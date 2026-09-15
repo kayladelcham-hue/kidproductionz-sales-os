@@ -44,7 +44,7 @@ def main():
    print('Destination counts:',dc); print('Verify PASS' if all(sc.get(t)==dc.get(t) for t in dc) else 'Verify FAIL'); return 0
   if a.preflight:
    dc={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
-   print('Destination counts:',dc); print('Tables that would be cleared:', ['queue_item','email_activity','calendar_event','external_action','crm_state','upload','run','prospect','app_setting','campaign']); print('Preflight PASS'); return 0
+   print('Destination counts:',dc); print('Tables that would be cleared:', ['queue_item','email_activity','calendar_event','external_action','crm_state','upload','run','prospect','app_setting','campaign']); print('Sequence handling:', ['campaign','prospect','run','crm_state','external_action','calendar_event','email_activity','queue_item']); print('Preflight PASS'); return 0
   pre={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
   print('Destination pre-migration counts:',pre)
   order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
@@ -84,6 +84,15 @@ def main():
      else:
       names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
       conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
+   # Synchronize identity sequences after preserving source IDs.
+   for table in order:
+    pks=inspect(e).get_pk_constraint(table).get('constrained_columns') or []
+    if len(pks)!=1 or table=='app_setting': continue
+    pk=pks[0]
+    seq=conn.execute(text('SELECT pg_get_serial_sequence(:table_name,:column_name)'),{'table_name':table,'column_name':pk}).scalar()
+    if seq:
+     max_id=conn.execute(text(f'SELECT MAX("{pk}") FROM "{table}"')).scalar()
+     if max_id is not None: conn.execute(text('SELECT setval(CAST(:seq AS regclass), :value, true)'),{'seq':seq,'value':max_id})
   post={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in pre}
   print('Destination post-migration counts:',post); print('Execute PASS'); return 0
 if __name__=='__main__': sys.exit(main())
