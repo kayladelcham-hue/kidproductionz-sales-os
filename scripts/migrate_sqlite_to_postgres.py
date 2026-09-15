@@ -80,13 +80,13 @@ def main():
        key=str(row['campaign_id'])
        if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
        row['campaign_id']=campaign_map[key]
-     where=' AND '.join(f'"{k}"=:pk_{k}' for k in pks); params={f'pk_{k}':row[k] for k in pks}
-     sets=', '.join(f'"{k}"=:v_{k}' for k in row if k not in pks)
-     if conn.execute(text(f'SELECT 1 FROM "{table}" WHERE {where}'),params).first():
-      if sets: conn.execute(text(f'UPDATE "{table}" SET {sets} WHERE {where}'),{**params,**{f'v_{k}':v for k,v in row.items() if k not in pks}})
-     else:
-      names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
-      conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
+      where=' AND '.join(f'"{k}"=:pk_{k}' for k in pks); params={f'pk_{k}':row[k] for k in pks}
+      sets=', '.join(f'"{k}"=:v_{k}' for k in row if k not in pks)
+      if conn.execute(text(f'SELECT 1 FROM "{table}" WHERE {where}'),params).first():
+       if sets: conn.execute(text(f'UPDATE "{table}" SET {sets} WHERE {where}'),{**params,**{f'v_{k}':v for k,v in row.items() if k not in pks}})
+      else:
+       names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
+       conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
    # Synchronize identity sequences after preserving source IDs.
    for table in order:
     pks=primary_keys[table]
