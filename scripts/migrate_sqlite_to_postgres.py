@@ -46,7 +46,7 @@ def main():
   if sc.get('queue_item',0): order.append('queue_item')
   with e.begin() as conn:
    for table in order:
-    rows=s.execute(f'SELECT * FROM "{table}"').fetchall(); cols=[d[0] for d in s.description]
+    cur=s.execute(f'SELECT * FROM "{table}"'); rows=cur.fetchall(); cols=[d[0] for d in cur.description]
     pks=[x['name'] for x in inspect(e).get_columns(table) if x.get('primary_key')]
     for raw in rows:
      row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in [x['name'] for x in inspect(e).get_columns(table)]}
