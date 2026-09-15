@@ -1,0 +1,47 @@
+{
+  "daily_limits": {
+    "CALL_FIRST": 10,
+    "EMAIL_FIRST": 8,
+    "DM_FIRST": 6,
+    "RESEARCH": 5
+  },
+  "follow_up_business_days": 3,
+  "priority": {
+    "p1_score": 80,
+    "p2_score": 65,
+    "rating": 4.0,
+    "reviews": 20
+  },
+  "professional_terms": [
+    "real estate",
+    "realtor",
+    "professional services",
+    "med spa",
+    "medical spa",
+    "organization"
+  ],
+  "social_first_terms": [
+    "braider",
+    "braiding",
+    "independent hairstylist",
+    "nail tech",
+    "lash artist",
+    "individual stylist",
+    "natural hair stylist",
+    "creator"
+  ],
+  "social_domains": [
+    "instagram.com",
+    "facebook.com",
+    "tiktok.com"
+  ],
+  "conflict_terms": [
+    "UNCERTAIN_DUPLICATE",
+    "LIKELY_CHAIN",
+    "IDENTITY_CONFLICT"
+  ],
+  "phone_weak_terms": [
+    "SHARED_PHONE",
+    "GENERIC_PHONE"
+  ]
+}

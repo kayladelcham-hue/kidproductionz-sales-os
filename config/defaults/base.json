@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "campaign_id": "default",
+  "name": "Default KidProductionz Campaign",
+  "market": {"active": "orlando", "markets": "../ideal_client_profile.json"},
+  "categories": "../ideal_client_profile.json",
+  "icp": "../ideal_client_profile.json",
+  "scoring": {"qualification_threshold": 65},
+  "routing": "../outreach_config.json",
+  "discovery": "../discovery_brave_config.json",
+  "enrichment": "../enrichment_config.json",
+  "crm": {"read_only_default": true, "writes_enabled": false},
+  "queue": {"daily_limit": 50},
+  "output": {"root": "campaign_outputs"},
+  "features": {"v3_enabled": false, "v4_frozen": true}
+}

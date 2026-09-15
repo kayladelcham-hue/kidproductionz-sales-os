@@ -1,0 +1,24 @@
+{
+  "max_records": 10,
+  "max_requests": 40,
+  "pace_seconds": 1,
+  "timeout_seconds": 15,
+  "max_bytes": 500000,
+  "cache_hours": 24,
+  "user_agent": "KidProductionzContactResearch/1.0",
+  "shared_domains": [
+    "salonlofts.com",
+    "booksy.com",
+    "vagaro.com",
+    "styleseat.com",
+    "fresha.com",
+    "yelp.com",
+    "facebook.com",
+    "instagram.com"
+  ],
+  "social_domains": {
+    "instagram.com": "Instagram",
+    "facebook.com": "Facebook",
+    "tiktok.com": "TikTok"
+  }
+}

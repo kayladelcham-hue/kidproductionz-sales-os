@@ -1,0 +1,17 @@
+[
+  {"fixture_id":"orlando_strong","campaign_id":"orlando_beauty","name":"Orlando Salon","city":"Orlando","state":"FL","category":"hair salon","phone":"4075550001","website":""},
+  {"fixture_id":"atlanta_strong","campaign_id":"atlanta_beauty","name":"Atlanta Salon","city":"Atlanta","state":"GA","category":"hair salon","phone":"4045550001","website":""},
+  {"fixture_id":"disqualified","campaign_id":"orlando_beauty","name":"Warehouse","city":"Orlando","state":"FL","category":"warehouse club"},
+  {"fixture_id":"orlando_wrong_market","campaign_id":"orlando_beauty","name":"Atlanta Lead","city":"Atlanta","state":"GA","category":"hair salon"},
+  {"fixture_id":"atlanta_wrong_market","campaign_id":"atlanta_beauty","name":"Orlando Lead","city":"Orlando","state":"FL","category":"hair salon"},
+  {"fixture_id":"unknown_category","campaign_id":"orlando_beauty","name":"Unknown","city":"Orlando","state":"FL","category":"misc"},
+  {"fixture_id":"category_normalization","campaign_id":"orlando_beauty","name":"Stylist","city":"Orlando","state":"FL","category":"HAIR STYLIST"},
+  {"fixture_id":"icp_edge","campaign_id":"orlando_beauty","name":"Edge","city":"Orlando","state":"FL","category":"hair salon"},
+  {"fixture_id":"missing_channels","campaign_id":"orlando_beauty","name":"No Contact","city":"Orlando","state":"FL","category":"hair salon"},
+  {"fixture_id":"phone_only","campaign_id":"orlando_beauty","name":"Phone Salon","city":"Orlando","state":"FL","category":"hair salon","phone":"4075550002"},
+  {"fixture_id":"website_social","campaign_id":"orlando_beauty","name":"Social Salon","city":"Orlando","state":"FL","category":"hair salon","website":"https://example.com","social":"https://instagram.com/example"},
+  {"fixture_id":"borderline","campaign_id":"orlando_beauty","name":"Borderline","city":"Orlando","state":"FL","category":"boutique"},
+  {"fixture_id":"review_required","campaign_id":"orlando_beauty","name":"Review","city":"","state":"","category":"hair salon"},
+  {"fixture_id":"excluded_category","campaign_id":"orlando_beauty","name":"School","city":"Orlando","state":"FL","category":"beauty school"},
+  {"fixture_id":"incomplete_location","campaign_id":"orlando_beauty","name":"No City","city":"","state":"FL","category":"hair salon"}
+]

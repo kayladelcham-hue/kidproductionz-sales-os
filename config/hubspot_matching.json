@@ -1,0 +1,183 @@
+{
+  "version": "2.0",
+ "portal_id": "247159003",
+  "api_base": "https://api.hubapi.com",
+  "token_env": "HUBSPOT_READONLY_TOKEN",
+  "properties": [
+    "name",
+    "domain",
+    "hs_additional_domains",
+    "website",
+    "phone",
+    "address",
+    "address2",
+    "city",
+    "state",
+    "zip",
+    "country"
+  ],
+  "required_properties": [
+    "name",
+    "domain",
+    "phone",
+    "address",
+    "city",
+    "state"
+  ],
+  "retrieval": {
+    "page_size": 100,
+    "timeout_seconds": 30,
+    "max_retries": 3,
+    "max_pages_per_partition": 100000
+  },
+  "snapshot": {
+    "max_age_hours": 24,
+    "include_archived": true
+  },
+  "thresholds": {
+    "existing": 90,
+    "review": 40,
+    "competing": 70,
+    "name_similarity": 0.92
+  },
+  "confidence": {
+    "name_address": 95,
+    "domain_phone_name": 95,
+    "domain_name_city": 90,
+    "fuzzy_phone_address": 90,
+    "domain_only": 70,
+    "name_city": 70,
+    "phone_only": 55,
+    "address_only": 55,
+    "fuzzy_only": 40,
+    "shared_identifier": 55
+  },
+  "normalization": {
+    "legal_suffixes": [
+      "llc",
+      "inc",
+      "incorporated",
+      "ltd",
+      "corp",
+      "corporation"
+    ],
+    "street_aliases": {
+      "street": "st",
+      "road": "rd",
+      "avenue": "ave",
+      "boulevard": "blvd",
+      "drive": "dr",
+      "lane": "ln",
+      "court": "ct",
+      "parkway": "pkwy",
+      "highway": "hwy"
+    },
+    "state_aliases": {
+      "florida": "FL",
+      "georgia": "GA",
+      "alabama": "AL",
+      "alaska": "AK",
+      "arizona": "AZ",
+      "arkansas": "AR",
+      "california": "CA",
+      "colorado": "CO",
+      "connecticut": "CT",
+      "delaware": "DE",
+      "district of columbia": "DC",
+      "hawaii": "HI",
+      "idaho": "ID",
+      "illinois": "IL",
+      "indiana": "IN",
+      "iowa": "IA",
+      "kansas": "KS",
+      "kentucky": "KY",
+      "louisiana": "LA",
+      "maine": "ME",
+      "maryland": "MD",
+      "massachusetts": "MA",
+      "michigan": "MI",
+      "minnesota": "MN",
+      "mississippi": "MS",
+      "missouri": "MO",
+      "montana": "MT",
+      "nebraska": "NE",
+      "nevada": "NV",
+      "new hampshire": "NH",
+      "new jersey": "NJ",
+      "new mexico": "NM",
+      "new york": "NY",
+      "north carolina": "NC",
+      "north dakota": "ND",
+      "ohio": "OH",
+      "oklahoma": "OK",
+      "oregon": "OR",
+      "pennsylvania": "PA",
+      "rhode island": "RI",
+      "south carolina": "SC",
+      "south dakota": "SD",
+      "tennessee": "TN",
+      "texas": "TX",
+      "utah": "UT",
+      "vermont": "VT",
+      "virginia": "VA",
+      "washington": "WA",
+      "west virginia": "WV",
+      "wisconsin": "WI",
+      "wyoming": "WY"
+    },
+    "generic_name_tokens": [
+      "salon",
+      "hair",
+      "beauty",
+      "studio",
+      "shop",
+      "spa",
+      "nails",
+      "the",
+      "and",
+      "of"
+    ],
+    "suite_pattern": "(?:\\b(?:suite|ste|unit|suit)\\s*|#\\s*)([a-z0-9-]+)",
+    "country_aliases": {
+      "us": "us",
+      "usa": "us",
+      "united states": "us",
+      "united states of america": "us"
+    }
+  },
+  "shared_domains": [
+    "salonlofts.com",
+    "booksy.com",
+    "vagaro.com",
+    "styleseat.com",
+    "square.site",
+    "squareup.com",
+    "glossgenius.com",
+    "fresha.com",
+    "instagram.com",
+    "facebook.com",
+    "google.com",
+    "yelp.com"
+  ],
+  "brand_domains": [
+    "haircuttery.com",
+    "greatclips.com",
+    "supercuts.com",
+    "sportclips.com",
+    "ulta.com",
+    "sallybeauty.com",
+    "floydsbarbershop.com"
+  ],
+  "platforms": [
+    {
+      "domain": "salonlofts.com",
+      "operator_name_patterns": [
+        "^salon lofts$",
+        "^salon lofts maitland south$"
+      ],
+      "operator_path_prefixes": [
+        "/salons/"
+      ]
+    }
+  ]
+}

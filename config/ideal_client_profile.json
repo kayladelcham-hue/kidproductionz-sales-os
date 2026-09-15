@@ -1,0 +1,442 @@
+{
+  "schema_version": 1,
+  "markets": {
+    "orlando": {
+      "enabled": true,
+      "state": "FL",
+      "cities": [
+        "Orlando",
+        "Winter Park",
+        "Maitland",
+        "Altamonte Springs",
+        "Apopka",
+        "Ocoee",
+        "Winter Garden",
+        "Windermere",
+        "Dr. Phillips",
+        "Doctor Phillips",
+        "Lake Nona",
+        "Kissimmee",
+        "Sanford"
+      ],
+      "supporting_zip_codes": []
+    },
+    "atlanta": {
+      "enabled": false,
+      "state": "GA",
+      "cities": [
+        "Atlanta",
+        "Decatur",
+        "Sandy Springs",
+        "Roswell",
+        "Alpharetta",
+        "Marietta",
+        "Smyrna",
+        "Brookhaven",
+        "Dunwoody",
+        "East Point",
+        "College Park"
+      ],
+      "supporting_zip_codes": []
+    }
+  },
+  "state_aliases": {
+    "florida": "FL",
+    "georgia": "GA"
+  },
+  "categories": {
+    "primary": {
+      "hair salon": [
+        "hair salon",
+        "hair salons",
+        "beauty salon",
+        "hairdresser",
+        "hair stylist",
+        "hairstylist",
+        "independent hairstylist"
+      ],
+      "braids and natural hair": [
+        "braider",
+        "braiders",
+        "braiding",
+        "hair braiding",
+        "natural hair",
+        "natural hair stylist",
+        "loc stylist",
+        "locs",
+        "dreadlocks"
+      ],
+      "nails": [
+        "nail salon",
+        "nail salons",
+        "nail tech",
+        "nail technician"
+      ],
+      "lashes": [
+        "lash artist",
+        "lash studio",
+        "eyelash salon",
+        "eyelash extensions",
+        "lash extensions"
+      ],
+      "skin care": [
+        "esthetician",
+        "aesthetician",
+        "facial studio",
+        "facial spa",
+        "skin care clinic"
+      ],
+      "med spa": [
+        "med spa",
+        "medspa",
+        "medical spa"
+      ],
+      "beauty studio": [
+        "beauty bar",
+        "beauty studio"
+      ]
+    },
+    "secondary": {
+      "real estate": [
+        "realtor",
+        "real estate agent",
+        "real estate agency",
+        "real estate team"
+      ],
+      "fitness": [
+        "personal trainer",
+        "fitness studio",
+        "pilates studio",
+        "yoga studio",
+        "boutique fitness"
+      ],
+      "fashion": [
+        "boutique",
+        "clothing store",
+        "fashion designer"
+      ],
+      "food and drink": [
+        "restaurant",
+        "cafe",
+        "coffee shop",
+        "bakery"
+      ],
+      "creative local business": [
+        "florist",
+        "tattoo shop",
+        "pet groomer",
+        "interior designer",
+        "event planner",
+        "wedding planner"
+      ]
+    },
+    "excluded": [
+      "school",
+      "cosmetology school",
+      "beauty school",
+      "government office",
+      "city hall",
+      "police department",
+      "post office",
+      "public library",
+      "department store",
+      "warehouse club"
+    ],
+    "secondary_requires_visual_evidence": [
+      "food and drink",
+      "creative local business"
+    ],
+    "unknown_action": "review"
+  },
+  "weights": {
+    "primary_category": 30,
+    "secondary_category": 15,
+    "active_area": 15,
+    "usable_contact": 8,
+    "website": 6,
+    "social": 4,
+    "rating": 8,
+    "reviews": 8,
+    "independent": 10,
+    "visual": 7,
+    "named_contact": 4
+  },
+  "penalties": {
+    "likely_chain": -35,
+    "outside_area": -30,
+    "no_contact": -25
+  },
+  "thresholds": {
+    "hot": 80,
+    "qualified": 65,
+    "review": 50,
+    "rating": 4,
+    "reviews": 20
+  },
+  "exclusions": {
+    "permanently_closed": true,
+    "temporarily_closed": true,
+    "outside_area": true,
+    "no_contact": true,
+    "excluded_category": true
+  },
+  "status_values": {
+    "permanently_closed": [
+      "permanently closed",
+      "closed permanently",
+      "permanently_closed"
+    ],
+    "temporarily_closed": [
+      "temporarily closed",
+      "closed temporarily",
+      "temporarily_closed"
+    ]
+  },
+  "true_values": [
+    "true",
+    "yes",
+    "1",
+    "y"
+  ],
+  "ownership": {
+    "independent_values": [
+      "independent",
+      "independently owned",
+      "locally owned",
+      "owner operated",
+      "locally operated",
+      "single location"
+    ],
+    "evidence_required": true
+  },
+  "chains": {
+    "names": [
+      "Great Clips",
+      "Supercuts",
+      "Sport Clips",
+      "Ulta Beauty",
+      "Sephora",
+      "Walmart",
+      "Target",
+      "Costco",
+      "Planet Fitness",
+      "Orangetheory Fitness",
+      "Starbucks",
+      "McDonald's",
+      "Hair Cuttery",
+      "Floyd's 99 Barbershop",
+      "Sally Beauty"
+    ],
+    "domains": [
+      "greatclips.com",
+      "supercuts.com",
+      "sportclips.com",
+      "ulta.com",
+      "sephora.com",
+      "walmart.com",
+      "target.com",
+      "costco.com",
+      "planetfitness.com",
+      "orangetheory.com",
+      "starbucks.com",
+      "mcdonalds.com",
+      "haircuttery.com",
+      "floydsbarbershop.com",
+      "sallybeauty.com"
+    ],
+    "ambiguous_action": "review",
+    "independent_evidence_waives_penalty": true,
+    "shared_platforms": [
+      {
+        "names": [
+          "Salon Lofts"
+        ],
+        "domains": [
+          "salonlofts.com"
+        ],
+        "operator_name_patterns": [
+          "^salon lofts$",
+          "^salon lofts maitland south$"
+        ]
+      }
+    ]
+  },
+  "duplicates": {
+    "fuzzy_name_ratio": 0.9,
+    "shared_domain_action": "relationship",
+    "shared_phone_action": "relationship",
+    "suite_pattern": "(?:\\b(?:suite|ste|unit|suit)\\s*|#\\s*)([a-z0-9-]+)"
+  },
+  "contact": {
+    "social_domains": [
+      "instagram.com",
+      "facebook.com",
+      "tiktok.com",
+      "linkedin.com",
+      "youtube.com",
+      "x.com",
+      "twitter.com",
+      "pinterest.com"
+    ],
+    "directory_domains": [
+      "google.com",
+      "maps.google.com",
+      "goo.gl",
+      "maps.app.goo.gl",
+      "yelp.com",
+      "tripadvisor.com",
+      "yellowpages.com"
+    ],
+    "booking_domains": [
+      "booksy.com",
+      "vagaro.com",
+      "styleseat.com",
+      "square.site",
+      "squareup.com",
+      "acuityscheduling.com",
+      "glossgenius.com",
+      "fresha.com"
+    ],
+    "placeholder_values": [
+      "",
+      "n/a",
+      "na",
+      "none",
+      "null",
+      "nan",
+      "-",
+      "unknown"
+    ],
+    "generic_platform_paths": [
+      "",
+      "/",
+      "/en",
+      "/en-us",
+      "/login",
+      "/search"
+    ]
+  },
+  "column_aliases": {
+    "name": [
+      "name",
+      "business_name",
+      "business name",
+      "title"
+    ],
+    "phone": [
+      "phone",
+      "phone_number",
+      "phone number"
+    ],
+    "website": [
+      "site",
+      "website",
+      "website_url"
+    ],
+    "category": [
+      "category",
+      "categories",
+      "type",
+      "subtypes"
+    ],
+    "city": [
+      "city",
+      "town"
+    ],
+    "state": [
+      "state",
+      "state_code",
+      "region"
+    ],
+    "zip": [
+      "postal_code",
+      "zip",
+      "zipcode",
+      "zip_code"
+    ],
+    "address": [
+      "street",
+      "address",
+      "full_address"
+    ],
+    "place_id": [
+      "place_id",
+      "google_id"
+    ],
+    "rating": [
+      "rating",
+      "google_rating"
+    ],
+    "reviews": [
+      "reviews",
+      "reviews_count",
+      "review_count"
+    ],
+    "status": [
+      "business_status",
+      "status"
+    ],
+    "permanently_closed": [
+      "permanently_closed"
+    ],
+    "temporarily_closed": [
+      "temporarily_closed"
+    ],
+    "email": [
+      "email",
+      "email_1",
+      "email_2",
+      "email_3",
+      "emails"
+    ],
+    "social": [
+      "instagram",
+      "instagram_url",
+      "facebook",
+      "facebook_url",
+      "tiktok",
+      "linkedin",
+      "youtube",
+      "social",
+      "social_url"
+    ],
+    "other_contact": [
+      "booking_url",
+      "contact_url",
+      "booking_link",
+      "booking_appointment_link"
+    ],
+    "owner": [
+      "owner_name",
+      "contact_name",
+      "owner",
+      "contact"
+    ],
+    "ownership": [
+      "ownership",
+      "ownership_type"
+    ],
+    "ownership_evidence": [
+      "ownership_evidence",
+      "independent_evidence"
+    ],
+    "visual": [
+      "visual_opportunity",
+      "content_opportunity",
+      "strong_visual_branding"
+    ],
+    "visual_evidence": [
+      "visual_evidence",
+      "content_opportunity_evidence"
+    ]
+  },
+  "version": "1.1",
+  "primary_qualification": {
+    "require_active_area": true,
+    "require_contact": true,
+    "require_rating": true,
+    "require_reviews": true,
+    "block_closed": true,
+    "block_excluded_category": true
+  }
+}

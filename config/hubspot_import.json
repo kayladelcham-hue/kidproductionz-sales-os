@@ -1,0 +1,25 @@
+{
+  "version": "3.0",
+  "enabled": false,
+  "pilot_limit": 10,
+  "write_token_env": "HUBSPOT_COMPANY_CREATE_TOKEN",
+  "max_recheck_age_seconds": 30,
+  "property_map": {
+    "name": "name",
+    "website": "website",
+    "phone": "phone",
+    "address": "address",
+    "city": "city",
+    "state": "state",
+    "zip": "zip",
+    "source_file": "kidproductionz_source_file",
+    "source_row": "kidproductionz_source_row",
+    "lead_id": "kidproductionz_lead_id",
+    "source_run_id": "kidproductionz_source_run_id",
+    "v2_run_id": "kidproductionz_v2_run_id",
+    "score": "kidproductionz_lead_score",
+    "grade": "kidproductionz_lead_grade",
+    "normalized_category": "kidproductionz_category",
+    "score_explanation": "kidproductionz_score_explanation"
+  }
+}

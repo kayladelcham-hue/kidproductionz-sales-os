@@ -1,0 +1,16 @@
+{
+  "live_provider": "brave",
+  "max_records": 10,
+  "query_budget": 30,
+  "results_per_query": 5,
+  "pace_seconds": 1.2,
+  "cache_hours": 24,
+  "timeout_seconds": 15,
+  "max_page_bytes": 500000,
+  "max_queries_per_lead": 3,
+  "max_results_per_query": 5,
+  "pilot_lead_limit": 10,
+  "request_pacing_seconds": 1.2,
+  "monthly_budget_awareness": true,
+  "max_public_requests": 120
+}
