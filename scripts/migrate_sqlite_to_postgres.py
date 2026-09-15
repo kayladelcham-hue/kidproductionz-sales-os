@@ -58,8 +58,13 @@ def main():
    print(f"{table} primary key: {','.join(pks)}")
   with e.begin() as conn:
    if a.fresh_cloud_mirror:
-    for t in ['queue_item','email_activity','calendar_event','external_action','crm_state','upload','run','prospect','app_setting','campaign']:
-     conn.execute(text(f'DELETE FROM "{t}"'))
+     print('Fresh cloud mirror reset: START')
+     cleared=['queue_item','email_activity','calendar_event','external_action','crm_state','upload','run','prospect','app_setting','campaign']
+     conn.execute(text('TRUNCATE TABLE "queue_item","email_activity","calendar_event","external_action","crm_state","upload","run","prospect","app_setting","campaign" RESTART IDENTITY CASCADE'))
+     post_clear={t:conn.execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in cleared}
+     print('Destination post-clear counts:',post_clear)
+     if any(post_clear.values()): raise RuntimeError('Fresh mirror reset failed; refusing to migrate')
+     print('Fresh cloud mirror reset: PASS')
    # Upsert campaigns first, then resolve every legacy identifier on this same transaction connection.
    for raw in s.execute('SELECT * FROM "campaign"').fetchall():
     cur=s.execute('SELECT * FROM "campaign"'); cols=[d[0] for d in cur.description]; row=dict(zip(cols,raw))
