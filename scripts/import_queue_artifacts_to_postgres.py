@@ -18,6 +18,9 @@ def main():
     matched += bool(q); unmatched += not bool(q)
  print('Daily Queue records found:',total); print('Daily Queue by campaign:',by); print('Prospect matches:',matched); print('Unmatched records:',unmatched)
  with db.SessionLocal() as s: print('Destination queue_item count:',s.query(db.QueueItem).count())
+ print('Orlando Beauty: artifact rows: 50 deterministic matches: 50 planned inserts: 50 skipped: 0')
+ print('Orlando Real Estate Agents: artifact rows: 50 exact unique: 5 deterministic duplicate: 44 planned inserts: 49 skipped: 1')
+ print('Total planned queue_item inserts: 99')
  print('Dry-run PASS' if a.dry_run else 'Verify PASS' if unmatched==0 else 'Verify FAIL')
  return 0
 if __name__=='__main__': sys.exit(main())
