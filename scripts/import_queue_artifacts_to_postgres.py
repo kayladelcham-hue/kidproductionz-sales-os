@@ -23,3 +23,5 @@ def main():
 if __name__=='__main__': sys.exit(main())
 
 
+
+# Authoritative mapping policy: exact identifiers first; duplicate names may be assigned by queue_position to sorted prospect IDs only when group cardinalities match.
