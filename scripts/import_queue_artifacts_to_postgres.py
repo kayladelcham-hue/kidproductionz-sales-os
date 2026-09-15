@@ -3,7 +3,7 @@ import argparse,csv,os,sqlite3,sys
 from pathlib import Path
 from app.api import database_v2 as db
 from sqlalchemy import text
-ROOT=Path(os.getenv('KIDPRODUCTIONZ_ARTIFACT_ROOT','validation_outputs'))
+ROOT=Path(os.getenv('KIDPRODUCTIONZ_ARTIFACT_ROOT',r'C:\\Users\\CJ\\AppData\\Local\\KidProductionz Sales OS\\validation_outputs'))
 def main():
  ap=argparse.ArgumentParser(); ap.add_argument('--dry-run',action='store_true'); ap.add_argument('--execute',action='store_true'); ap.add_argument('--approve-write',action='store_true'); ap.add_argument('--verify',action='store_true'); a=ap.parse_args()
  if sum((a.dry_run,a.execute,a.verify))!=1: ap.error('choose one mode')
@@ -21,4 +21,5 @@ def main():
  print('Dry-run PASS' if a.dry_run else 'Verify PASS' if unmatched==0 else 'Verify FAIL')
  return 0
 if __name__=='__main__': sys.exit(main())
+
 
