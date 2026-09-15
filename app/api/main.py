@@ -38,7 +38,7 @@ from . import hubspot_sync_service
 from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
-from .database import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, get_settings, save_settings
+from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, get_settings, save_settings
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
@@ -449,3 +449,4 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
+

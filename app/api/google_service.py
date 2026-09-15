@@ -1,5 +1,5 @@
 import base64,email.message,json,os,time,urllib.parse,urllib.request,urllib.error,logging
-from .database import save_google_connection,load_google_connection,clear_google_connection
+from .database_v2 import save_google_connection,load_google_connection,clear_google_connection
 SCOPES=('https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/calendar.events')
 logger=logging.getLogger(__name__)
 def status():
@@ -48,3 +48,4 @@ def upcoming_calendar_events(limit=10):
     req=urllib.request.Request('https://www.googleapis.com/calendar/v3/calendars/primary/events?'+urllib.parse.urlencode({'maxResults':limit,'singleEvents':'true','orderBy':'startTime','timeMin':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())}),headers={'Authorization':'Bearer '+_token()})
     with urllib.request.urlopen(req,timeout=10) as r: data=json.loads(r.read().decode())
     return [{'id':x.get('id'),'title':x.get('summary',''),'start':(x.get('start') or {}).get('dateTime') or (x.get('start') or {}).get('date'),'end':(x.get('end') or {}).get('dateTime') or (x.get('end') or {}).get('date'),'location':x.get('location',''),'html_link':x.get('htmlLink')} for x in data.get('items',[])]
+
