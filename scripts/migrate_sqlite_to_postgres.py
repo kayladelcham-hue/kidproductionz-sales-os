@@ -21,8 +21,10 @@ def counts(c):
  return {t:c.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0] for t in TABLES+['google_connection','queue_item'] if c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(t,)).fetchone()}
 
 def main():
- ap=argparse.ArgumentParser(); ap.add_argument('--dry-run',action='store_true'); ap.add_argument('--execute',action='store_true'); ap.add_argument('--verify',action='store_true'); a=ap.parse_args()
+ ap=argparse.ArgumentParser(); ap.add_argument('--dry-run',action='store_true'); ap.add_argument('--execute',action='store_true'); ap.add_argument('--verify',action='store_true'); ap.add_argument('--approve-write',action='store_true'); a=ap.parse_args()
  if sum((a.dry_run,a.execute,a.verify))!=1: ap.error('choose exactly one mode')
+ if a.execute and not a.approve_write:
+  print('Execute blocked: add --approve-write to confirm migration writes.'); return 2
  with source_conn() as s:
   sc=counts(s); print('Source counts:',sc); print('Sensitive tables skipped:',SENSITIVE)
   if sc.get('queue_item',0): print('Queue rows present; migration enabled for existing rows only')
