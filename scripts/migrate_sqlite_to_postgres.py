@@ -75,7 +75,7 @@ def main():
     pks=primary_keys[table]
     if not pks: raise RuntimeError(f"No primary key found for {table}")
     for raw in rows:
-    row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in destination_columns[table]}
+      row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in destination_columns[table]}
      if table in ('prospect','run') and 'campaign_id' in row:
       key=str(row['campaign_id'])
       if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
