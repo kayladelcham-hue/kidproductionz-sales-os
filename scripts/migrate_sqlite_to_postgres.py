@@ -85,7 +85,7 @@ def main():
       sets=', '.join(f'"{k}"=:v_{k}' for k in row if k not in pks)
       if a.fresh_cloud_mirror:
        names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
-        conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
+       conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
        if n % 100 == 0 or n == total: print(f'{table}: {n}/{total}')
        continue
       if conn.execute(text(f'SELECT 1 FROM "{table}" WHERE {where}'),params).first():
