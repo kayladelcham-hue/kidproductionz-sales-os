@@ -47,7 +47,7 @@ def main():
    print('Destination counts:',dc); print('Tables that would be cleared:', ['queue_item','email_activity','calendar_event','external_action','crm_state','upload','run','prospect','app_setting','campaign']); print('Sequence handling:', ['campaign','prospect','run','crm_state','external_action','calendar_event','email_activity','queue_item']); print('Preflight PASS'); return 0
   pre={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
   print('Destination pre-migration counts:',pre)
-  order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
+  order=['prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
   if sc.get('queue_item',0): order.append('queue_item')
   insp=inspect(e)
   destination_columns={t:{c['name'] for c in insp.get_columns(t)} for t in order}
@@ -75,6 +75,8 @@ def main():
     dest=conn.execute(text('SELECT id,slug,name FROM "campaign" WHERE slug=:slug OR name=:name'),{'slug':slug,'name':name}).first()
     if not dest: raise RuntimeError(f'No destination campaign mapping for {slug or name}')
     campaign_map[str(sid)]=dest[0]; campaign_map[str(slug)]=dest[0]; print(f'{slug or name} -> {dest[0]}')
+    if conn.execute(text('SELECT COUNT(*) FROM "campaign"')).scalar() != len(src_campaigns): raise RuntimeError('Campaign migration count mismatch')
+    print(f'campaign: {len(src_campaigns)}/{len(src_campaigns)}')
    for table in order:
     cur=s.execute(f'SELECT * FROM "{table}"'); rows=cur.fetchall(); cols=[d[0] for d in cur.description]
     pks=primary_keys[table]
