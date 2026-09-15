@@ -8,7 +8,7 @@ def main():
  ap=argparse.ArgumentParser(); ap.add_argument('--dry-run',action='store_true'); ap.add_argument('--execute',action='store_true'); ap.add_argument('--approve-write',action='store_true'); ap.add_argument('--verify',action='store_true'); a=ap.parse_args()
  if sum((a.dry_run,a.execute,a.verify))!=1: ap.error('choose one mode')
  if a.execute and not a.approve_write: print('Execute blocked: add --approve-write to confirm migration writes.'); return 2
- files=list(ROOT.glob('**/daily_queue*.csv')); print('Artifacts discovered:',len(files)); total=0; matched=0; unmatched=0; by={}
+ files=list(ROOT.glob('**/daily_queue*.csv'))+list(ROOT.glob('**/daily_queue*.json')); print('Artifacts discovered:',len(files)); total=0; matched=0; unmatched=0; by={}
  with db.SessionLocal() as s:
   campaigns={r.slug:r.id for r in s.query(db.Campaign).all()}; print('Campaigns found:',','.join(sorted(campaigns)))
   for f in files:
@@ -21,3 +21,4 @@ def main():
  print('Dry-run PASS' if a.dry_run else 'Verify PASS' if unmatched==0 else 'Verify FAIL')
  return 0
 if __name__=='__main__': sys.exit(main())
+
