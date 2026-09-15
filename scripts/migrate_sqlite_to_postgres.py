@@ -42,19 +42,6 @@ def main():
    print('Destination counts:',dc); print('Verify PASS' if all(sc.get(t)==dc.get(t) for t in dc) else 'Verify FAIL'); return 0
   pre={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
   print('Destination pre-migration counts:',pre)
-  # Build safe legacy campaign-id/slug -> destination integer-id mapping.
-  campaign_map={}
-  src_campaigns=s.execute('SELECT id, slug, name FROM campaign').fetchall()
-  print('Source campaigns:', ', '.join(f'{r[0]}:{r[1]}' for r in src_campaigns))
-  for sid,slug,name in src_campaigns:
-   with e.connect() as lookup:
-    dest=lookup.execute(text('SELECT id,slug,name FROM "campaign" WHERE slug=:slug'),{'slug':slug}).first()
-    if not dest: dest=lookup.execute(text('SELECT id,slug,name FROM "campaign" WHERE name=:name'),{'name':name}).first()
-    if not dest and str(sid).isdigit(): dest=lookup.execute(text('SELECT id,slug,name FROM "campaign" WHERE id=:id'),{'id':int(sid)}).first()
-   if not dest: raise RuntimeError(f'No destination campaign mapping for {slug or name}')
-   campaign_map[str(sid)]=dest[0]
-   if slug is not None: campaign_map[str(slug)]=dest[0]
-   print(f'{slug or name} -> {dest[0]}')
   order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
   if sc.get('queue_item',0): order.append('queue_item')
   for table in order:
@@ -62,6 +49,16 @@ def main():
    if not pks: raise RuntimeError(f"No primary key found for {table}")
    print(f"{table} primary key: {','.join(pks)}")
   with e.begin() as conn:
+   # Upsert campaigns first, then resolve every legacy identifier on this same transaction connection.
+   for raw in s.execute('SELECT * FROM "campaign"').fetchall():
+    cur=s.execute('SELECT * FROM "campaign"'); cols=[d[0] for d in cur.description]; row=dict(zip(cols,raw))
+    conn.execute(text('UPDATE "campaign" SET "name"=:name,"market"=:market,"active"=:active,"config_ref"=:config_ref,"city"=:city,"state"=:state,"category"=:category,"description"=:description,"daily_queue_limit"=:daily_queue_limit,"status"=:status WHERE "slug"=:slug'),row)
+    if not conn.execute(text('SELECT 1 FROM "campaign" WHERE "slug"=:slug'),row).first(): conn.execute(text('INSERT INTO "campaign" ("id","slug","name") VALUES (:id,:slug,:name)'),row)
+   campaign_map={}; src_campaigns=s.execute('SELECT id, slug, name FROM campaign').fetchall()
+   for sid,slug,name in src_campaigns:
+    dest=conn.execute(text('SELECT id,slug,name FROM "campaign" WHERE slug=:slug OR name=:name'),{'slug':slug,'name':name}).first()
+    if not dest: raise RuntimeError(f'No destination campaign mapping for {slug or name}')
+    campaign_map[str(sid)]=dest[0]; campaign_map[str(slug)]=dest[0]; print(f'{slug or name} -> {dest[0]}')
    for table in order:
     cur=s.execute(f'SELECT * FROM "{table}"'); rows=cur.fetchall(); cols=[d[0] for d in cur.description]
     pks=inspect(e).get_pk_constraint(table).get('constrained_columns') or []
