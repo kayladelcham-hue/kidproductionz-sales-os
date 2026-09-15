@@ -49,6 +49,9 @@ def main():
   print('Destination pre-migration counts:',pre)
   order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
   if sc.get('queue_item',0): order.append('queue_item')
+  insp=inspect(e)
+  destination_columns={t:{c['name'] for c in insp.get_columns(t)} for t in order}
+  primary_keys={t:(insp.get_pk_constraint(t).get('constrained_columns') or []) for t in order}
   for table in order:
    pks=inspect(e).get_pk_constraint(table).get('constrained_columns') or []
    if not pks: raise RuntimeError(f"No primary key found for {table}")
@@ -69,10 +72,10 @@ def main():
     campaign_map[str(sid)]=dest[0]; campaign_map[str(slug)]=dest[0]; print(f'{slug or name} -> {dest[0]}')
    for table in order:
     cur=s.execute(f'SELECT * FROM "{table}"'); rows=cur.fetchall(); cols=[d[0] for d in cur.description]
-    pks=inspect(e).get_pk_constraint(table).get('constrained_columns') or []
+    pks=primary_keys[table]
     if not pks: raise RuntimeError(f"No primary key found for {table}")
     for raw in rows:
-     row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in [x['name'] for x in inspect(e).get_columns(table)]}
+    row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in destination_columns[table]}
      if table in ('prospect','run') and 'campaign_id' in row:
       key=str(row['campaign_id'])
       if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
@@ -86,7 +89,7 @@ def main():
       conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
    # Synchronize identity sequences after preserving source IDs.
    for table in order:
-    pks=inspect(e).get_pk_constraint(table).get('constrained_columns') or []
+    pks=primary_keys[table]
     if len(pks)!=1 or table=='app_setting': continue
     pk=pks[0]
     seq=conn.execute(text('SELECT pg_get_serial_sequence(:table_name,:column_name)'),{'table_name':table,'column_name':pk}).scalar()
