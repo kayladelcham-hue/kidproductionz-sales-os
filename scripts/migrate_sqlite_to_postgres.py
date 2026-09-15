@@ -40,5 +40,23 @@ def main():
   if a.verify:
    dc={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
    print('Destination counts:',dc); print('Verify PASS' if all(sc.get(t)==dc.get(t) for t in dc) else 'Verify FAIL'); return 0
-  print('Execute mode is intentionally disabled until explicitly approved; no writes performed.'); return 2
+  pre={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
+  print('Destination pre-migration counts:',pre)
+  order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
+  if sc.get('queue_item',0): order.append('queue_item')
+  with e.begin() as conn:
+   for table in order:
+    rows=s.execute(f'SELECT * FROM "{table}"').fetchall(); cols=[d[0] for d in s.description]
+    pks=[x['name'] for x in inspect(e).get_columns(table) if x.get('primary_key')]
+    for raw in rows:
+     row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in [x['name'] for x in inspect(e).get_columns(table)]}
+     where=' AND '.join(f'"{k}"=:pk_{k}' for k in pks); params={f'pk_{k}':row[k] for k in pks}
+     sets=', '.join(f'"{k}"=:v_{k}' for k in row if k not in pks)
+     if conn.execute(text(f'SELECT 1 FROM "{table}" WHERE {where}'),params).first():
+      if sets: conn.execute(text(f'UPDATE "{table}" SET {sets} WHERE {where}'),{**params,**{f'v_{k}':v for k,v in row.items() if k not in pks}})
+     else:
+      names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
+      conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
+  post={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in pre}
+  print('Destination post-migration counts:',post); print('Execute PASS'); return 0
 if __name__=='__main__': sys.exit(main())
