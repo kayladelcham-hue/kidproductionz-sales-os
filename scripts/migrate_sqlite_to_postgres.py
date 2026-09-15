@@ -76,10 +76,10 @@ def main():
     if not pks: raise RuntimeError(f"No primary key found for {table}")
     for raw in rows:
       row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in destination_columns[table]}
-     if table in ('prospect','run') and 'campaign_id' in row:
-      key=str(row['campaign_id'])
-      if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
-      row['campaign_id']=campaign_map[key]
+      if table in ('prospect','run') and 'campaign_id' in row:
+       key=str(row['campaign_id'])
+       if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
+       row['campaign_id']=campaign_map[key]
      where=' AND '.join(f'"{k}"=:pk_{k}' for k in pks); params={f'pk_{k}':row[k] for k in pks}
      sets=', '.join(f'"{k}"=:v_{k}' for k in row if k not in pks)
      if conn.execute(text(f'SELECT 1 FROM "{table}" WHERE {where}'),params).first():
