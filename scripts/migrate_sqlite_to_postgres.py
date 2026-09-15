@@ -44,10 +44,15 @@ def main():
   print('Destination pre-migration counts:',pre)
   order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
   if sc.get('queue_item',0): order.append('queue_item')
+  for table in order:
+   pks=inspect(e).get_pk_constraint(table).get('constrained_columns') or []
+   if not pks: raise RuntimeError(f"No primary key found for {table}")
+   print(f"{table} primary key: {','.join(pks)}")
   with e.begin() as conn:
    for table in order:
     cur=s.execute(f'SELECT * FROM "{table}"'); rows=cur.fetchall(); cols=[d[0] for d in cur.description]
-    pks=[x['name'] for x in inspect(e).get_columns(table) if x.get('primary_key')]
+    pks=inspect(e).get_pk_constraint(table).get('constrained_columns') or []
+    if not pks: raise RuntimeError(f"No primary key found for {table}")
     for raw in rows:
      row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in [x['name'] for x in inspect(e).get_columns(table)]}
      where=' AND '.join(f'"{k}"=:pk_{k}' for k in pks); params={f'pk_{k}':row[k] for k in pks}
