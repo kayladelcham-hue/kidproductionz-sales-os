@@ -21,7 +21,7 @@ def _load_local_env():
             os.environ[key]=value
 
 _load_local_env()
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import tempfile, uuid, shutil
@@ -81,19 +81,19 @@ def auth_login(req: LoginRequest):
     return response
 
 @app.post('/api/auth/logout')
-def auth_logout(request):
+def auth_logout(request: Request):
     token=request.cookies.get(_AUTH_COOKIE)
     if token: _sessions.discard(token)
     response=JSONResponse({'authenticated':False}); response.delete_cookie(_AUTH_COOKIE); return response
 
 @app.get('/api/auth/me')
-def auth_me(request):
+def auth_me(request: Request):
     if not _auth_required(): return {'authenticated':True,'mode':'local'}
     token=request.cookies.get(_AUTH_COOKIE)
     return {'authenticated':bool(token and token in _sessions)}
 
 @app.get('/api/auth/csrf')
-def auth_csrf(request):
+def auth_csrf(request: Request):
     if not _auth_required(): return {'csrf_token':'local-mode'}
     token=request.cookies.get(_AUTH_COOKIE)
     if not token or token not in _sessions: raise HTTPException(401, 'Authentication required')
