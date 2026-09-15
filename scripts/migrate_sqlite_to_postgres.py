@@ -76,24 +76,24 @@ def main():
     if not pks: raise RuntimeError(f"No primary key found for {table}")
     total=len(rows)
     for n,raw in enumerate(rows,1):
-      row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in destination_columns[table]}
-      if table in ('prospect','run') and 'campaign_id' in row:
-       key=str(row['campaign_id'])
-       if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
-       row['campaign_id']=campaign_map[key]
+     row={k:v for k,v in zip(cols,raw) if k in destination_columns[table]}
+     if table in ('prospect','run') and 'campaign_id' in row:
+      key=str(row['campaign_id'])
+      if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
+      row['campaign_id']=campaign_map[key]
+     if a.fresh_cloud_mirror:
+      names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
+      conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
+     else:
       where=' AND '.join(f'"{k}"=:pk_{k}' for k in pks); params={f'pk_{k}':row[k] for k in pks}
       sets=', '.join(f'"{k}"=:v_{k}' for k in row if k not in pks)
-      if a.fresh_cloud_mirror:
-       names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
-       conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
-       if n % 100 == 0 or n == total: print(f'{table}: {n}/{total}')
-       continue
       if conn.execute(text(f'SELECT 1 FROM "{table}" WHERE {where}'),params).first():
        if sets: conn.execute(text(f'UPDATE "{table}" SET {sets} WHERE {where}'),{**params,**{f'v_{k}':v for k,v in row.items() if k not in pks}})
       else:
        names=', '.join(f'"{k}"' for k in row); binds=', '.join(f':{k}' for k in row)
-        conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
-    if not a.fresh_cloud_mirror and total < 100: print(f'{table}: {total}/{total}')
+       conn.execute(text(f'INSERT INTO "{table}" ({names}) VALUES ({binds})'),row)
+     if total >= 100 and (n % 100 == 0 or n == total): print(f'{table}: {n}/{total}')
+    if total < 100: print(f'{table}: {total}/{total}')
    # Synchronize identity sequences after preserving source IDs.
    for table in order:
     pks=primary_keys[table]
