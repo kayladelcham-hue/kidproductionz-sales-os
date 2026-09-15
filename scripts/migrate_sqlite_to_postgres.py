@@ -44,14 +44,17 @@ def main():
   print('Destination pre-migration counts:',pre)
   # Build safe legacy campaign-id/slug -> destination integer-id mapping.
   campaign_map={}
-  for row in s.execute('SELECT id, slug FROM campaign').fetchall():
-   sid,slug=row
+  src_campaigns=s.execute('SELECT id, slug, name FROM campaign').fetchall()
+  print('Source campaigns:', ', '.join(f'{r[0]}:{r[1]}' for r in src_campaigns))
+  for sid,slug,name in src_campaigns:
    with e.connect() as lookup:
-    dest=lookup.execute(text('SELECT id FROM "campaign" WHERE slug=:slug'),{'slug':slug}).first()
-    if not dest and isinstance(sid,int): dest=lookup.execute(text('SELECT id FROM "campaign" WHERE id=:id'),{'id':sid}).first()
-   if not dest: raise RuntimeError(f'No destination campaign mapping for {slug}')
-   campaign_map[str(sid)]=dest[0]; campaign_map[str(slug)]=dest[0]
-  print('Campaign mappings resolved:', ', '.join(sorted(campaign_map.keys())))
+    dest=lookup.execute(text('SELECT id,slug,name FROM "campaign" WHERE slug=:slug'),{'slug':slug}).first()
+    if not dest: dest=lookup.execute(text('SELECT id,slug,name FROM "campaign" WHERE name=:name'),{'name':name}).first()
+    if not dest and str(sid).isdigit(): dest=lookup.execute(text('SELECT id,slug,name FROM "campaign" WHERE id=:id'),{'id':int(sid)}).first()
+   if not dest: raise RuntimeError(f'No destination campaign mapping for {slug or name}')
+   campaign_map[str(sid)]=dest[0]
+   if slug is not None: campaign_map[str(slug)]=dest[0]
+   print(f'{slug or name} -> {dest[0]}')
   order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
   if sc.get('queue_item',0): order.append('queue_item')
   for table in order:
