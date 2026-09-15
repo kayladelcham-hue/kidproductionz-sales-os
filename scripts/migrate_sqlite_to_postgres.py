@@ -21,10 +21,12 @@ def counts(c):
  return {t:c.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0] for t in TABLES+['google_connection','queue_item'] if c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(t,)).fetchone()}
 
 def main():
- ap=argparse.ArgumentParser(); ap.add_argument('--dry-run',action='store_true'); ap.add_argument('--execute',action='store_true'); ap.add_argument('--verify',action='store_true'); ap.add_argument('--approve-write',action='store_true'); a=ap.parse_args()
- if sum((a.dry_run,a.execute,a.verify))!=1: ap.error('choose exactly one mode')
+ ap=argparse.ArgumentParser(); ap.add_argument('--dry-run',action='store_true'); ap.add_argument('--execute',action='store_true'); ap.add_argument('--verify',action='store_true'); ap.add_argument('--preflight',action='store_true'); ap.add_argument('--approve-write',action='store_true'); ap.add_argument('--fresh-cloud-mirror',action='store_true'); a=ap.parse_args()
+ if sum((a.dry_run,a.execute,a.verify,a.preflight))!=1: ap.error('choose exactly one mode')
  if a.execute and not a.approve_write:
   print('Execute blocked: add --approve-write to confirm migration writes.'); return 2
+ if a.fresh_cloud_mirror and not (a.execute and a.approve_write):
+  print('Fresh cloud mirror requires --execute --approve-write.'); return 2
  with source_conn() as s:
   sc=counts(s); print('Source counts:',sc); print('Sensitive tables skipped:',SENSITIVE)
   if sc.get('queue_item',0): print('Queue rows present; migration enabled for existing rows only')
@@ -40,6 +42,9 @@ def main():
   if a.verify:
    dc={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
    print('Destination counts:',dc); print('Verify PASS' if all(sc.get(t)==dc.get(t) for t in dc) else 'Verify FAIL'); return 0
+  if a.preflight:
+   dc={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
+   print('Destination counts:',dc); print('Tables that would be cleared:', ['queue_item','email_activity','calendar_event','external_action','crm_state','upload','run','prospect','app_setting','campaign']); print('Preflight PASS'); return 0
   pre={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
   print('Destination pre-migration counts:',pre)
   order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
@@ -49,6 +54,9 @@ def main():
    if not pks: raise RuntimeError(f"No primary key found for {table}")
    print(f"{table} primary key: {','.join(pks)}")
   with e.begin() as conn:
+   if a.fresh_cloud_mirror:
+    for t in ['queue_item','email_activity','calendar_event','external_action','crm_state','upload','run','prospect','app_setting','campaign']:
+     conn.execute(text(f'DELETE FROM "{t}"'))
    # Upsert campaigns first, then resolve every legacy identifier on this same transaction connection.
    for raw in s.execute('SELECT * FROM "campaign"').fetchall():
     cur=s.execute('SELECT * FROM "campaign"'); cols=[d[0] for d in cur.description]; row=dict(zip(cols,raw))
