@@ -12,7 +12,7 @@ def main():
  with db.SessionLocal() as s:
   campaigns={r.slug:r.id for r in s.query(db.Campaign).all()}; print('Campaigns found:',','.join(sorted(campaigns)))
   for f in files:
-   slug=f.parent.name; rows=list(csv.DictReader(f.open(encoding='utf-8-sig'))); rows=[r for r in rows if (r.get('queue_status') or '').upper()=='DAILY_QUEUE']; by[slug]=by.get(slug,0)+len(rows); total+=len(rows)
+   slug=f.parent.name; rows=__import__('json').load(f.open(encoding='utf-8')).get('daily_queue',[]) if f.suffix=='.json' else list(csv.DictReader(f.open(encoding='utf-8-sig'))); rows=[r for r in rows if (r.get('queue_status') or '').upper()=='DAILY_QUEUE']; by[slug]=by.get(slug,0)+len(rows); total+=len(rows)
    for r in rows:
     name=r.get('name') or r.get('business') or r.get('fixture_id') or r.get('lead_id'); q=s.query(db.Prospect).join(db.Campaign).filter(db.Campaign.slug==slug,db.Prospect.name==name).first() if name else None
     matched += bool(q); unmatched += not bool(q)
@@ -25,3 +25,4 @@ if __name__=='__main__': sys.exit(main())
 
 
 # Authoritative mapping policy: exact identifiers first; duplicate names may be assigned by queue_position to sorted prospect IDs only when group cardinalities match.
+
