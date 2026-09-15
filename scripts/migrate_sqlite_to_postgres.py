@@ -42,6 +42,16 @@ def main():
    print('Destination counts:',dc); print('Verify PASS' if all(sc.get(t)==dc.get(t) for t in dc) else 'Verify FAIL'); return 0
   pre={t:e.connect().execute(text(f'SELECT COUNT(*) FROM "{t}"')).scalar() for t in sc if t!='google_connection'}
   print('Destination pre-migration counts:',pre)
+  # Build safe legacy campaign-id/slug -> destination integer-id mapping.
+  campaign_map={}
+  for row in s.execute('SELECT id, slug FROM campaign').fetchall():
+   sid,slug=row
+   with e.connect() as lookup:
+    dest=lookup.execute(text('SELECT id FROM "campaign" WHERE slug=:slug'),{'slug':slug}).first()
+    if not dest and isinstance(sid,int): dest=lookup.execute(text('SELECT id FROM "campaign" WHERE id=:id'),{'id':sid}).first()
+   if not dest: raise RuntimeError(f'No destination campaign mapping for {slug}')
+   campaign_map[str(sid)]=dest[0]; campaign_map[str(slug)]=dest[0]
+  print('Campaign mappings resolved:', ', '.join(sorted(campaign_map.keys())))
   order=['campaign','prospect','run','crm_state','upload','external_action','calendar_event','email_activity','app_setting']
   if sc.get('queue_item',0): order.append('queue_item')
   for table in order:
@@ -55,6 +65,10 @@ def main():
     if not pks: raise RuntimeError(f"No primary key found for {table}")
     for raw in rows:
      row=dict(zip(cols,raw)); row={k:v for k,v in row.items() if k in [x['name'] for x in inspect(e).get_columns(table)]}
+     if table in ('prospect','run') and 'campaign_id' in row:
+      key=str(row['campaign_id'])
+      if key not in campaign_map: raise RuntimeError(f'No campaign mapping for {key}')
+      row['campaign_id']=campaign_map[key]
      where=' AND '.join(f'"{k}"=:pk_{k}' for k in pks); params={f'pk_{k}':row[k] for k in pks}
      sets=', '.join(f'"{k}"=:v_{k}' for k in row if k not in pks)
      if conn.execute(text(f'SELECT 1 FROM "{table}" WHERE {where}'),params).first():
