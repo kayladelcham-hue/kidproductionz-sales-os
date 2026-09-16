@@ -368,7 +368,27 @@ def calendar_create(req:CalendarRequest):
                 }
             )
             c.commit()
-        return {'status':'CREATED','calendar_event_id':event.get('id'),'event_url':event.get('htmlLink')}
+        status_warning = None
+        try:
+            update_sales_activity(
+                req.prospect_id,
+                'CONSULTATION_SET',
+                None,
+                None
+            )
+        except Exception as status_exc:
+            logger.exception(
+                'Calendar event created but consultation status update failed'
+            )
+            status_warning = _safe_error_message(str(status_exc))
+
+        return {
+            'status':'CREATED',
+            'calendar_event_id':event.get('id'),
+            'event_url':event.get('htmlLink'),
+            'sales_status':'CONSULTATION_SET' if not status_warning else None,
+            'status_warning':status_warning
+        }
     except Exception as exc: raise HTTPException(503,detail={'provider':'GOOGLE_CALENDAR','stage':'event_create','message':_safe_error_message(str(exc))})
 class GmailRequest(BaseModel):
     prospect_id:int; to:str|None=None; subject:str; body:str; confirmed:bool=False
