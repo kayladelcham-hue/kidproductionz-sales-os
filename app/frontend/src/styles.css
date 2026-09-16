@@ -700,3 +700,100 @@ button{
   }
 }
 
+
+
+/* === KIDPRODUCTIONZ TYPOGRAPHY POLISH V1 === */
+
+body,
+button,
+input,
+select,
+textarea{
+  font-family:
+    Inter,
+    "Segoe UI",
+    Helvetica,
+    Arial,
+    sans-serif;
+}
+
+h1,
+h2,
+h3,
+.brand b,
+.metric strong{
+  font-family:
+    "Arial Narrow",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+}
+
+h1{
+  font-weight:800;
+  letter-spacing:-.055em;
+}
+
+h2{
+  font-weight:800;
+  letter-spacing:-.05em;
+}
+
+h3{
+  font-weight:700;
+  letter-spacing:-.025em;
+}
+
+.eyebrow{
+  font-size:.68rem;
+  font-weight:800;
+  letter-spacing:.18em;
+}
+
+.metric span,
+.badge,
+.status,
+label{
+  text-transform:none;
+}
+
+.metric span{
+  letter-spacing:.07em;
+}
+
+select,
+input,
+textarea{
+  font-weight:500;
+}
+
+button{
+  font-weight:700;
+  letter-spacing:-.01em;
+}
+
+.card p,
+.muted,
+small{
+  line-height:1.5;
+}
+
+.hero h2{
+  max-width:650px;
+}
+
+.hero .muted{
+  max-width:620px;
+  font-size:1rem;
+}
+
+/* Prevent raw database-looking typography */
+.badge,
+.status-badge,
+.route-badge,
+.priority-badge,
+.grade-badge{
+  letter-spacing:.02em;
+  text-transform:none;
+}
+
