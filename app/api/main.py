@@ -399,7 +399,33 @@ def gmail_send(req:GmailRequest):
     if os.getenv('GMAIL_ENABLED','false').lower()!='true': raise HTTPException(403,'Gmail is disabled')
     try:
         result=google_service.send_gmail(req.to,req.subject,req.body); log_external_action(req.prospect_id,'EMAIL_SENT',{'provider_message_id':result.get('id')})
-        with connect() as c: c.execute('INSERT INTO email_activity(prospect_id,provider,provider_message_id,recipient,subject) VALUES(?,?,?,?,?)',(req.prospect_id,'GMAIL',result.get('id'),req.to,req.subject))
+        with connect() as c:
+            c.execute(
+                text('''
+                    INSERT INTO email_activity(
+                        prospect_id,
+                        provider,
+                        provider_message_id,
+                        recipient,
+                        subject
+                    )
+                    VALUES(
+                        :prospect_id,
+                        :provider,
+                        :provider_message_id,
+                        :recipient,
+                        :subject
+                    )
+                '''),
+                {
+                    'prospect_id': req.prospect_id,
+                    'provider': 'GMAIL',
+                    'provider_message_id': result.get('id'),
+                    'recipient': req.to,
+                    'subject': req.subject,
+                }
+            )
+            c.commit()
         return {'status':'SENT','provider_message_id':result.get('id')}
     except Exception as exc: raise HTTPException(503,detail={'provider':'GMAIL','stage':'send','message':_safe_error_message(str(exc))})
 @app.get('/api/integrations/status')
