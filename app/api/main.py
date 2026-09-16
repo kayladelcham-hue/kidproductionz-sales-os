@@ -230,9 +230,26 @@ def queue(campaign='orlando_beauty'):
         }
         for p in prospects
         if p.get('grade') == 'B / Qualified'
+        and p.get('sales_status') != 'FOLLOW_UP'
     ]
 
-    deferred = []
+    deferred = [
+        {
+            **p,
+            'prospect_id': p['id'],
+            'business_name': p.get('name'),
+            'route': 'Follow Up',
+            'priority': (
+                'High' if (p.get('score') or 0) >= 75
+                else 'Medium' if (p.get('score') or 0) >= 65
+                else 'Standard'
+            ),
+            'reason': 'Follow-up required',
+        }
+        for p in prospects
+        if p.get('grade') == 'B / Qualified'
+        and p.get('sales_status') == 'FOLLOW_UP'
+    ]
 
     research = [
         {
@@ -525,6 +542,7 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
+
 
 
 
