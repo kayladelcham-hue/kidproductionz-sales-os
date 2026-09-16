@@ -201,10 +201,37 @@ def queue(campaign='orlando_beauty'):
             if p.get('queue') == queue_name
         ]
 
-    daily_queue = queue_rows('CALL_FIRST')
+    daily_queue = [
+        {
+            **p,
+            'prospect_id': p['id'],
+            'business_name': p.get('name'),
+        }
+        for p in prospects
+        if p.get('grade') == 'B / Qualified'
+    ]
+
     deferred = []
-    research = queue_rows('RESEARCH')
-    ineligible = []
+
+    research = [
+        {
+            **p,
+            'prospect_id': p['id'],
+            'business_name': p.get('name'),
+        }
+        for p in prospects
+        if p.get('grade') == 'C / Review'
+    ]
+
+    ineligible = [
+        {
+            **p,
+            'prospect_id': p['id'],
+            'business_name': p.get('name'),
+        }
+        for p in prospects
+        if p.get('grade') == 'Reject/Hold'
+    ]
 
     return {
         'campaign_id': campaign,
@@ -477,6 +504,7 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
+
 
 
 
