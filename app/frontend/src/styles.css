@@ -797,3 +797,593 @@ small{
   text-transform:none;
 }
 
+
+
+/* === KIDPRODUCTIONZ SELLING ARENA V2 === */
+
+.up-next{
+  position:relative;
+  isolation:isolate;
+  max-width:1180px;
+  margin:0 auto;
+  padding-top:32px;
+}
+
+/* giant hanging editorial word */
+.up-next::before{
+  content:"SELL";
+  position:absolute;
+  z-index:-1;
+  top:-30px;
+  right:-8px;
+  font-size:clamp(7rem,18vw,15rem);
+  line-height:.8;
+  font-weight:900;
+  letter-spacing:-.09em;
+  color:rgba(255,255,255,.022);
+  pointer-events:none;
+  user-select:none;
+}
+
+/* small atmosphere above focal card */
+.up-next::after{
+  content:"ACTIVE SELLING SESSION";
+  display:block;
+  position:absolute;
+  top:5px;
+  left:4px;
+  color:rgba(190,225,245,.55);
+  font-size:.62rem;
+  font-weight:800;
+  letter-spacing:.21em;
+}
+
+/* ========================================
+   MAIN PROSPECT / NEXT BEST ACTION
+   ======================================== */
+
+.up-next-card{
+  position:relative;
+  overflow:hidden;
+  min-height:360px;
+  padding:42px !important;
+  border:1px solid rgba(190,225,245,.18) !important;
+  border-radius:26px !important;
+
+  background:
+    radial-gradient(circle at 92% 4%,
+      rgba(117,207,255,.15),
+      transparent 30%),
+    radial-gradient(circle at 8% 110%,
+      rgba(255,255,255,.055),
+      transparent 35%),
+    linear-gradient(
+      138deg,
+      rgba(255,255,255,.075) 0%,
+      rgba(255,255,255,.026) 46%,
+      rgba(4,6,8,.45) 100%
+    ) !important;
+
+  box-shadow:
+    0 35px 100px rgba(0,0,0,.42),
+    0 0 80px rgba(72,165,220,.035),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.8);
+
+  animation:kp-arena-enter .72s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* metallic top rail */
+.up-next-card::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  width:100%;
+  height:2px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(137,215,255,.25) 10%,
+      rgba(235,249,255,.95) 43%,
+      rgba(137,215,255,.48) 66%,
+      transparent 100%
+    );
+  background-size:180% 100%;
+  animation:kp-metal-rail 5s ease-in-out infinite;
+}
+
+/* subtle huge number / atmosphere */
+.up-next-card::after{
+  content:"NEXT";
+  position:absolute;
+  right:-10px;
+  bottom:-25px;
+  z-index:0;
+
+  font-size:clamp(5rem,12vw,9rem);
+  line-height:.8;
+  font-weight:900;
+  letter-spacing:-.08em;
+
+  color:rgba(255,255,255,.026);
+  pointer-events:none;
+}
+
+/* keep actual content above atmosphere */
+.up-next-card > *{
+  position:relative;
+  z-index:2;
+}
+
+/* eyebrow becomes live-state label */
+.up-next-card > .eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+
+  margin:0 0 25px;
+  padding:8px 12px;
+
+  border:1px solid rgba(137,215,255,.18);
+  border-radius:999px;
+
+  color:#c6efff;
+  background:rgba(137,215,255,.055);
+
+  font-size:.64rem;
+  letter-spacing:.17em;
+}
+
+.up-next-card > .eyebrow::before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#89d7ff;
+  box-shadow:
+    0 0 0 4px rgba(137,215,255,.08),
+    0 0 15px rgba(137,215,255,.7);
+  animation:kp-live-pulse 2.2s ease-in-out infinite;
+}
+
+/* PROSPECT NAME */
+
+.up-next-card h2{
+  max-width:850px;
+  margin:0 0 18px;
+
+  font-size:clamp(2.8rem,6vw,5.5rem);
+  line-height:.91;
+  font-weight:850;
+  letter-spacing:-.065em;
+
+  color:#f7f9fb;
+
+  text-shadow:
+    0 5px 35px rgba(0,0,0,.34);
+}
+
+/* badges */
+
+.up-next-card .badges{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+
+  margin:22px 0;
+}
+
+/* reason / supporting copy */
+
+.up-next-card .muted{
+  max-width:720px;
+  margin:22px 0 30px;
+
+  color:#9ca6b2;
+  font-size:1rem;
+  line-height:1.65;
+}
+
+/* ========================================
+   ACTION DECK
+   ======================================== */
+
+.up-next-card .actions{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(125px,1fr));
+  gap:10px;
+
+  max-width:900px;
+  margin-top:28px;
+  padding-top:26px;
+
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+/* links and buttons become same control system */
+
+.up-next-card .actions a,
+.up-next-card .actions button{
+  position:relative;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  min-height:50px;
+  padding:0 16px;
+
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:13px;
+
+  color:#dce2e9;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.065),
+      rgba(255,255,255,.025)
+    );
+
+  text-decoration:none;
+  font-size:.86rem;
+  font-weight:750;
+  letter-spacing:-.015em;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.055);
+
+  transition:
+    transform 160ms cubic-bezier(.2,.8,.2,1),
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 180ms ease;
+}
+
+.up-next-card .actions a:hover,
+.up-next-card .actions button:hover{
+  transform:translateY(-3px);
+
+  color:#fff;
+  border-color:rgba(137,215,255,.28);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(137,215,255,.10),
+      rgba(255,255,255,.035)
+    );
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.up-next-card .actions a:active,
+.up-next-card .actions button:active{
+  transform:translateY(1px) scale(.975);
+}
+
+/* Call gets the strongest CTA treatment */
+
+.up-next-card .actions > :first-child{
+  color:#071117;
+
+  border-color:rgba(215,245,255,.60);
+
+  background:
+    linear-gradient(
+      135deg,
+      #e8f8ff,
+      #99dcff 48%,
+      #dff6ff
+    );
+
+  box-shadow:
+    0 12px 38px rgba(85,185,240,.18),
+    inset 0 1px 0 white;
+}
+
+.up-next-card .actions > :first-child:hover{
+  color:#03080b;
+  border-color:#dff6ff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f6fcff,
+      #abe3ff 50%,
+      #e5f8ff
+    );
+
+  box-shadow:
+    0 16px 44px rgba(85,185,240,.26),
+    inset 0 1px 0 white;
+}
+
+/* ========================================
+   COMING UP
+   ======================================== */
+
+.up-next > h3{
+  position:relative;
+
+  margin:46px 0 18px;
+
+  color:#e9edf2;
+  font-size:.78rem;
+  font-weight:800;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+
+.up-next > h3::after{
+  content:"";
+  display:inline-block;
+
+  width:70px;
+  height:1px;
+  margin-left:14px;
+  vertical-align:middle;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(137,215,255,.50),
+      transparent
+    );
+}
+
+/* upcoming prospect stack */
+
+.coming-up{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+
+  min-height:75px;
+  margin-bottom:9px;
+  padding:17px 20px !important;
+
+  border-radius:15px !important;
+
+  background:
+    linear-gradient(
+      105deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.014)
+    ) !important;
+
+  animation:kp-coming-enter .5s var(--kp-smooth) both;
+}
+
+.coming-up:nth-of-type(2){
+  animation-delay:60ms;
+}
+
+.coming-up:nth-of-type(3){
+  animation-delay:110ms;
+}
+
+.coming-up:nth-of-type(4){
+  animation-delay:160ms;
+}
+
+.coming-up:nth-of-type(5){
+  animation-delay:210ms;
+}
+
+.coming-up::before{
+  content:"";
+  position:absolute;
+  left:-1px;
+  top:22%;
+  bottom:22%;
+
+  width:2px;
+
+  border-radius:10px;
+  background:#89d7ff;
+
+  opacity:0;
+  box-shadow:0 0 16px rgba(137,215,255,.45);
+
+  transition:
+    opacity 170ms ease,
+    top 170ms ease,
+    bottom 170ms ease;
+}
+
+.coming-up:hover{
+  transform:translateX(5px);
+
+  border-color:rgba(137,215,255,.18) !important;
+
+  background:
+    linear-gradient(
+      105deg,
+      rgba(137,215,255,.055),
+      rgba(255,255,255,.015)
+    ) !important;
+}
+
+.coming-up:hover::before{
+  top:12%;
+  bottom:12%;
+  opacity:1;
+}
+
+.coming-up b{
+  color:#e9edf2;
+
+  font-size:1rem;
+  font-weight:700;
+  letter-spacing:-.02em;
+}
+
+.coming-up span,
+.coming-up small{
+  color:#747e8b;
+}
+
+/* ========================================
+   EMPTY / COMPLETION STATE
+   ======================================== */
+
+.up-next .empty{
+  position:relative;
+  overflow:hidden;
+
+  min-height:360px;
+
+  display:grid;
+  place-items:center;
+
+  text-align:center;
+
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(117,207,255,.08),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.012)
+    );
+}
+
+.up-next .empty h2{
+  font-size:clamp(2.8rem,8vw,6rem);
+  letter-spacing:-.065em;
+}
+
+/* ========================================
+   ANIMATION
+   ======================================== */
+
+@keyframes kp-arena-enter{
+  0%{
+    opacity:0;
+    transform:
+      translateY(20px)
+      scale(.985);
+  }
+
+  100%{
+    opacity:1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+@keyframes kp-coming-enter{
+  0%{
+    opacity:0;
+    transform:translateY(10px);
+  }
+
+  100%{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+@keyframes kp-metal-rail{
+  0%,25%{
+    background-position:100% 0;
+  }
+
+  55%{
+    background-position:0 0;
+  }
+
+  100%{
+    background-position:0 0;
+  }
+}
+
+@keyframes kp-live-pulse{
+  0%,100%{
+    opacity:.7;
+    transform:scale(.88);
+  }
+
+  50%{
+    opacity:1;
+    transform:scale(1.08);
+  }
+}
+
+/* ========================================
+   MOBILE SELLING ARENA
+   ======================================== */
+
+@media(max-width:760px){
+
+  .up-next{
+    padding-top:25px;
+  }
+
+  .up-next::before{
+    top:-8px;
+    right:-4px;
+
+    font-size:7rem;
+  }
+
+  .up-next::after{
+    top:2px;
+    font-size:.54rem;
+  }
+
+  .up-next-card{
+    min-height:0;
+    padding:27px 19px !important;
+    border-radius:20px !important;
+  }
+
+  .up-next-card::after{
+    font-size:5rem;
+    right:-5px;
+    bottom:-10px;
+  }
+
+  .up-next-card h2{
+    font-size:clamp(2.55rem,13vw,4rem);
+    line-height:.92;
+  }
+
+  .up-next-card .muted{
+    margin-bottom:22px;
+  }
+
+  .up-next-card .actions{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+
+  .up-next-card .actions a,
+  .up-next-card .actions button{
+    min-height:52px;
+    padding:0 10px;
+  }
+
+  .coming-up{
+    min-height:68px;
+    padding:15px 16px !important;
+  }
+
+  .up-next > h3{
+    margin-top:34px;
+  }
+}
+
