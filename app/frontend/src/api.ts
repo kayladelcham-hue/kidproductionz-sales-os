@@ -1,5 +1,5 @@
 const BASE=import.meta.env.VITE_API_BASE_URL||(import.meta.env.DEV?'http://127.0.0.1:8000':'');
-export type QueueItem={id?:number;queue_position?:number|string;fixture_id?:string;lead_id?:string;name?:string;business?:string;score?:number;grade?:string;route?:string;route_reason?:string;priority?:string;queue_status?:string;sales_status?:string;notes?:string;booked_value?:number;last_activity_at?:string;phone?:string;email?:string;social?:string;website?:string};
+export type QueueItem={id?:number;prospect_id?:number;queue_position?:number|string;fixture_id?:string;lead_id?:string;name?:string;business?:string;score?:number;grade?:string;route?:string;route_reason?:string;priority?:string;queue_status?:string;sales_status?:string;notes?:string;booked_value?:number;last_activity_at?:string;phone?:string;email?:string;social?:string;website?:string};
 export type Queue={campaign_id:string;queue_limit:number;summary:Record<string,number>;daily_queue:QueueItem[];deferred:QueueItem[];research:QueueItem[];ineligible:QueueItem[];safety:Record<string,boolean>};
 let csrfToken: string | null = null;
 async function get<T>(path:string):Promise<T>{const r=await fetch(`${BASE}${path}`,{credentials:'include'});if(!r.ok)throw new Error(`API_${r.status}`);return r.json()}
@@ -12,13 +12,49 @@ async function ensureCsrf():Promise<string>{
   if(!csrfToken) throw new Error('CSRF_TOKEN_MISSING');
   return csrfToken;
 }
-async function post<T>(path:string,body:any):Promise<T>{
+async function post<T>(path:string,body:any,retry=true):Promise<T>{
   const headers:Record<string,string>={'Content-Type':'application/json'};
-  // Login/logout are intentionally public; all other mutations carry the session CSRF token.
-  if(path!=='/api/auth/login' && path!=='/api/auth/logout') headers['X-CSRF-Token']=await ensureCsrf();
-  const r=await fetch(`${BASE}${path}`,{method:'POST',headers,credentials:'include',body:JSON.stringify(body)});
-  if(r.status===403 && path!=='/api/auth/login' && path!=='/api/auth/logout'){csrfToken=null;throw new Error('CSRF_403');}
-  if(!r.ok)throw new Error(`API_${r.status}`);return r.json()
+  const protectedRequest=path!=='/api/auth/login' && path!=='/api/auth/logout';
+
+  if(protectedRequest){
+    headers['X-CSRF-Token']=await ensureCsrf();
+  }
+
+  const r=await fetch(`${BASE}${path}`,{
+    method:'POST',
+    headers,
+    credentials:'include',
+    body:JSON.stringify(body)
+  });
+
+  if(r.status===403 && protectedRequest && retry){
+    csrfToken=null;
+    return post<T>(path,body,false);
+  }
+
+  if(!r.ok){
+    let message=`API_${r.status}`;
+
+    try{
+      const data=await r.json();
+      const detail=data?.detail;
+
+      if(typeof detail==='string'){
+        message=detail;
+      }else if(Array.isArray(detail)){
+        message=detail.map((x:any)=>{
+          const where=Array.isArray(x.loc)?x.loc.join('.'):'request';
+          return `${where}: ${x.msg||'Invalid value'}`;
+        }).join(' | ');
+      }else if(detail?.message){
+        message=detail.message;
+      }
+    }catch{}
+
+    throw new Error(message);
+  }
+
+  return r.json();
 }
 async function mutate<T>(path:string,method:'PATCH'|'PUT'|'DELETE',body?:any):Promise<T>{
   const headers:Record<string,string>={'X-CSRF-Token':await ensureCsrf()};
