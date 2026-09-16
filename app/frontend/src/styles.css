@@ -6347,3 +6347,538 @@ small{
 
 }
 
+
+
+/* === KP FINAL MOBILE POLISH V13 === */
+
+@media(max-width:760px){
+
+  /* =====================================================
+     HEADER ? GIVE IOS BREATHING ROOM
+     ===================================================== */
+
+  main > header{
+    padding-top:
+      calc(env(safe-area-inset-top, 0px) + 22px) !important;
+
+    padding-left:18px !important;
+    padding-right:18px !important;
+    padding-bottom:11px !important;
+  }
+
+  main > header h1{
+    line-height:.96 !important;
+  }
+
+
+  /* =====================================================
+     CALENDAR ? PRETTY DATE + TIME
+     ===================================================== */
+
+  .schedule .event > .event-when{
+    grid-area:time;
+
+    display:flex !important;
+    align-items:center;
+    flex-wrap:wrap;
+
+    gap:6px;
+
+    min-width:0;
+
+    margin:0 0 5px;
+  }
+
+
+  .schedule .event-day,
+  .schedule .event-time{
+    display:inline-flex;
+
+    align-items:center;
+    justify-content:center;
+
+    min-height:24px;
+
+    box-sizing:border-box;
+
+    padding:
+      0
+      8px;
+
+    border-radius:999px;
+
+    font-size:.56rem;
+    line-height:1;
+
+    font-weight:820;
+
+    letter-spacing:.025em;
+
+    white-space:nowrap;
+  }
+
+
+  .schedule .event-day{
+    color:#8bdcff;
+
+    border:
+      1px solid rgba(137,220,255,.17);
+
+    background:
+      rgba(137,220,255,.075);
+
+    box-shadow:
+      inset 0 1px 0
+      rgba(255,255,255,.025);
+  }
+
+
+  .schedule .event-time{
+    color:#e8eef3;
+
+    border:
+      1px solid rgba(255,255,255,.075);
+
+    background:
+      rgba(255,255,255,.035);
+  }
+
+
+  .schedule .event{
+    grid-template-columns:
+      minmax(0,1fr)
+      104px !important;
+
+    grid-template-areas:
+      "time action"
+      "title action"
+      "location action" !important;
+
+    padding:
+      12px
+      11px !important;
+  }
+
+
+  .schedule .event > span{
+    font-size:.78rem !important;
+
+    line-height:1.15 !important;
+  }
+
+
+  /* =====================================================
+     PROSPECTS ? REMOVE DESKTOP TABLE OVERFLOW
+     ===================================================== */
+
+  .prospects{
+    width:100% !important;
+    max-width:100% !important;
+
+    min-width:0 !important;
+
+    box-sizing:border-box;
+
+    padding:
+      12px
+      14px
+      96px !important;
+
+    overflow-x:hidden !important;
+  }
+
+
+  .prospects::before{
+    display:none !important;
+  }
+
+
+  .prospects > .card{
+    width:100% !important;
+    max-width:100% !important;
+
+    min-width:0 !important;
+
+    box-sizing:border-box;
+
+    padding:
+      14px !important;
+
+    overflow:hidden !important;
+
+    border-radius:17px !important;
+  }
+
+
+  /* SEARCH */
+
+  .prospects .filter{
+    width:100% !important;
+    max-width:100% !important;
+
+    min-width:0;
+
+    box-sizing:border-box;
+
+    margin-bottom:12px !important;
+  }
+
+
+  .prospects .filter input{
+    width:100% !important;
+    max-width:100% !important;
+
+    box-sizing:border-box;
+
+    min-height:54px !important;
+
+    padding:
+      0
+      14px !important;
+
+    border-radius:13px !important;
+
+    font-size:.82rem !important;
+  }
+
+
+  /* TABLE WRAPPER */
+
+  .prospects .table-wrap{
+    width:100% !important;
+    max-width:100% !important;
+
+    min-width:0 !important;
+
+    margin:0 !important;
+
+    padding:0 !important;
+
+    overflow:visible !important;
+  }
+
+
+  .prospects table{
+    display:block !important;
+
+    width:100% !important;
+    max-width:100% !important;
+
+    min-width:0 !important;
+
+    border:0 !important;
+
+    background:transparent !important;
+  }
+
+
+  .prospects table thead{
+    display:none !important;
+  }
+
+
+  .prospects table tbody{
+    display:grid !important;
+
+    grid-template-columns:
+      minmax(0,1fr) !important;
+
+    width:100% !important;
+    max-width:100% !important;
+
+    min-width:0 !important;
+
+    gap:8px !important;
+  }
+
+
+  /* =====================================================
+     EACH PROSPECT = MOBILE APP CARD
+     ===================================================== */
+
+  .prospects table tbody tr{
+    position:relative !important;
+
+    display:grid !important;
+
+    grid-template-columns:
+      minmax(0,1fr)
+      auto
+      auto !important;
+
+    grid-template-areas:
+      "business score arrow"
+      "grade route route"
+      "priority priority priority" !important;
+
+    align-items:center;
+
+    width:100% !important;
+    max-width:100% !important;
+
+    min-width:0 !important;
+
+    box-sizing:border-box !important;
+
+    gap:
+      7px
+      8px !important;
+
+    min-height:80px;
+
+    margin:0 !important;
+
+    padding:
+      13px
+      34px
+      13px
+      13px !important;
+
+    overflow:hidden !important;
+
+    border:
+      1px solid rgba(255,255,255,.07) !important;
+
+    border-radius:14px !important;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.042),
+        rgba(255,255,255,.012)
+      ) !important;
+
+    cursor:pointer;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+
+  .prospects table tbody tr:active{
+    transform:scale(.988);
+
+    border-color:
+      rgba(137,215,255,.17) !important;
+
+    background:
+      rgba(137,215,255,.045) !important;
+  }
+
+
+  /* RESET DESKTOP CELLS */
+
+  .prospects table tbody td{
+    display:block !important;
+
+    width:auto !important;
+    max-width:100% !important;
+
+    min-width:0 !important;
+
+    margin:0 !important;
+
+    padding:0 !important;
+
+    overflow:hidden !important;
+
+    border:0 !important;
+
+    background:transparent !important;
+  }
+
+
+  /* hide position number */
+
+  .prospects table tbody td:nth-child(1){
+    display:none !important;
+  }
+
+
+  /* BUSINESS */
+
+  .prospects table tbody td:nth-child(2){
+    grid-area:business;
+
+    min-width:0;
+  }
+
+
+  .prospects table tbody td:nth-child(2) b{
+    display:block;
+
+    width:100%;
+
+    overflow:hidden;
+
+    color:#f7f9fb !important;
+
+    font-size:.88rem !important;
+    line-height:1.08;
+
+    font-weight:820 !important;
+
+    letter-spacing:-.025em;
+
+    white-space:nowrap;
+
+    text-overflow:ellipsis;
+  }
+
+
+  /* SCORE */
+
+  .prospects table tbody td:nth-child(3){
+    grid-area:score;
+
+    justify-self:end;
+  }
+
+
+  /* GRADE */
+
+  .prospects table tbody td:nth-child(4){
+    grid-area:grade;
+
+    justify-self:start;
+  }
+
+
+  /* ROUTE */
+
+  .prospects table tbody td:nth-child(5){
+    grid-area:route;
+
+    justify-self:start;
+  }
+
+
+  /* PRIORITY */
+
+  .prospects table tbody td:nth-child(6){
+    grid-area:priority;
+
+    justify-self:start;
+  }
+
+
+  /* Long reason belongs inside the Prospect Drawer */
+
+  .prospects table tbody td:nth-child(7){
+    display:none !important;
+  }
+
+
+  /* compact badges */
+
+  .prospects table tbody .badge{
+    display:inline-flex !important;
+
+    align-items:center;
+    justify-content:center;
+
+    max-width:100%;
+
+    min-height:22px;
+
+    padding:
+      4px
+      7px !important;
+
+    border-radius:7px !important;
+
+    font-size:.52rem !important;
+    line-height:1;
+
+    font-weight:800;
+
+    white-space:nowrap;
+  }
+
+
+  /* PRETTY OPEN CHEVRON */
+
+  .prospects table tbody tr::after{
+    content:"";
+
+    position:absolute;
+
+    top:50%;
+    right:14px;
+
+    width:8px;
+    height:8px;
+
+    border-right:
+      1.5px solid rgba(191,230,250,.72);
+
+    border-bottom:
+      1.5px solid rgba(191,230,250,.72);
+
+    border-radius:1px;
+
+    transform:
+      translateY(-50%)
+      rotate(-45deg);
+
+    opacity:.72;
+
+    filter:
+      drop-shadow(
+        0
+        0
+        4px
+        rgba(137,215,255,.18)
+      );
+  }
+
+
+  .prospects table tbody tr:active::after{
+    transform:
+      translate(2px,-50%)
+      rotate(-45deg);
+
+    opacity:1;
+  }
+
+}
+
+
+/* =========================================================
+   VERY SMALL IPHONES
+   ========================================================= */
+
+@media(max-width:390px){
+
+  .prospects{
+    padding-left:11px !important;
+    padding-right:11px !important;
+  }
+
+
+  .prospects table tbody tr{
+    grid-template-columns:
+      minmax(0,1fr)
+      auto !important;
+
+    grid-template-areas:
+      "business arrow"
+      "score grade"
+      "route priority" !important;
+
+    padding:
+      12px
+      32px
+      12px
+      12px !important;
+  }
+
+
+  .schedule .event{
+    grid-template-columns:
+      minmax(0,1fr)
+      92px !important;
+  }
+
+}
+
