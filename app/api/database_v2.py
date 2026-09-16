@@ -37,28 +37,60 @@ def update_sales_activity(prospect_id,status=None,notes=None,booked_value=None):
         if notes is not None:p.notes=notes
         if booked_value is not None:p.booked_value=booked_value
         return _dict(p)
-def activity_metrics():
+def activity_metrics(campaign=None):
     with SessionLocal() as s:
-        rows = s.execute(
+        base_filters = []
+
+        if campaign:
+            campaign_id = s.execute(
+                select(Campaign.id).where(Campaign.slug == campaign)
+            ).scalar_one_or_none()
+
+            if campaign_id is None:
+                return {
+                    'queue': 0,
+                    'attempted_or_contacted': 0,
+                    'replies': 0,
+                    'consultations_set': 0,
+                    'booked': 0,
+                    'booked_revenue': 0.0,
+                }
+
+            base_filters.append(Prospect.campaign_id == campaign_id)
+
+        status_query = (
             select(Prospect.sales_status, func.count())
             .group_by(Prospect.sales_status)
-        ).all()
+        )
 
+        if base_filters:
+            status_query = status_query.where(*base_filters)
+
+        rows = s.execute(status_query).all()
         counts = {str(k or 'UNKNOWN'): int(v) for k, v in rows}
 
-        booked_revenue = s.execute(
-            select(func.coalesce(func.sum(Prospect.booked_value), 0))
-            .where(Prospect.sales_status == 'BOOKED')
-        ).scalar_one()
+        revenue_query = select(
+            func.coalesce(func.sum(Prospect.booked_value), 0)
+        ).where(Prospect.sales_status == 'BOOKED')
 
-        queue_count = s.execute(
+        if base_filters:
+            revenue_query = revenue_query.where(*base_filters)
+
+        booked_revenue = s.execute(revenue_query).scalar_one()
+
+        queue_query = (
             select(func.count())
             .select_from(Prospect)
             .where(
                 Prospect.queue == 'DAILY_QUEUE',
                 Prospect.sales_status == 'NOT_CONTACTED'
             )
-        ).scalar_one()
+        )
+
+        if base_filters:
+            queue_query = queue_query.where(*base_filters)
+
+        queue_count = s.execute(queue_query).scalar_one()
 
         return {
             'queue': int(queue_count or 0),
@@ -71,6 +103,7 @@ def activity_metrics():
             'booked': counts.get('BOOKED', 0),
             'booked_revenue': float(booked_revenue or 0),
         }
+
 def ensure_queue_item(item,campaign):
     with session_scope() as s:
         q=s.execute(select(QueueItem).where(QueueItem.run_id==item.get('run_id'),QueueItem.prospect_id==item.get('prospect_id'))).scalar_one_or_none()
