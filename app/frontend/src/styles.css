@@ -5920,3 +5920,430 @@ small{
 
 }
 
+
+
+/* === KP CAMPAIGNS MOBILE FINAL V12 === */
+
+@media(max-width:760px){
+
+  /* =====================================================
+     PAGE CONTAINER
+     ===================================================== */
+
+  .campaign-grid{
+    width:100% !important;
+    max-width:100% !important;
+
+    box-sizing:border-box;
+
+    padding:
+      12px
+      14px
+      96px !important;
+
+    overflow:hidden !important;
+  }
+
+
+  /* kill the giant MARKETS collision on mobile */
+  .campaign-grid::before{
+    display:none !important;
+  }
+
+
+  /* =====================================================
+     REMOVE DUPLICATE CAMPAIGNS TITLE
+     ===================================================== */
+
+  .campaign-grid > .section-head{
+    display:flex !important;
+
+    justify-content:flex-end !important;
+    align-items:center;
+
+    width:100%;
+
+    margin:
+      0
+      0
+      10px !important;
+
+    padding:0 !important;
+  }
+
+  .campaign-grid > .section-head h2{
+    display:none !important;
+  }
+
+
+  /* compact native-app add button */
+
+  .campaign-grid > .section-head button{
+    width:auto !important;
+
+    min-height:36px !important;
+
+    margin:0 !important;
+
+    padding:
+      0
+      12px !important;
+
+    border:
+      1px solid rgba(137,215,255,.18) !important;
+
+    border-radius:10px !important;
+
+    color:#dff5ff !important;
+
+    background:
+      rgba(137,215,255,.055) !important;
+
+    box-shadow:none !important;
+
+    font-size:.67rem !important;
+    font-weight:780 !important;
+  }
+
+
+  /* =====================================================
+     CAMPAIGN CARD
+     ===================================================== */
+
+  .campaign-grid .card.campaign{
+    width:100% !important;
+    max-width:100% !important;
+
+    box-sizing:border-box;
+
+    margin:
+      0
+      0
+      10px !important;
+
+    padding:
+      16px
+      14px !important;
+
+    overflow:hidden !important;
+
+    border-radius:17px !important;
+
+    background:
+      radial-gradient(
+        circle at 100% 0,
+        rgba(137,215,255,.065),
+        transparent 34%
+      ),
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.044),
+        rgba(255,255,255,.012)
+      ) !important;
+  }
+
+
+  .campaign-grid .card.campaign > .eyebrow{
+    margin:
+      0
+      0
+      5px !important;
+
+    color:#657384 !important;
+
+    font-size:.54rem !important;
+  }
+
+
+  /* campaign title */
+
+  .campaign-grid .card.campaign > h2{
+    width:100%;
+    max-width:100%;
+
+    margin:
+      0
+      0
+      12px !important;
+
+    overflow:hidden;
+
+    color:#f7f9fb;
+
+    font-size:1.38rem !important;
+    line-height:1.02 !important;
+
+    font-weight:840;
+
+    letter-spacing:-.045em;
+
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+
+
+  /* =====================================================
+     CLEAN METADATA
+     ===================================================== */
+
+  .campaign-market{
+    display:flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    margin:
+      0
+      0
+      7px !important;
+
+    font-size:.68rem !important;
+  }
+
+  .campaign-market strong{
+    overflow:hidden;
+
+    color:#aab5bf;
+
+    font-weight:680;
+
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+
+
+  .campaign-meta{
+    display:flex;
+
+    align-items:center;
+    justify-content:space-between;
+
+    gap:8px;
+
+    margin:
+      0
+      0
+      8px !important;
+
+    font-size:.68rem !important;
+  }
+
+  .campaign-meta > span:first-child{
+    overflow:hidden;
+
+    color:#8c97a3;
+
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+
+
+  .campaign-stats{
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    margin:
+      0
+      0
+      12px !important;
+
+    color:#687582 !important;
+
+    font-size:.62rem !important;
+
+    white-space:nowrap;
+  }
+
+
+  /* =====================================================
+     CAMPAIGN ACTION GRID
+     ===================================================== */
+
+  .campaign-grid .card.campaign > button{
+    width:auto !important;
+
+    min-height:37px !important;
+
+    margin:
+      0
+      5px
+      5px
+      0 !important;
+
+    padding:
+      0
+      11px !important;
+
+    border-radius:9px !important;
+
+    font-size:.65rem !important;
+  }
+
+
+  /* Primary open action */
+
+  .campaign-grid .card.campaign > button:first-of-type{
+    min-width:70px;
+
+    color:#071116 !important;
+
+    background:
+      linear-gradient(
+        135deg,
+        #eaf9ff,
+        #8ed9ff
+      ) !important;
+
+    font-weight:850 !important;
+  }
+
+
+  /* Delete gets intentional danger styling */
+
+  .campaign-grid .card.campaign > button:last-of-type{
+    color:#b47f84 !important;
+
+    border-color:
+      rgba(190,85,96,.12) !important;
+
+    background:
+      rgba(130,40,48,.04) !important;
+  }
+
+
+  /* =====================================================
+     RUN CARD
+     ===================================================== */
+
+  .campaign-grid .card.campaign > h3{
+    margin:
+      0
+      0
+      5px !important;
+
+    color:#edf2f6;
+
+    font-size:1rem !important;
+
+    font-weight:800;
+
+    letter-spacing:-.025em;
+  }
+
+
+  .campaign-grid .card.campaign > h3 + p{
+    margin:
+      0
+      0
+      12px !important;
+
+    font-size:.67rem !important;
+  }
+
+
+  .campaign-grid .card.campaign input[type="file"]{
+    width:100% !important;
+
+    height:48px;
+
+    box-sizing:border-box;
+
+    margin:
+      0
+      0
+      10px !important;
+
+    padding:6px !important;
+
+    overflow:hidden;
+
+    border:
+      1px solid rgba(255,255,255,.07);
+
+    border-radius:11px;
+
+    background:
+      rgba(255,255,255,.018);
+
+    color:#68737f;
+
+    font-size:.63rem;
+  }
+
+
+  .campaign-grid .card.campaign input[type="file"]::file-selector-button{
+    height:34px;
+
+    margin-right:8px;
+
+    padding:
+      0
+      11px;
+
+    border:0;
+
+    border-radius:8px;
+
+    color:#c4ccd4;
+
+    background:
+      rgba(255,255,255,.055);
+
+    font-size:.64rem;
+    font-weight:760;
+  }
+
+
+  /* Preview Run should not look disabled unless it is */
+
+  .campaign-grid .card.campaign > button:not(:disabled){
+    opacity:1;
+  }
+
+
+  .campaign-grid .card.campaign > button:disabled{
+    opacity:.4 !important;
+
+    cursor:not-allowed;
+  }
+
+
+  /* =====================================================
+     CREATE / EDIT PANEL
+     ===================================================== */
+
+  .campaign-grid > .preview{
+    width:100% !important;
+    max-width:100% !important;
+
+    box-sizing:border-box;
+
+    margin:
+      0
+      0
+      10px !important;
+
+    padding:
+      14px !important;
+
+    overflow:hidden;
+
+    border-radius:15px !important;
+  }
+
+
+  .campaign-grid > .preview input,
+  .campaign-grid > .preview select,
+  .campaign-grid > .preview textarea{
+    width:100% !important;
+    max-width:100% !important;
+
+    box-sizing:border-box;
+  }
+
+}
+
