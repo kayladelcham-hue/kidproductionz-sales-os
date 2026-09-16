@@ -4740,3 +4740,420 @@ small{
 
 }
 
+
+
+/* === KP DAILY QUEUE MOBILE CARDS V8 === */
+
+
+/* =========================================================
+   DAILY QUEUE ? COMPANY VISIBILITY
+   ========================================================= */
+
+.queue-sections table tbody td:nth-child(2) b{
+  color:#f4f7fa !important;
+
+  font-size:.86rem;
+  font-weight:800;
+
+  letter-spacing:-.018em;
+
+  opacity:1 !important;
+}
+
+
+/* clickable rows */
+
+.queue-sections table tbody tr{
+  cursor:pointer;
+
+  transition:
+    background 150ms ease,
+    transform 150ms ease,
+    border-color 150ms ease;
+}
+
+.queue-sections table tbody tr:hover{
+  background:
+    rgba(137,215,255,.035);
+}
+
+
+/* =========================================================
+   MOBILE ? TABLE BECOMES NATIVE PROSPECT CARDS
+   ========================================================= */
+
+@media(max-width:760px){
+
+  /*
+    Kill desktop horizontal table behavior completely.
+  */
+
+  .queue-sections .table-wrap{
+    width:100% !important;
+
+    max-width:100% !important;
+
+    overflow:visible !important;
+
+    margin:0 !important;
+
+    padding:0 !important;
+  }
+
+
+  .queue-sections table{
+    display:block;
+
+    width:100% !important;
+    min-width:0 !important;
+
+    border-collapse:separate;
+
+    background:transparent;
+  }
+
+
+  /* hide desktop column headings */
+
+  .queue-sections table thead{
+    display:none;
+  }
+
+
+  .queue-sections table tbody{
+    display:grid;
+
+    width:100%;
+
+    gap:7px;
+  }
+
+
+  /*
+    Each row is now a true full-width app card.
+  */
+
+  .queue-sections table tbody tr{
+    position:relative;
+
+    display:grid;
+
+    grid-template-columns:
+      32px
+      minmax(0,1fr)
+      auto
+      auto;
+
+    grid-template-areas:
+      "position business score priority"
+      "position route route grade";
+
+    align-items:center;
+
+    width:100% !important;
+    max-width:100% !important;
+
+    box-sizing:border-box;
+
+    gap:5px 8px;
+
+    min-height:72px;
+
+    padding:
+      11px
+      12px !important;
+
+    margin:0 !important;
+
+    border:
+      1px solid rgba(255,255,255,.065);
+
+    border-radius:13px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.042),
+        rgba(255,255,255,.012)
+      );
+
+    box-shadow:
+      inset 0 1px 0
+      rgba(255,255,255,.025);
+
+    overflow:hidden;
+
+    cursor:pointer;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+
+  /*
+    Subtle right edge = indicates card can be opened.
+  */
+
+  .queue-sections table tbody tr::after{
+    content:"";
+
+    position:absolute;
+
+    right:10px;
+    top:50%;
+
+    width:6px;
+    height:6px;
+
+    border-right:
+      1.5px solid rgba(210,239,255,.32);
+
+    border-bottom:
+      1.5px solid rgba(210,239,255,.32);
+
+    transform:
+      translateY(-50%)
+      rotate(-45deg);
+
+    opacity:.75;
+  }
+
+
+  .queue-sections table tbody tr:active{
+    transform:
+      scale(.985);
+
+    background:
+      rgba(137,215,255,.055);
+
+    border-color:
+      rgba(137,215,255,.18);
+  }
+
+
+  /* reset desktop cells */
+
+  .queue-sections table tbody td{
+    display:block;
+
+    width:auto !important;
+    max-width:100%;
+
+    padding:0 !important;
+
+    border:0 !important;
+
+    background:transparent !important;
+
+    color:#747f8b;
+
+    font-size:.64rem;
+
+    overflow:hidden;
+  }
+
+
+  /* Position */
+
+  .queue-sections table tbody td:nth-child(1){
+    grid-area:position;
+
+    align-self:center;
+
+    color:#536170;
+
+    font-size:.62rem;
+    font-weight:800;
+
+    font-variant-numeric:
+      tabular-nums;
+  }
+
+  .queue-sections table tbody td:nth-child(1)::before{
+    content:"#";
+  }
+
+
+  /* =====================================================
+     BUSINESS NAME ? MAIN VISUAL ANCHOR
+     ===================================================== */
+
+  .queue-sections table tbody td:nth-child(2){
+    grid-area:business;
+
+    min-width:0;
+
+    padding-right:6px !important;
+  }
+
+  .queue-sections table tbody td:nth-child(2) b{
+    display:block;
+
+    overflow:hidden;
+
+    color:#ffffff !important;
+
+    font-size:.91rem !important;
+    line-height:1.1;
+
+    font-weight:820 !important;
+
+    letter-spacing:-.028em;
+
+    white-space:nowrap;
+    text-overflow:ellipsis;
+
+    opacity:1 !important;
+
+    text-shadow:
+      0 0 18px
+      rgba(255,255,255,.035);
+  }
+
+
+  /* Score */
+
+  .queue-sections table tbody td:nth-child(3){
+    grid-area:score;
+  }
+
+
+  /* Grade */
+
+  .queue-sections table tbody td:nth-child(4){
+    grid-area:grade;
+  }
+
+
+  /* Route */
+
+  .queue-sections table tbody td:nth-child(5){
+    grid-area:route;
+
+    min-width:0;
+  }
+
+
+  /* Priority */
+
+  .queue-sections table tbody td:nth-child(6){
+    grid-area:priority;
+
+    padding-right:14px !important;
+  }
+
+
+  /*
+    Hide long route reason from the collapsed mobile card.
+    It remains available when the prospect is opened.
+  */
+
+  .queue-sections table tbody td:nth-child(7){
+    display:none;
+  }
+
+
+  /* compact badges */
+
+  .queue-sections table tbody .badge{
+    max-width:100%;
+
+    padding:
+      4px
+      6px !important;
+
+    font-size:.52rem !important;
+
+    line-height:1;
+
+    white-space:nowrap;
+  }
+
+
+  /* =====================================================
+     SECTION CONTAINERS ? NO EXTRA WIDTH
+     ===================================================== */
+
+  .queue-sections > .card{
+    width:100%;
+
+    max-width:100%;
+
+    box-sizing:border-box;
+
+    overflow:hidden;
+  }
+
+
+  /*
+    The expanded queue itself should never make the
+    viewport horizontally scroll.
+  */
+
+  .queue-sections{
+    width:100%;
+
+    max-width:100%;
+
+    box-sizing:border-box;
+
+    overflow-x:hidden !important;
+  }
+
+
+  /*
+    Search/filter panel also respects viewport width.
+  */
+
+  .queue-sections .filter{
+    width:100%;
+
+    max-width:100%;
+
+    box-sizing:border-box;
+  }
+
+  .queue-sections .filter input,
+  .queue-sections .filter select{
+    max-width:100%;
+
+    box-sizing:border-box;
+  }
+
+}
+
+
+/* VERY SMALL PHONES */
+
+@media(max-width:390px){
+
+  .queue-sections table tbody tr{
+    grid-template-columns:
+      27px
+      minmax(0,1fr)
+      auto;
+
+    grid-template-areas:
+      "position business priority"
+      "position score grade"
+      "position route route";
+
+    min-height:76px;
+
+    padding:
+      10px
+      10px !important;
+  }
+
+
+  .queue-sections table tbody td:nth-child(2) b{
+    font-size:.85rem !important;
+  }
+
+
+  .queue-sections table tbody td:nth-child(6){
+    padding-right:13px !important;
+  }
+
+}
+
