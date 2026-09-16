@@ -188,105 +188,17 @@ def run_detail(run_id:str):
     return read_json(matches[0])
 @app.get('/api/queue')
 def queue(campaign='orlando_beauty'):
-    prospects = list_prospects(campaign)
-
-    def queue_rows(queue_name):
-        return [
-            {
-                **p,
-                'prospect_id': p['id'],
-                'business_name': p.get('name'),
-                'route': 'Call First' if p.get('queue') == 'CALL_FIRST' else (p.get('queue') or 'Review'),
-                'priority': (
-                    'High' if (p.get('score') or 0) >= 75
-                    else 'Medium' if (p.get('score') or 0) >= 65
-                    else 'Standard'
-                ),
-                'reason': p.get('grade') or 'Qualified lead',
-                'route': 'Call First' if p.get('queue') == 'CALL_FIRST' else p.get('queue'),
-                'priority': (
-                    'High' if (p.get('score') or 0) >= 75
-                    else 'Medium' if (p.get('score') or 0) >= 65
-                    else 'Standard'
-                ),
-                'reason': p.get('grade') or 'Qualified lead',
-            }
-            for p in prospects
-            if p.get('queue') == queue_name
-        ]
-
-    daily_queue = [
-        {
-            **p,
-            'prospect_id': p['id'],
-            'business_name': p.get('name'),
-            'route': 'Call First',
-            'priority': (
-                'High' if (p.get('score') or 0) >= 75
-                else 'Medium' if (p.get('score') or 0) >= 65
-                else 'Standard'
-            ),
-            'reason': 'Qualified lead',
-        }
-        for p in prospects
-        if p.get('grade') == 'B / Qualified'
-        and p.get('sales_status') != 'FOLLOW_UP'
-    ]
-
-    deferred = [
-        {
-            **p,
-            'prospect_id': p['id'],
-            'business_name': p.get('name'),
-            'route': 'Follow Up',
-            'priority': (
-                'High' if (p.get('score') or 0) >= 75
-                else 'Medium' if (p.get('score') or 0) >= 65
-                else 'Standard'
-            ),
-            'reason': 'Follow-up required',
-        }
-        for p in prospects
-        if p.get('grade') == 'B / Qualified'
-        and p.get('sales_status') == 'FOLLOW_UP'
-    ]
-
-    research = [
-        {
-            **p,
-            'prospect_id': p['id'],
-            'business_name': p.get('name'),
-        }
-        for p in prospects
-        if p.get('grade') == 'C / Review'
-    ]
-
-    ineligible = [
-        {
-            **p,
-            'prospect_id': p['id'],
-            'business_name': p.get('name'),
-        }
-        for p in prospects
-        if p.get('grade') == 'Reject/Hold'
-    ]
-
-    return {
-        'campaign_id': campaign,
-        'daily_queue': daily_queue,
-        'deferred': deferred,
-        'research': research,
-        'ineligible': ineligible,
-        'summary': {
-            'total_candidates': len(prospects),
-            'daily_queue_count': len(daily_queue),
-            'deferred_count': len(deferred),
-            'research_count': len(research),
-            'ineligible_count': len(ineligible),
-        },
-        'safety': {'source': 'postgres'},
-    }
-
+    if os.getenv('KIDPRODUCTIONZ_AUTH_MODE','local').lower() == 'cloud':
+        snap=ROOT/'app'/'data'/'cloud_daily_queue.json'
+        if snap.exists() and not any(ensure_queue_item(x,campaign) for x in []):
+            rows=[x for x in json.loads(snap.read_text(encoding='utf-8')) if x.get('campaign_slug')==campaign]
+            return {'campaign_id':campaign,'daily_queue':rows,'deferred':[],'research':[],'ineligible':[],'summary':{'daily_queue_count':len(rows)},'safety':{'source':'cloud_snapshot'}}
+    path=latest_versioned(ARTIFACT_ROOT/'v5_queue'/campaign,'daily_queue')
+    if not path: return {'campaign_id':campaign,'daily_queue':[],'deferred':[],'research':[],'ineligible':[],'summary':{'total_candidates':0,'daily_queue_count':0,'deferred_count':0,'research_count':0,'ineligible_count':0},'safety':{}}
+    doc=read_json(path)
+    for section in ('daily_queue','deferred','research','ineligible'):
+        doc[section]=[ensure_queue_item(x,campaign) for x in doc.get(section,[])]
+    return doc
 @app.get('/api/prospects')
 def prospects(campaign='orlando_beauty'): return list_prospects(campaign)
 class SalesActivity(BaseModel):
@@ -542,11 +454,4 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
-
-
-
-
-
-
-
 
