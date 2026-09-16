@@ -188,17 +188,66 @@ def run_detail(run_id:str):
     return read_json(matches[0])
 @app.get('/api/queue')
 def queue(campaign='orlando_beauty'):
-    if os.getenv('KIDPRODUCTIONZ_AUTH_MODE','local').lower() == 'cloud':
-        snap=ROOT/'app'/'data'/'cloud_daily_queue.json'
-        if snap.exists() and not any(ensure_queue_item(x,campaign) for x in []):
-            rows=[x for x in json.loads(snap.read_text(encoding='utf-8')) if x.get('campaign_slug')==campaign]
-            return {'campaign_id':campaign,'daily_queue':rows,'deferred':[],'research':[],'ineligible':[],'summary':{'daily_queue_count':len(rows)},'safety':{'source':'cloud_snapshot'}}
-    path=latest_versioned(ARTIFACT_ROOT/'v5_queue'/campaign,'daily_queue')
-    if not path: return {'campaign_id':campaign,'daily_queue':[],'deferred':[],'research':[],'ineligible':[],'summary':{'total_candidates':0,'daily_queue_count':0,'deferred_count':0,'research_count':0,'ineligible_count':0},'safety':{}}
-    doc=read_json(path)
-    for section in ('daily_queue','deferred','research','ineligible'):
-        doc[section]=[ensure_queue_item(x,campaign) for x in doc.get(section,[])]
-    return doc
+    prospects = list_prospects(campaign)
+
+    def item(p, route, reason):
+        score = p.get('score') or 0
+        return {
+            **p,
+            'prospect_id': p['id'],
+            'business_name': p.get('name'),
+            'route': route,
+            'priority': (
+                'P1' if score >= 75
+                else 'P2' if score >= 65
+                else 'P3'
+            ),
+            'route_reason': reason,
+        }
+
+    daily_queue = [
+        item(p, 'CALL_FIRST', 'Qualified lead')
+        for p in prospects
+        if p.get('grade') == 'B / Qualified'
+        and p.get('sales_status') != 'FOLLOW_UP'
+    ]
+
+    deferred = [
+        item(p, 'FOLLOW_UP', 'Follow-up required')
+        for p in prospects
+        if p.get('grade') == 'B / Qualified'
+        and p.get('sales_status') == 'FOLLOW_UP'
+    ]
+
+    research = [
+        item(p, 'RESEARCH', 'Needs review')
+        for p in prospects
+        if p.get('grade') == 'C / Review'
+    ]
+
+    ineligible = [
+        item(p, 'INELIGIBLE', 'Rejected or on hold')
+        for p in prospects
+        if p.get('grade') == 'Reject/Hold'
+    ]
+
+    return {
+        'campaign_id': campaign,
+        'daily_queue': daily_queue,
+        'deferred': deferred,
+        'research': research,
+        'ineligible': ineligible,
+        'summary': {
+            'total_candidates': len(prospects),
+            'daily_queue_count': len(daily_queue),
+            'deferred_count': len(deferred),
+            'research_count': len(research),
+            'ineligible_count': len(ineligible),
+        },
+        'safety': {
+            'source': 'postgres'
+        },
+    }
 @app.get('/api/prospects')
 def prospects(campaign='orlando_beauty'): return list_prospects(campaign)
 class SalesActivity(BaseModel):
@@ -282,7 +331,7 @@ def save_hubspot_settings(req:HubSpotSettings):
     path=Path(os.getenv('APP_ENV_FILE', str(ROOT/'.env'))); path.parent.mkdir(parents=True,exist_ok=True)
     if path.exists(): shutil.copy2(path, path.with_name(path.name+'.bak.'+datetime.now().strftime('%Y%m%d%H%M%S')))
     values={'HUBSPOT_PORTAL_ID':req.portal_id,'HUBSPOT_PIPELINE_ID':req.pipeline_id,'HUBSPOT_STAGE_ID':req.stage_id,'HUBSPOT_WRITE_ENABLED':str(req.write_enabled).lower()}
-    if req.access_token and '•' not in req.access_token: values['HUBSPOT_ACCESS_TOKEN']=req.access_token
+    if req.access_token and 'â€¢' not in req.access_token: values['HUBSPOT_ACCESS_TOKEN']=req.access_token
     lines=path.read_text(encoding='utf-8').splitlines() if path.exists() else []; keys={k for k in values}; out=[l for l in lines if not any(l.startswith(k+'=') for k in keys)]; out += [f'{k}={v}' for k,v in values.items()]; path.write_text('\n'.join(out)+'\n',encoding='utf-8'); os.environ.update(values)
     return hubspot_settings()
 
