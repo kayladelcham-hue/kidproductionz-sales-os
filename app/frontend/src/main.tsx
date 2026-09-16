@@ -6,6 +6,8 @@ function UpNext({campaign}:{campaign:string}){
   const [idx,setIdx]=useState(0);
   const [selected,setSelected]=useState<any>(null);
   const [openEmail,setOpenEmail]=useState(false);
+  const [lastAction,setLastAction]=useState<any>(null);
+  const [undoing,setUndoing]=useState(false);
 
   const items=((data?.daily_queue||[]) as any[])
     .map((x:any,i:number)=>({...x,__i:i}))
@@ -17,17 +19,81 @@ function UpNext({campaign}:{campaign:string}){
 
   const current=items[idx];
 
-  const next=()=>{
+  const moveNext=()=>{
     setIdx(i=>Math.min(i+1,Math.max(0,items.length-1)))
   };
 
+  const skip=()=>{
+    if(!current)return;
+    setLastAction({
+      type:'SKIP',
+      idx,
+      prospect:current,
+      message:`Skipped ${current.business_name||current.name||current.business||'prospect'}`
+    });
+    moveNext();
+  };
+
   const markAttempted=async()=>{
-    if(current?.prospect_id){
+    if(!current)return;
+
+    const previousStatus=current.sales_status||'NOT_CONTACTED';
+
+    if(current.prospect_id){
       try{
-        await api.activity(current.prospect_id,{status:'ATTEMPTED'})
-      }catch{}
+        await api.activity(current.prospect_id,{status:'ATTEMPTED'});
+      }catch{
+        return;
+      }
     }
-    next()
+
+    setLastAction({
+      type:'ATTEMPTED',
+      idx,
+      prospect:current,
+      previousStatus,
+      message:`Marked ${current.business_name||current.name||current.business||'prospect'} attempted`
+    });
+
+    moveNext();
+  };
+
+  const savedAndNext=()=>{
+    if(!current)return;
+
+    setLastAction({
+      type:'SAVED',
+      idx,
+      prospect:current,
+      message:`Saved ${current.business_name||current.name||current.business||'prospect'}`
+    });
+
+    setSelected(null);
+    setOpenEmail(false);
+    moveNext();
+  };
+
+  const undo=async()=>{
+    if(!lastAction||undoing)return;
+
+    setUndoing(true);
+
+    try{
+      if(
+        lastAction.type==='ATTEMPTED' &&
+        lastAction.prospect?.prospect_id
+      ){
+        await api.activity(
+          lastAction.prospect.prospect_id,
+          {status:lastAction.previousStatus||'NOT_CONTACTED'}
+        );
+      }
+
+      setIdx(lastAction.idx);
+      setLastAction(null);
+    }finally{
+      setUndoing(false);
+    }
   };
 
   if(error)return <div className="card empty">API unavailable</div>;
@@ -37,6 +103,17 @@ function UpNext({campaign}:{campaign:string}){
   const name=current.business_name||current.name||current.business||'-';
 
   return <div className="up-next">
+
+    {lastAction&&
+      <div className="notice">
+        {lastAction.message}
+        {' '}
+        <button onClick={undo} disabled={undoing}>
+          {undoing?'Undoing...':'Undo'}
+        </button>
+      </div>
+    }
+
     <div className="card up-next-card">
       <p className="eyebrow">UP NEXT - #{current.queue_position??idx+1}</p>
       <h2>{name}</h2>
@@ -67,9 +144,12 @@ function UpNext({campaign}:{campaign:string}){
           setOpenEmail(false);
         }}>Open Prospect</button>
 
-        <button onClick={next}>Skip</button>
+        <button onClick={skip}>Skip</button>
         <button onClick={markAttempted}>Mark Attempted</button>
-        <button onClick={()=>{setSelected(current);setOpenEmail(false)}}>Save & Next</button>
+        <button onClick={()=>{
+          setSelected(current);
+          setOpenEmail(false);
+        }}>Save & Next</button>
       </div>
     </div>
 
@@ -90,6 +170,7 @@ function UpNext({campaign}:{campaign:string}){
           setSelected(null);
           setOpenEmail(false);
         }}
+        onNext={savedAndNext}
       />
     }
   </div>
