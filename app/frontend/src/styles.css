@@ -1983,3 +1983,690 @@ small{
 
 }
 
+
+
+/* === KIDPRODUCTIONZ PIPELINE FLOOR V4 === */
+
+
+/* =========================================
+   PAGE ATMOSPHERE
+   ========================================= */
+
+.queue-sections,
+.prospects{
+  position:relative;
+  isolation:isolate;
+  max-width:1400px;
+  margin:0 auto;
+  padding-top:30px;
+}
+
+.queue-sections::before{
+  content:"PIPELINE";
+  position:absolute;
+  top:-24px;
+  right:-12px;
+  z-index:-1;
+
+  font-size:clamp(6rem,14vw,13rem);
+  line-height:.8;
+  font-weight:900;
+  letter-spacing:-.09em;
+
+  color:rgba(255,255,255,.022);
+
+  pointer-events:none;
+  user-select:none;
+}
+
+.prospects::before{
+  content:"PROSPECTS";
+  position:absolute;
+  top:-24px;
+  right:-10px;
+  z-index:-1;
+
+  font-size:clamp(5rem,12vw,11rem);
+  line-height:.8;
+  font-weight:900;
+  letter-spacing:-.09em;
+
+  color:rgba(255,255,255,.022);
+
+  pointer-events:none;
+  user-select:none;
+}
+
+
+/* =========================================
+   TOP CONTROL / FILTER DECK
+   ========================================= */
+
+.queue-sections > .card:first-child,
+.prospects > .card:first-child{
+  position:relative;
+  z-index:5;
+
+  overflow:visible;
+
+  border-color:rgba(185,220,240,.12) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.062),
+      rgba(255,255,255,.018)
+    ) !important;
+
+  box-shadow:
+    0 25px 70px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.065);
+}
+
+
+/* search gets hero treatment */
+
+.queue-sections .search-bar,
+.prospects .search-bar{
+  position:relative;
+  margin-bottom:14px;
+}
+
+.queue-sections .search-bar::before,
+.prospects .search-bar::before{
+  content:"SEARCH";
+  position:absolute;
+  left:17px;
+  top:10px;
+  z-index:2;
+
+  color:#66717e;
+  font-size:.52rem;
+  font-weight:850;
+  letter-spacing:.17em;
+
+  pointer-events:none;
+}
+
+.queue-sections .search-bar input,
+.prospects .search-bar input,
+.queue-sections .filter > input,
+.prospects .filter > input{
+  min-height:58px !important;
+
+  padding:
+    22px 16px
+    8px 16px !important;
+
+  border-radius:14px !important;
+
+  color:#f4f7fa;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.065),
+      rgba(255,255,255,.024)
+    ) !important;
+
+  border:
+    1px solid rgba(255,255,255,.105) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04);
+
+  font-size:.94rem;
+  font-weight:600;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 180ms ease;
+}
+
+.queue-sections .search-bar input:focus,
+.prospects .search-bar input:focus,
+.queue-sections .filter > input:focus,
+.prospects .filter > input:focus{
+  border-color:
+    rgba(137,215,255,.46) !important;
+
+  background:
+    rgba(255,255,255,.058) !important;
+
+  box-shadow:
+    0 0 0 3px rgba(137,215,255,.055),
+    inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+
+/* =========================================
+   FILTER BAR
+   ========================================= */
+
+.queue-sections .filter,
+.prospects .filter{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+
+  padding:10px;
+
+  border:
+    1px solid rgba(255,255,255,.065);
+
+  border-radius:15px;
+
+  background:
+    rgba(0,0,0,.16);
+
+  backdrop-filter:blur(18px);
+}
+
+.queue-sections .filter select{
+  min-height:42px;
+
+  padding:0 35px 0 12px;
+
+  border:
+    1px solid rgba(255,255,255,.09);
+
+  border-radius:10px;
+
+  color:#bbc3cd;
+
+  background:#111419;
+
+  font-size:.77rem;
+  font-weight:650;
+
+  outline:none;
+
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.queue-sections .filter select:hover,
+.queue-sections .filter select:focus{
+  color:#fff;
+
+  border-color:
+    rgba(137,215,255,.28);
+
+  background:#15191f;
+}
+
+.queue-sections .filter button{
+  min-height:42px;
+
+  padding:0 14px;
+
+  border:
+    1px solid rgba(255,255,255,.10);
+
+  border-radius:10px;
+
+  color:#aeb6c0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,.02)
+    );
+
+  font-size:.75rem;
+  font-weight:750;
+}
+
+.queue-sections .filter button:hover{
+  color:#fff;
+
+  border-color:
+    rgba(137,215,255,.24);
+
+  background:
+    rgba(137,215,255,.07);
+}
+
+
+/* Last filter button = sync action */
+
+.queue-sections .filter button:last-child{
+  color:#dff5ff;
+
+  border-color:
+    rgba(137,215,255,.22);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(137,215,255,.12),
+      rgba(137,215,255,.035)
+    );
+}
+
+
+/* =========================================
+   QUEUE SECTION CARDS
+   ========================================= */
+
+.queue-sections > .card:not(:first-child){
+  overflow:hidden;
+
+  margin-top:12px;
+
+  border-radius:17px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.014)
+    ) !important;
+
+  animation:
+    kp-pipeline-enter .5s
+    cubic-bezier(.16,1,.3,1)
+    both;
+}
+
+.queue-sections > .card:nth-child(2){
+  animation-delay:40ms;
+}
+
+.queue-sections > .card:nth-child(3){
+  animation-delay:80ms;
+}
+
+.queue-sections > .card:nth-child(4){
+  animation-delay:120ms;
+}
+
+.queue-sections > .card:nth-child(5){
+  animation-delay:160ms;
+}
+
+
+/* collapsible section header */
+
+.section-toggle{
+  width:100%;
+
+  display:flex;
+  align-items:center;
+
+  min-height:60px;
+
+  padding:0 18px !important;
+
+  border:0 !important;
+
+  color:#e7ebef !important;
+
+  background:transparent !important;
+
+  text-align:left;
+
+  font-size:.84rem !important;
+  font-weight:780 !important;
+  letter-spacing:-.01em;
+
+  transition:
+    color 160ms ease,
+    background 160ms ease !important;
+}
+
+.section-toggle:hover{
+  color:#fff !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(137,215,255,.065),
+      transparent
+    ) !important;
+}
+
+
+/* =========================================
+   TABLE FRAME
+   ========================================= */
+
+.table-wrap{
+  position:relative;
+
+  overflow-x:auto;
+
+  border-top:
+    1px solid rgba(255,255,255,.055);
+
+  scrollbar-width:thin;
+  scrollbar-color:
+    rgba(255,255,255,.14)
+    transparent;
+}
+
+.table-wrap::-webkit-scrollbar{
+  height:6px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.14);
+  border-radius:20px;
+}
+
+.table-wrap table{
+  width:100%;
+
+  border-collapse:collapse;
+
+  color:#b8c0ca;
+}
+
+
+/* =========================================
+   TABLE HEADER
+   ========================================= */
+
+.table-wrap thead{
+  position:relative;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.04),
+      rgba(255,255,255,.012)
+    );
+}
+
+.table-wrap th{
+  padding:14px 13px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.07);
+
+  color:#697481;
+
+  font-size:.60rem;
+  font-weight:850;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+
+  text-align:left;
+  white-space:nowrap;
+}
+
+
+/* =========================================
+   PROSPECT ROWS
+   ========================================= */
+
+.table-wrap tbody tr{
+  position:relative;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.045);
+
+  transition:
+    background 150ms ease,
+    transform 150ms ease,
+    box-shadow 180ms ease;
+}
+
+.table-wrap tbody tr:last-child{
+  border-bottom:0;
+}
+
+.table-wrap td{
+  padding:16px 13px;
+
+  color:#8f99a5;
+
+  font-size:.78rem;
+
+  vertical-align:middle;
+}
+
+
+/* business name */
+
+.table-wrap td:nth-child(2) b{
+  color:#edf1f5;
+
+  font-size:.91rem;
+  font-weight:740;
+  letter-spacing:-.02em;
+}
+
+
+/* position number */
+
+.table-wrap td:first-child{
+  color:#57616e;
+
+  font-size:.68rem;
+  font-weight:750;
+
+  font-variant-numeric:tabular-nums;
+}
+
+
+/* reason column */
+
+.table-wrap td:last-child{
+  max-width:360px;
+
+  color:#717c89;
+
+  line-height:1.45;
+}
+
+
+/* interactive prospect rows */
+
+.prospects .table-wrap tbody tr{
+  cursor:pointer;
+}
+
+.prospects .table-wrap tbody tr:hover,
+.queue-sections .table-wrap tbody tr:hover{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(137,215,255,.065),
+      rgba(255,255,255,.018) 55%,
+      transparent
+    );
+
+  box-shadow:
+    inset 2px 0 0
+    rgba(137,215,255,.7);
+}
+
+.prospects .table-wrap tbody tr:hover td:nth-child(2) b,
+.queue-sections .table-wrap tbody tr:hover td:nth-child(2) b{
+  color:#fff;
+}
+
+
+/* =========================================
+   PROSPECTS PAGE
+   ========================================= */
+
+.prospects > .card{
+  overflow:hidden;
+}
+
+.prospects .table-wrap{
+  margin-top:12px;
+}
+
+
+/* subtle prospect count atmosphere */
+
+.prospects > .card:first-child::after{
+  content:"LEAD DATABASE";
+
+  position:absolute;
+  top:16px;
+  right:18px;
+
+  color:rgba(255,255,255,.18);
+
+  font-size:.56rem;
+  font-weight:850;
+  letter-spacing:.17em;
+
+  pointer-events:none;
+}
+
+
+/* =========================================
+   HUBSPOT PREVIEW
+   ========================================= */
+
+.queue-sections .preview{
+  margin-top:14px;
+  padding:18px;
+
+  border:
+    1px solid rgba(137,215,255,.13);
+
+  border-radius:14px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(137,215,255,.055),
+      rgba(0,0,0,.18)
+    );
+
+  animation:
+    kp-pipeline-enter .32s
+    cubic-bezier(.16,1,.3,1)
+    both;
+}
+
+
+/* =========================================
+   EMPTY STATES
+   ========================================= */
+
+.queue-sections .empty,
+.prospects .empty{
+  min-height:180px;
+
+  display:grid;
+  place-items:center;
+
+  color:#68727f;
+
+  text-align:center;
+}
+
+
+/* =========================================
+   ANIMATION
+   ========================================= */
+
+@keyframes kp-pipeline-enter{
+  from{
+    opacity:0;
+    transform:translateY(9px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+
+/* =========================================
+   MOBILE PIPELINE
+   ========================================= */
+
+@media(max-width:760px){
+
+  .queue-sections,
+  .prospects{
+    padding-top:22px;
+  }
+
+  .queue-sections::before{
+    top:-3px;
+    right:-3px;
+
+    font-size:5.5rem;
+  }
+
+  .prospects::before{
+    top:0;
+    right:-3px;
+
+    font-size:4.8rem;
+  }
+
+  .queue-sections > .card:first-child,
+  .prospects > .card:first-child{
+    border-radius:18px !important;
+  }
+
+  .queue-sections .filter{
+    display:grid;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+
+    gap:7px;
+  }
+
+  .queue-sections .filter select,
+  .queue-sections .filter button{
+    width:100%;
+  }
+
+  .queue-sections .search-bar,
+  .prospects .search-bar{
+    grid-column:1 / -1;
+  }
+
+  .queue-sections .filter > input,
+  .prospects .filter > input{
+    grid-column:1 / -1;
+
+    width:100%;
+  }
+
+  .table-wrap{
+    margin-left:-2px;
+    margin-right:-2px;
+  }
+
+  .table-wrap table{
+    min-width:760px;
+  }
+
+  .table-wrap th{
+    padding:12px 10px;
+  }
+
+  .table-wrap td{
+    padding:14px 10px;
+  }
+
+  .section-toggle{
+    min-height:55px;
+    padding:0 14px !important;
+  }
+
+  .prospects > .card:first-child::after{
+    display:none;
+  }
+
+}
+
