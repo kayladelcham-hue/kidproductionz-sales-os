@@ -55,7 +55,7 @@ def activity_metrics():
             select(func.count())
             .select_from(Prospect)
             .where(
-                Prospect.grade == 'B / Qualified',
+                Prospect.queue == 'DAILY_QUEUE',
                 Prospect.sales_status == 'NOT_CONTACTED'
             )
         ).scalar_one()
