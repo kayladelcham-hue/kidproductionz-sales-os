@@ -196,6 +196,20 @@ def queue(campaign='orlando_beauty'):
                 **p,
                 'prospect_id': p['id'],
                 'business_name': p.get('name'),
+                'route': 'Call First' if p.get('queue') == 'CALL_FIRST' else (p.get('queue') or 'Review'),
+                'priority': (
+                    'High' if (p.get('score') or 0) >= 75
+                    else 'Medium' if (p.get('score') or 0) >= 65
+                    else 'Standard'
+                ),
+                'reason': p.get('grade') or 'Qualified lead',
+                'route': 'Call First' if p.get('queue') == 'CALL_FIRST' else p.get('queue'),
+                'priority': (
+                    'High' if (p.get('score') or 0) >= 75
+                    else 'Medium' if (p.get('score') or 0) >= 65
+                    else 'Standard'
+                ),
+                'reason': p.get('grade') or 'Qualified lead',
             }
             for p in prospects
             if p.get('queue') == queue_name
@@ -206,6 +220,13 @@ def queue(campaign='orlando_beauty'):
             **p,
             'prospect_id': p['id'],
             'business_name': p.get('name'),
+            'route': 'Call First',
+            'priority': (
+                'High' if (p.get('score') or 0) >= 75
+                else 'Medium' if (p.get('score') or 0) >= 65
+                else 'Standard'
+            ),
+            'reason': 'Qualified lead',
         }
         for p in prospects
         if p.get('grade') == 'B / Qualified'
@@ -504,6 +525,9 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
+
+
+
 
 
 
