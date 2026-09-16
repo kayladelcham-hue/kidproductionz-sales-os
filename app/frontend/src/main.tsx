@@ -17,13 +17,17 @@ function UpNext({campaign}:{campaign:string}){
 
   const current=items[idx];
 
-  const advance=async()=>{
+  const next=()=>{
+    setIdx(i=>Math.min(i+1,Math.max(0,items.length-1)))
+  };
+
+  const markAttempted=async()=>{
     if(current?.prospect_id){
       try{
-        await api.activity(current.prospect_id,{sales_status:'ATTEMPTED'})
+        await api.activity(current.prospect_id,{status:'ATTEMPTED'})
       }catch{}
     }
-    setIdx(i=>Math.min(i+1,Math.max(0,items.length-1)))
+    next()
   };
 
   if(error)return <div className="card empty">API unavailable</div>;
@@ -63,9 +67,9 @@ function UpNext({campaign}:{campaign:string}){
           setOpenEmail(false);
         }}>Open Prospect</button>
 
-        <button onClick={advance}>Skip</button>
-        <button onClick={advance}>Mark Attempted</button>
-        <button onClick={advance}>Save & Next</button>
+        <button onClick={next}>Skip</button>
+        <button onClick={markAttempted}>Mark Attempted</button>
+        <button onClick={()=>{setSelected(current);setOpenEmail(false)}}>Save & Next</button>
       </div>
     </div>
 
