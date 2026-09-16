@@ -38,6 +38,7 @@ from . import hubspot_sync_service
 from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
@@ -337,7 +338,36 @@ def calendar_create(req:CalendarRequest):
         if req.attendee_email: event_doc['attendees']=[{'email':req.attendee_email}]
         event=google_service.create_calendar_event(event_doc)
         log_external_action(req.prospect_id,'CALENDAR_EVENT_CREATED',{'calendar_event_id':event.get('id')})
-        with connect() as c: c.execute('INSERT INTO calendar_event(prospect_id,provider,calendar_event_id,event_url,consultation_start,consultation_end) VALUES(?,?,?,?,?,?)',(req.prospect_id,'GOOGLE',event.get('id'),event.get('htmlLink'),req.consultation_start,req.consultation_end))
+        with connect() as c:
+            c.execute(
+                text('''
+                    INSERT INTO calendar_event(
+                        prospect_id,
+                        provider,
+                        calendar_event_id,
+                        event_url,
+                        consultation_start,
+                        consultation_end
+                    )
+                    VALUES(
+                        :prospect_id,
+                        :provider,
+                        :calendar_event_id,
+                        :event_url,
+                        :consultation_start,
+                        :consultation_end
+                    )
+                '''),
+                {
+                    'prospect_id': req.prospect_id,
+                    'provider': 'GOOGLE',
+                    'calendar_event_id': event.get('id'),
+                    'event_url': event.get('htmlLink'),
+                    'consultation_start': req.consultation_start,
+                    'consultation_end': req.consultation_end,
+                }
+            )
+            c.commit()
         return {'status':'CREATED','calendar_event_id':event.get('id'),'event_url':event.get('htmlLink')}
     except Exception as exc: raise HTTPException(503,detail={'provider':'GOOGLE_CALENDAR','stage':'event_create','message':_safe_error_message(str(exc))})
 class GmailRequest(BaseModel):
