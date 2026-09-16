@@ -39,8 +39,38 @@ def update_sales_activity(prospect_id,status=None,notes=None,booked_value=None):
         return _dict(p)
 def activity_metrics():
     with SessionLocal() as s:
-        rows=s.execute(select(Prospect.sales_status,func.count()).group_by(Prospect.sales_status)).all()
-        return {str(k or 'UNKNOWN'):v for k,v in rows}
+        rows = s.execute(
+            select(Prospect.sales_status, func.count())
+            .group_by(Prospect.sales_status)
+        ).all()
+
+        counts = {str(k or 'UNKNOWN'): int(v) for k, v in rows}
+
+        booked_revenue = s.execute(
+            select(func.coalesce(func.sum(Prospect.booked_value), 0))
+            .where(Prospect.sales_status == 'BOOKED')
+        ).scalar_one()
+
+        queue_count = s.execute(
+            select(func.count())
+            .select_from(Prospect)
+            .where(
+                Prospect.grade == 'B / Qualified',
+                Prospect.sales_status == 'NOT_CONTACTED'
+            )
+        ).scalar_one()
+
+        return {
+            'queue': int(queue_count or 0),
+            'attempted_or_contacted': (
+                counts.get('ATTEMPTED', 0) +
+                counts.get('CONTACTED', 0)
+            ),
+            'replies': counts.get('REPLIED', 0),
+            'consultations_set': counts.get('CONSULTATION_SET', 0),
+            'booked': counts.get('BOOKED', 0),
+            'booked_revenue': float(booked_revenue or 0),
+        }
 def ensure_queue_item(item,campaign):
     with session_scope() as s:
         q=s.execute(select(QueueItem).where(QueueItem.run_id==item.get('run_id'),QueueItem.prospect_id==item.get('prospect_id'))).scalar_one_or_none()
@@ -101,3 +131,4 @@ def clear_google_connection():
         x=s.get(GoogleConnection,1)
         if x:s.delete(x)
 __all__=['engine','SessionLocal','session_scope','Base','init_db','seed_campaigns','persist_upload','update_sales_activity','activity_metrics','ensure_queue_item','persist_crm_state','get_crm_state','log_external_action','connect','list_campaigns','list_prospects','get_campaign','create_campaign','update_campaign','get_settings','save_settings','save_google_connection','load_google_connection','clear_google_connection']
+
