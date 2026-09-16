@@ -1,6 +1,10 @@
 import base64,email.message,json,os,time,urllib.parse,urllib.request,urllib.error,logging
 from .database_v2 import save_google_connection,load_google_connection,clear_google_connection
-SCOPES=('https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/calendar.events')
+SCOPES=(
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+)
 logger=logging.getLogger(__name__)
 def status():
  if os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower()!='true' and os.getenv('GMAIL_ENABLED','false').lower()!='true': return 'DISABLED'
@@ -45,7 +49,76 @@ def create_calendar_event(event):
         logger.exception('Google Calendar create failed type=%s message=%s payload=%s token_refreshed=%s',type(exc).__name__,str(exc),{k:v for k,v in event.items() if k not in ('access_token','refresh_token')},False)
         raise
 def upcoming_calendar_events(limit=10):
-    req=urllib.request.Request('https://www.googleapis.com/calendar/v3/calendars/primary/events?'+urllib.parse.urlencode({'maxResults':limit,'singleEvents':'true','orderBy':'startTime','timeMin':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())}),headers={'Authorization':'Bearer '+_token()})
-    with urllib.request.urlopen(req,timeout=10) as r: data=json.loads(r.read().decode())
-    return [{'id':x.get('id'),'title':x.get('summary',''),'start':(x.get('start') or {}).get('dateTime') or (x.get('start') or {}).get('date'),'end':(x.get('end') or {}).get('dateTime') or (x.get('end') or {}).get('date'),'location':x.get('location',''),'html_link':x.get('htmlLink')} for x in data.get('items',[])]
+    token = _token()
+    headers = {'Authorization': 'Bearer ' + token}
+
+    # Read every calendar visible to the connected Google account.
+    req = urllib.request.Request(
+        'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+        headers=headers,
+    )
+
+    with urllib.request.urlopen(req, timeout=10) as r:
+        calendar_data = json.loads(r.read().decode())
+
+    calendars = calendar_data.get('items', [])
+    time_min = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+
+    events = []
+
+    for calendar in calendars:
+        calendar_id = calendar.get('id')
+        if not calendar_id:
+            continue
+
+        url = (
+            'https://www.googleapis.com/calendar/v3/calendars/'
+            + urllib.parse.quote(calendar_id, safe='')
+            + '/events?'
+            + urllib.parse.urlencode({
+                'maxResults': limit,
+                'singleEvents': 'true',
+                'orderBy': 'startTime',
+                'timeMin': time_min,
+            })
+        )
+
+        try:
+            event_req = urllib.request.Request(url, headers=headers)
+
+            with urllib.request.urlopen(event_req, timeout=10) as r:
+                data = json.loads(r.read().decode())
+
+            for x in data.get('items', []):
+                events.append({
+                    'id': x.get('id'),
+                    'calendar_id': calendar_id,
+                    'calendar_name': calendar.get('summary', ''),
+                    'title': x.get('summary', ''),
+                    'start': (x.get('start') or {}).get('dateTime')
+                             or (x.get('start') or {}).get('date'),
+                    'end': (x.get('end') or {}).get('dateTime')
+                           or (x.get('end') or {}).get('date'),
+                    'location': x.get('location', ''),
+                    'html_link': x.get('htmlLink'),
+                })
+
+        except Exception:
+            # One inaccessible/shared calendar should not break the schedule.
+            continue
+
+    events.sort(key=lambda x: str(x.get('start') or ''))
+
+    # Avoid duplicates if the same event is visible through multiple calendars.
+    seen = set()
+    unique = []
+
+    for event in events:
+        key = (event.get('id'), event.get('start'))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(event)
+
+    return unique[:limit]
 
