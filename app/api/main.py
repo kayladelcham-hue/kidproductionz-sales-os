@@ -190,55 +190,87 @@ def run_detail(run_id:str):
 def queue(campaign='orlando_beauty'):
     prospects = list_prospects(campaign)
 
-    def item(p, route, reason):
+    def item(p):
         score = p.get('score') or 0
+        stored_queue = str(p.get('queue') or '').upper()
+
+        if stored_queue == 'RESEARCH':
+            route = 'RESEARCH'
+            reason = 'Needs research or review'
+            priority = 'RESEARCH'
+        elif stored_queue == 'INELIGIBLE':
+            route = 'INELIGIBLE'
+            reason = 'Ineligible prospect'
+            priority = 'INELIGIBLE'
+        else:
+            route = 'CALL_FIRST'
+            reason = (
+                'Selected for today\'s queue'
+                if stored_queue == 'DAILY_QUEUE'
+                else 'Eligible prospect deferred from today\'s queue'
+            )
+            priority = (
+                'P1' if score >= 75
+                else 'P2' if score >= 65
+                else 'P3'
+            )
+
         return {
             **p,
             'prospect_id': p['id'],
             'business_name': p.get('name'),
             'route': route,
-            'priority': (
-                'P1' if score >= 75
-                else 'P2' if score >= 65
-                else 'P3'
-            ),
+            'priority': priority,
             'route_reason': reason,
+            'queue_status': stored_queue,
         }
 
+    # Only validated queue states are surfaced here.
+    # Legacy/test rows such as CALL_FIRST remain in Postgres but do not
+    # participate in the current validated queue.
+    validated = [
+        p for p in prospects
+        if str(p.get('queue') or '').upper()
+        in {'DAILY_QUEUE', 'DEFERRED', 'RESEARCH', 'INELIGIBLE'}
+    ]
+
     daily_queue = [
-        item(p, 'CALL_FIRST', 'Qualified lead')
-        for p in prospects
-        if p.get('grade') == 'B / Qualified'
-        and p.get('sales_status') != 'FOLLOW_UP'
+        item(p) for p in validated
+        if str(p.get('queue') or '').upper() == 'DAILY_QUEUE'
     ]
 
     deferred = [
-        item(p, 'FOLLOW_UP', 'Follow-up required')
-        for p in prospects
-        if p.get('grade') == 'B / Qualified'
-        and p.get('sales_status') == 'FOLLOW_UP'
+        item(p) for p in validated
+        if str(p.get('queue') or '').upper() == 'DEFERRED'
     ]
 
     research = [
-        item(p, 'RESEARCH', 'Needs review')
-        for p in prospects
-        if p.get('grade') == 'C / Review'
+        item(p) for p in validated
+        if str(p.get('queue') or '').upper() == 'RESEARCH'
     ]
 
     ineligible = [
-        item(p, 'INELIGIBLE', 'Rejected or on hold')
-        for p in prospects
-        if p.get('grade') == 'Reject/Hold'
+        item(p) for p in validated
+        if str(p.get('queue') or '').upper() == 'INELIGIBLE'
     ]
+
+    daily_queue.sort(
+        key=lambda x: (
+            {'P1': 0, 'P2': 1, 'P3': 2}.get(x.get('priority'), 3),
+            -float(x.get('score') or 0),
+            str(x.get('business_name') or '').casefold(),
+        )
+    )
 
     return {
         'campaign_id': campaign,
+        'queue_limit': 50,
         'daily_queue': daily_queue,
         'deferred': deferred,
         'research': research,
         'ineligible': ineligible,
         'summary': {
-            'total_candidates': len(prospects),
+            'total_candidates': len(validated),
             'daily_queue_count': len(daily_queue),
             'deferred_count': len(deferred),
             'research_count': len(research),
@@ -248,6 +280,7 @@ def queue(campaign='orlando_beauty'):
             'source': 'postgres'
         },
     }
+
 @app.get('/api/prospects')
 def prospects(campaign='orlando_beauty'): return list_prospects(campaign)
 class SalesActivity(BaseModel):
