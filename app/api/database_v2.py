@@ -2,7 +2,7 @@ from __future__ import annotations
 import os, json
 from contextlib import contextmanager
 from pathlib import Path
-from sqlalchemy import create_engine, select, update, func, text
+from sqlalchemy import create_engine, select, update, func, text, delete
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base, Campaign, Prospect, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting
 
@@ -139,6 +139,104 @@ def update_campaign(slug,data):
         for k,v in data.items():
             if k in Campaign.__table__.columns.keys() and k!='id':setattr(c,k,v)
         s.flush(); return _dict(c)
+def delete_campaign(slug):
+    with session_scope() as s:
+        campaign = s.execute(
+            select(Campaign).where(Campaign.slug == slug)
+        ).scalar_one_or_none()
+
+        if not campaign:
+            return None
+
+        campaign_count = s.execute(
+            select(func.count()).select_from(Campaign)
+        ).scalar_one()
+
+        if campaign_count <= 1:
+            raise ValueError('At least one campaign is required')
+
+        campaign_id = campaign.id
+
+        prospect_ids = list(
+            s.execute(
+                select(Prospect.id).where(
+                    Prospect.campaign_id == campaign_id
+                )
+            ).scalars()
+        )
+
+        run_ids = list(
+            s.execute(
+                select(Run.id).where(
+                    Run.campaign_id == campaign_id
+                )
+            ).scalars()
+        )
+
+        # Remove records owned through prospects.
+        if prospect_ids:
+            s.execute(
+                delete(EmailActivity).where(
+                    EmailActivity.prospect_id.in_(prospect_ids)
+                )
+            )
+
+            s.execute(
+                delete(CalendarEvent).where(
+                    CalendarEvent.prospect_id.in_(prospect_ids)
+                )
+            )
+
+            s.execute(
+                delete(ExternalAction).where(
+                    ExternalAction.prospect_id.in_(prospect_ids)
+                )
+            )
+
+            s.execute(
+                delete(CrmState).where(
+                    CrmState.prospect_id.in_(prospect_ids)
+                )
+            )
+
+            s.execute(
+                delete(QueueItem).where(
+                    QueueItem.prospect_id.in_(prospect_ids)
+                )
+            )
+
+        # Remove queue rows associated with campaign runs.
+        if run_ids:
+            s.execute(
+                delete(QueueItem).where(
+                    QueueItem.run_id.in_(run_ids)
+                )
+            )
+
+        prospects_deleted = len(prospect_ids)
+        runs_deleted = len(run_ids)
+
+        s.execute(
+            delete(Prospect).where(
+                Prospect.campaign_id == campaign_id
+            )
+        )
+
+        s.execute(
+            delete(Run).where(
+                Run.campaign_id == campaign_id
+            )
+        )
+
+        s.delete(campaign)
+
+        return {
+            'deleted': True,
+            'campaign_id': slug,
+            'prospects_deleted': prospects_deleted,
+            'runs_deleted': runs_deleted,
+        }
+
 def get_settings(prefix=None):
     with SessionLocal() as s:
         q=select(AppSetting)
@@ -163,5 +261,5 @@ def clear_google_connection():
     with session_scope() as s:
         x=s.get(GoogleConnection,1)
         if x:s.delete(x)
-__all__=['engine','SessionLocal','session_scope','Base','init_db','seed_campaigns','persist_upload','update_sales_activity','activity_metrics','ensure_queue_item','persist_crm_state','get_crm_state','log_external_action','connect','list_campaigns','list_prospects','get_campaign','create_campaign','update_campaign','get_settings','save_settings','save_google_connection','load_google_connection','clear_google_connection']
+__all__=['engine','SessionLocal','session_scope','Base','init_db','seed_campaigns','persist_upload','update_sales_activity','activity_metrics','ensure_queue_item','persist_crm_state','get_crm_state','log_external_action','connect','list_campaigns','list_prospects','get_campaign','create_campaign','update_campaign','delete_campaign','get_settings','save_settings','save_google_connection','load_google_connection','clear_google_connection']
 

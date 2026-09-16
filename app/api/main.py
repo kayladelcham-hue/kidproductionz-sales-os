@@ -38,7 +38,7 @@ from . import hubspot_sync_service
 from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
-from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, get_settings, save_settings
+from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
@@ -115,7 +115,7 @@ try:
 except Exception:
     # An empty/unavailable local DB must not prevent read-only API startup.
     pass
-app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http://127.0.0.1:5173'], allow_methods=['GET','POST','OPTIONS'], allow_headers=['*'])
+app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http://127.0.0.1:5173'], allow_methods=['GET','POST','PATCH','DELETE','OPTIONS'], allow_headers=['*'])
 def read_json(path):
     try:return json.loads(path.read_text(encoding='utf-8'))
     except FileNotFoundError: raise HTTPException(404,'Artifact not found')
@@ -178,6 +178,18 @@ def campaign_patch(campaign_id:str, req: CampaignPatch):
     except (ValueError,TypeError): raise HTTPException(422,'Invalid campaign settings')
     if not row: raise HTTPException(404,'Campaign not found')
     return _campaign_payload(row)
+@app.delete('/api/campaigns/{campaign_id}')
+def campaign_delete(campaign_id:str):
+    try:
+        result = delete_campaign(campaign_id)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+
+    if not result:
+        raise HTTPException(404, 'Campaign not found')
+
+    return result
+
 @app.get('/api/runs')
 def runs():
     return [read_json(p) for p in sorted((ARTIFACT_ROOT/'v5_runs').glob('*/run_v*.json')) if _re.fullmatch(r'run_v\d+\.json',p.name)]
