@@ -4085,3 +4085,658 @@ small{
 
 }
 
+
+
+/* === KP AGENDA + QUEUE CHEVRON V7 === */
+
+
+/* =========================================================
+   TODAY'S SCHEDULE ? SALES AGENDA
+   ========================================================= */
+
+.schedule{
+  position:relative;
+  overflow:hidden;
+
+  padding:20px !important;
+
+  border-color:
+    rgba(255,255,255,.09) !important;
+
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgba(137,215,255,.085),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.052),
+      rgba(255,255,255,.014)
+    ) !important;
+}
+
+
+/* subtle CALENDAR atmosphere */
+
+.schedule::before{
+  content:"AGENDA";
+
+  position:absolute;
+  right:-7px;
+  top:9px;
+
+  color:rgba(255,255,255,.026);
+
+  font-size:3.8rem;
+  line-height:.8;
+  font-weight:900;
+  letter-spacing:-.08em;
+
+  pointer-events:none;
+}
+
+
+/* HEADER */
+
+.schedule .section-head{
+  position:relative;
+  z-index:2;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  gap:12px;
+
+  margin-bottom:15px;
+}
+
+.schedule .section-head h3{
+  margin:0;
+
+  color:#f1f4f7;
+
+  font-size:1.05rem;
+  font-weight:800;
+  letter-spacing:-.035em;
+}
+
+
+/* refresh becomes tiny app control */
+
+.schedule .section-head button{
+  min-width:auto;
+  min-height:34px;
+
+  padding:0 11px;
+
+  border:
+    1px solid rgba(255,255,255,.09);
+
+  border-radius:9px;
+
+  color:#919ba7;
+
+  background:
+    rgba(255,255,255,.03);
+
+  font-size:.65rem;
+  font-weight:750;
+
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.schedule .section-head button:hover{
+  color:#dff4ff;
+
+  border-color:
+    rgba(137,215,255,.20);
+
+  background:
+    rgba(137,215,255,.055);
+
+  transform:translateY(-1px);
+}
+
+
+/* =========================================================
+   EVENT = MINI AGENDA CARD
+   ========================================================= */
+
+.schedule .event{
+  position:relative;
+
+  display:grid;
+
+  grid-template-columns:
+    minmax(86px,110px)
+    minmax(0,1fr)
+    auto;
+
+  grid-template-areas:
+    "time title action"
+    "time location action";
+
+  align-items:center;
+
+  gap:3px 15px;
+
+  min-height:68px;
+
+  margin:0;
+  padding:13px 12px;
+
+  border-top:
+    1px solid rgba(255,255,255,.052);
+
+  background:transparent;
+
+  transition:
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+
+/* little timeline rail */
+
+.schedule .event::before{
+  content:"";
+
+  position:absolute;
+  left:1px;
+  top:18px;
+  bottom:18px;
+
+  width:2px;
+
+  border-radius:999px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(137,215,255,.78),
+      rgba(137,215,255,.14)
+    );
+
+  opacity:.6;
+}
+
+
+.schedule .event:hover{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(137,215,255,.05),
+      transparent
+    );
+
+  transform:translateX(2px);
+
+  box-shadow:
+    inset 2px 0 0
+    rgba(137,215,255,.20);
+}
+
+
+/* START DATE/TIME */
+
+.schedule .event > b{
+  grid-area:time;
+
+  align-self:center;
+
+  color:#8ddcff;
+
+  font-size:.67rem;
+  line-height:1.35;
+
+  font-weight:800;
+  letter-spacing:.015em;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+/* EVENT TITLE */
+
+.schedule .event > span{
+  grid-area:title;
+
+  overflow:hidden;
+
+  color:#edf1f5;
+
+  font-size:.84rem;
+  font-weight:730;
+  letter-spacing:-.018em;
+
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+
+/* LOCATION */
+
+.schedule .event > small{
+  grid-area:location;
+
+  overflow:hidden;
+
+  color:#697481;
+
+  font-size:.65rem;
+
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+
+/* GOOGLE CALENDAR ACTION */
+
+.schedule .event > a{
+  grid-area:action;
+
+  align-self:center;
+
+  padding:7px 9px;
+
+  border:
+    1px solid rgba(255,255,255,.075);
+
+  border-radius:8px;
+
+  color:#82909e;
+
+  background:
+    rgba(255,255,255,.025);
+
+  text-decoration:none;
+
+  font-size:.58rem;
+  font-weight:750;
+
+  white-space:nowrap;
+
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.schedule .event > a:hover{
+  color:#dff6ff;
+
+  border-color:
+    rgba(137,215,255,.19);
+
+  background:
+    rgba(137,215,255,.055);
+}
+
+
+/* empty state */
+
+.schedule > .muted{
+  min-height:90px;
+
+  display:flex;
+  align-items:center;
+
+  margin:0;
+
+  color:#697481;
+
+  font-size:.77rem;
+}
+
+
+/* skeletons fit new UI */
+
+.schedule .skeleton-list{
+  display:grid;
+  gap:8px;
+}
+
+.schedule .skeleton{
+  min-height:58px;
+
+  border-radius:10px;
+
+  background:
+    linear-gradient(
+      100deg,
+      rgba(255,255,255,.025) 30%,
+      rgba(255,255,255,.065) 50%,
+      rgba(255,255,255,.025) 70%
+    );
+
+  background-size:200% 100%;
+
+  animation:
+    kp-agenda-shimmer 1.5s
+    linear infinite;
+}
+
+
+/* =========================================================
+   DAILY QUEUE ? REAL CHEVRON
+   ========================================================= */
+
+.section-toggle{
+  position:relative;
+
+  display:grid !important;
+
+  grid-template-columns:
+    18px
+    minmax(0,1fr)
+    auto;
+
+  align-items:center;
+
+  gap:9px;
+
+  text-align:left;
+}
+
+
+/* Draw the arrow instead of using a text character */
+
+.queue-chevron{
+  position:relative;
+
+  display:block;
+
+  width:8px;
+  height:8px;
+
+  border-right:
+    1.5px solid #768291;
+
+  border-bottom:
+    1.5px solid #768291;
+
+  transform:
+    rotate(-45deg);
+
+  transform-origin:center;
+
+  transition:
+    transform 220ms
+      cubic-bezier(.16,1,.3,1),
+    border-color 160ms ease;
+}
+
+
+/* expanded = arrow rotates downward */
+
+.section-toggle.expanded .queue-chevron{
+  transform:
+    rotate(45deg)
+    translate(-1px,-1px);
+
+  border-color:#a8e1ff;
+}
+
+
+/* arrow lights on hover */
+
+.section-toggle:hover .queue-chevron{
+  border-color:#d8f2ff;
+}
+
+
+/* queue title */
+
+.queue-section-title{
+  overflow:hidden;
+
+  color:#dce2e8;
+
+  font-size:.82rem;
+  font-weight:750;
+
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+
+/* count becomes a pill */
+
+.queue-section-count{
+  min-width:max-content;
+
+  padding:5px 8px;
+
+  border:
+    1px solid rgba(255,255,255,.065);
+
+  border-radius:999px;
+
+  color:#697481;
+
+  background:
+    rgba(255,255,255,.025);
+
+  font-size:.60rem;
+  font-weight:750;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+/* =========================================================
+   MOBILE CALENDAR ? HORIZONTAL AGENDA
+   ========================================================= */
+
+@media(max-width:760px){
+
+  .schedule{
+    padding:
+      15px
+      14px !important;
+  }
+
+
+  .schedule::before{
+    top:8px;
+    right:-2px;
+
+    font-size:3.15rem;
+  }
+
+
+  .schedule .section-head{
+    margin-bottom:10px;
+  }
+
+
+  /*
+    Calendar becomes a horizontally scrollable
+    mobile agenda instead of a giant vertical stack.
+  */
+
+  .schedule{
+    display:block;
+  }
+
+  .schedule .event{
+    display:grid;
+
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "time"
+      "title"
+      "location"
+      "action";
+
+    align-content:start;
+
+    width:190px;
+    min-width:190px;
+    min-height:146px;
+
+    margin-right:8px;
+    padding:13px;
+
+    border:
+      1px solid rgba(255,255,255,.07);
+
+    border-radius:14px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.045),
+        rgba(255,255,255,.014)
+      );
+
+    vertical-align:top;
+  }
+
+
+  /* use inline-block to create swipeable agenda cards */
+
+  .schedule .event{
+    display:inline-grid;
+  }
+
+
+  .schedule .event::before{
+    left:12px;
+    right:12px;
+    top:0;
+    bottom:auto;
+
+    width:auto;
+    height:1px;
+
+    background:
+      linear-gradient(
+        90deg,
+        rgba(137,215,255,.65),
+        transparent
+      );
+  }
+
+
+  .schedule .event > b{
+    margin-bottom:11px;
+
+    font-size:.65rem;
+  }
+
+
+  .schedule .event > span{
+    margin-bottom:5px;
+
+    font-size:.86rem;
+
+    white-space:normal;
+
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+  }
+
+
+  .schedule .event > small{
+    margin-bottom:12px;
+
+    white-space:normal;
+  }
+
+
+  .schedule .event > a{
+    align-self:end;
+
+    width:max-content;
+
+    margin-top:auto;
+  }
+
+
+  /*
+    Browser allows horizontal swipe across the
+    inline event cards.
+  */
+
+  .schedule{
+    white-space:nowrap;
+    overflow-x:auto;
+
+    scrollbar-width:none;
+  }
+
+  .schedule::-webkit-scrollbar{
+    display:none;
+  }
+
+
+  /* heading should stay full-width */
+  .schedule .section-head,
+  .schedule .skeleton-list,
+  .schedule > .muted{
+    position:sticky;
+    left:0;
+
+    white-space:normal;
+  }
+
+
+  /* queue rows feel more app-like */
+
+  .section-toggle{
+    min-height:51px !important;
+
+    grid-template-columns:
+      16px
+      minmax(0,1fr)
+      auto;
+
+    padding:
+      0
+      13px !important;
+  }
+
+
+  .queue-chevron{
+    width:7px;
+    height:7px;
+  }
+
+
+  .queue-section-title{
+    font-size:.76rem;
+  }
+
+
+  .queue-section-count{
+    padding:4px 7px;
+
+    font-size:.56rem;
+  }
+
+}
+
+
+@keyframes kp-agenda-shimmer{
+
+  from{
+    background-position:200% 0;
+  }
+
+  to{
+    background-position:-200% 0;
+  }
+
+}
+
