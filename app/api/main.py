@@ -39,7 +39,7 @@ from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings
+from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
@@ -811,6 +811,144 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
         raise HTTPException(
             status_code=422,
             detail=f'Qualification preview failed safely: {type(exc).__name__}: {_safe_error_message(str(exc))}',
+        )
+
+
+
+
+class OutscraperGenerateRequest(OutscraperQualifyRequest):
+    confirmed: bool = False
+
+
+@app.post('/api/leads/outscraper/generate')
+def outscraper_generate(req: OutscraperGenerateRequest):
+    """
+    Generate live leads, qualify them, deduplicate against the
+    selected campaign, and persist non-ineligible prospects.
+    """
+
+    if not req.confirmed:
+        raise HTTPException(
+            409,
+            "Lead generation write requires confirmed=true",
+        )
+
+    if req.limit < 1 or req.limit > 100:
+        raise HTTPException(
+            422,
+            "Lead generation limit must be between 1 and 100",
+        )
+
+    try:
+        # Reuse the already-tested qualification pipeline.
+        preview = outscraper_qualify_preview(req)
+
+        candidates = (
+            preview.get("daily_queue", [])
+            + preview.get("deferred", [])
+            + preview.get("research", [])
+            + preview.get("ineligible", [])
+        )
+
+        persisted = persist_generated_prospects(
+            req.campaign,
+            candidates,
+        )
+
+        source = preview.get("source_summary", {})
+        qualification = preview.get(
+            "qualification_summary",
+            {},
+        )
+
+        return {
+            "status": "GENERATED_AND_SAVED",
+            "campaign": req.campaign,
+            "query": req.query,
+            "location": {
+                "city": req.city,
+                "state": req.state,
+            },
+            "summary": {
+                "generated": source.get(
+                    "received",
+                    0,
+                ),
+                "source_unique": source.get(
+                    "unique",
+                    0,
+                ),
+                "source_duplicates_removed": source.get(
+                    "duplicates_removed",
+                    0,
+                ),
+                "qualified": (
+                    qualification.get(
+                        "daily_queue_count",
+                        0,
+                    )
+                    + qualification.get(
+                        "deferred_count",
+                        0,
+                    )
+                ),
+                "research": qualification.get(
+                    "research_count",
+                    0,
+                ),
+                "rejected": qualification.get(
+                    "ineligible_count",
+                    0,
+                ),
+                "saved": persisted.get(
+                    "inserted_count",
+                    0,
+                ),
+                "database_duplicates": persisted.get(
+                    "duplicate_count",
+                    0,
+                ),
+            },
+            "saved": persisted.get(
+                "inserted",
+                [],
+            ),
+            "duplicates": persisted.get(
+                "duplicates",
+                [],
+            ),
+            "rejected": persisted.get(
+                "rejected",
+                [],
+            ),
+            "safety": {
+                "database_write": True,
+                "hubspot_write": False,
+                "outbound": False,
+                "max_generation_limit": 100,
+            },
+        }
+
+    except HTTPException:
+        raise
+
+    except KeyError as exc:
+        raise HTTPException(
+            404,
+            _safe_error_message(str(exc)),
+        )
+
+    except Exception as exc:
+        logger.exception(
+            "Outscraper lead generation failed safely"
+        )
+
+        raise HTTPException(
+            422,
+            "Lead generation failed safely: "
+            + type(exc).__name__
+            + ": "
+            + _safe_error_message(str(exc)),
         )
 
 

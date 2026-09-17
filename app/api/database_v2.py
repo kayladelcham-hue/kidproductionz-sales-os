@@ -261,5 +261,226 @@ def clear_google_connection():
     with session_scope() as s:
         x=s.get(GoogleConnection,1)
         if x:s.delete(x)
+
+def persist_generated_prospects(campaign, items):
+    """Persist newly generated prospects safely with conservative deduplication."""
+
+    def norm(value):
+        return " ".join(str(value or "").strip().casefold().split())
+
+    def norm_phone(value):
+        return "".join(ch for ch in str(value or "") if ch.isdigit())
+
+    def norm_web(value):
+        value = str(value or "").strip().casefold()
+        for prefix in ("https://", "http://"):
+            if value.startswith(prefix):
+                value = value[len(prefix):]
+        if value.startswith("www."):
+            value = value[4:]
+        value = value.split("#", 1)[0].split("?", 1)[0]
+        return value.rstrip("/")
+
+    def keys_for(row):
+        keys = set()
+
+        phone = norm_phone(row.get("phone"))
+        website = norm_web(row.get("website"))
+        external = norm(
+            row.get("place_id")
+            or row.get("google_id")
+            or row.get("external_key")
+        )
+
+        name = norm(row.get("name") or row.get("business"))
+        address = norm(row.get("address"))
+        city = norm(row.get("city"))
+        state = norm(row.get("state"))
+
+        if external:
+            keys.add(("external", external))
+
+        if len(phone) >= 7:
+            keys.add(("phone", phone))
+
+        if website:
+            keys.add(("website", website))
+
+        if name and address:
+            keys.add(("name_address", name, address, city, state))
+
+        # Conservative fallback only when stronger identifiers are absent.
+        if (
+            name
+            and city
+            and state
+            and not phone
+            and not website
+            and not address
+        ):
+            keys.add(("name_city_state", name, city, state))
+
+        return keys
+
+    with session_scope() as s:
+        campaign_row = s.execute(
+            select(Campaign).where(Campaign.slug == campaign)
+        ).scalar_one_or_none()
+
+        if not campaign_row:
+            raise KeyError(f"Campaign not found: {campaign}")
+
+        existing = list(
+            s.execute(
+                select(Prospect).where(
+                    Prospect.campaign_id == campaign_row.id
+                )
+            ).scalars()
+        )
+
+        seen = set()
+
+        for prospect in existing:
+            row = _dict(prospect)
+
+            # Support external_key when the current schema contains it.
+            if hasattr(prospect, "external_key"):
+                row["external_key"] = getattr(
+                    prospect,
+                    "external_key",
+                    None,
+                )
+
+            seen.update(keys_for(row))
+
+        inserted = []
+        duplicates = []
+        rejected = []
+
+        prospect_columns = set(
+            Prospect.__table__.columns.keys()
+        )
+
+        for item in items:
+
+            queue_status = str(
+                item.get("queue_status") or ""
+            ).upper()
+
+            # Rejected prospects are reported but do not pollute the CRM.
+            if queue_status == "INELIGIBLE":
+                rejected.append({
+                    "name": item.get("name") or item.get("business"),
+                    "reason": item.get("rejection_reasons") or [],
+                })
+                continue
+
+            item_keys = keys_for(item)
+
+            if item_keys and any(k in seen for k in item_keys):
+                duplicates.append(
+                    item.get("name")
+                    or item.get("business")
+                    or "Unknown"
+                )
+                continue
+
+            name = str(
+                item.get("name")
+                or item.get("business")
+                or ""
+            ).strip()
+
+            if not name:
+                rejected.append({
+                    "name": "",
+                    "reason": ["MISSING_BUSINESS_NAME"],
+                })
+                continue
+
+            review_reasons = item.get("review_reasons") or []
+
+            if isinstance(review_reasons, list):
+                research = "; ".join(
+                    str(x) for x in review_reasons
+                )
+            else:
+                research = str(review_reasons or "")
+
+            data = {
+                "campaign_id": campaign_row.id,
+                "name": name,
+                "email": item.get("email") or None,
+                "phone": item.get("phone") or None,
+                "website": item.get("website") or None,
+                "social": item.get("social") or None,
+                "category": item.get("category") or None,
+                "normalized_category": item.get(
+                    "normalized_category"
+                ) or None,
+                "address": item.get("address") or None,
+                "city": item.get("city") or None,
+                "state": item.get("state") or None,
+                "zip": item.get("zip") or None,
+                "status": item.get("status") or None,
+                "score": item.get("score"),
+                "raw_score": item.get("raw_score"),
+                "grade": item.get("grade") or None,
+                "queue": queue_status or "RESEARCH",
+                "ownership": item.get("ownership") or None,
+                "research": research or None,
+                "sales_status": "NOT_CONTACTED",
+            }
+
+            # Save Outscraper's stable Google identifier when schema supports it.
+            if "external_key" in prospect_columns:
+                external = (
+                    item.get("place_id")
+                    or item.get("google_id")
+                )
+
+                if external:
+                    data["external_key"] = (
+                        "OUTSCRAPER:" + str(external)
+                    )
+
+            data = {
+                k: v
+                for k, v in data.items()
+                if k in prospect_columns
+            }
+
+            prospect = Prospect(**data)
+
+            s.add(prospect)
+            s.flush()
+
+            inserted.append({
+                "id": prospect.id,
+                "name": prospect.name,
+                "queue": getattr(
+                    prospect,
+                    "queue",
+                    queue_status,
+                ),
+                "score": getattr(
+                    prospect,
+                    "score",
+                    None,
+                ),
+            })
+
+            seen.update(item_keys)
+
+        return {
+            "campaign": campaign,
+            "inserted_count": len(inserted),
+            "duplicate_count": len(duplicates),
+            "rejected_count": len(rejected),
+            "inserted": inserted,
+            "duplicates": duplicates,
+            "rejected": rejected,
+        }
+
 __all__=['engine','SessionLocal','session_scope','Base','init_db','seed_campaigns','persist_upload','update_sales_activity','activity_metrics','ensure_queue_item','persist_crm_state','get_crm_state','log_external_action','connect','list_campaigns','list_prospects','get_campaign','create_campaign','update_campaign','delete_campaign','get_settings','save_settings','save_google_connection','load_google_connection','clear_google_connection']
 
