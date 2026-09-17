@@ -7332,3 +7332,684 @@ html[data-kp-theme] textarea:focus{
 }
 
 
+/* === KP OVERVIEW EXPERIENCE MOTION V1 === */
+
+/*
+  OVERVIEW EXPERIENCE
+  Keeps existing layout intact.
+  Motion inherits the selected KP interface theme.
+*/
+
+
+/* -----------------------------------------
+   HERO ATMOSPHERE
+----------------------------------------- */
+
+.hero{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+
+.hero::before{
+  content:"";
+  position:absolute;
+  z-index:-2;
+
+  width:520px;
+  height:520px;
+
+  top:-330px;
+  right:-180px;
+
+  border-radius:50%;
+
+  background:
+    radial-gradient(
+      circle,
+      var(--kp-theme-glow, rgba(91,164,255,.22)) 0%,
+      var(--kp-theme-soft, rgba(71,118,255,.12)) 30%,
+      transparent 68%
+    );
+
+  filter:blur(8px);
+
+  animation:
+    kpHeroGlowFloat 12s ease-in-out infinite alternate;
+
+  pointer-events:none;
+}
+
+.hero::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+
+  width:240px;
+  height:1px;
+
+  top:28px;
+  left:0;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      var(--kp-theme-a, #8fd3ff),
+      transparent
+    );
+
+  opacity:.35;
+
+  animation:
+    kpHeroScan 7s ease-in-out infinite;
+
+  pointer-events:none;
+}
+
+
+/* -----------------------------------------
+   HERO STAGGERED ENTRANCE
+----------------------------------------- */
+
+.hero > div:first-child > *{
+  opacity:0;
+  transform:translateY(15px);
+
+  animation:
+    kpOverviewRise .56s cubic-bezier(.22,.8,.25,1) forwards;
+}
+
+.hero > div:first-child > *:nth-child(1){
+  animation-delay:.05s;
+}
+
+.hero > div:first-child > *:nth-child(2){
+  animation-delay:.12s;
+}
+
+.hero > div:first-child > *:nth-child(3){
+  animation-delay:.19s;
+}
+
+.hero > div:first-child > *:nth-child(4){
+  animation-delay:.26s;
+}
+
+.hero > div:first-child > *:nth-child(5){
+  animation-delay:.33s;
+}
+
+.hero > div:first-child > *:nth-child(6){
+  animation-delay:.40s;
+}
+
+.hero .date{
+  opacity:0;
+  transform:translateX(12px);
+
+  animation:
+    kpOverviewDate .65s cubic-bezier(.22,.8,.25,1)
+    .25s forwards;
+}
+
+
+/* -----------------------------------------
+   HERO HEADLINE
+----------------------------------------- */
+
+.hero h2{
+  position:relative;
+
+  background:
+    linear-gradient(
+      100deg,
+      #f7f9fc 0%,
+      #f7f9fc 30%,
+      var(--kp-theme-a, #8fd3ff) 48%,
+      #ffffff 56%,
+      #f7f9fc 72%
+    );
+
+  background-size:220% 100%;
+  background-position:100% 0;
+
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+
+  animation:
+    kpOverviewRise .56s cubic-bezier(.22,.8,.25,1) .12s forwards,
+    kpHeadlineSheen 8s ease-in-out 1.4s infinite;
+}
+
+
+/* -----------------------------------------
+   DAILY QUOTE
+----------------------------------------- */
+
+.daily-quote{
+  position:relative;
+}
+
+.daily-quote::before{
+  content:"";
+  display:inline-block;
+
+  width:20px;
+  height:2px;
+
+  margin-right:8px;
+  vertical-align:middle;
+
+  border-radius:999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--kp-theme-a, #8fd3ff),
+      var(--kp-theme-b, #4776ff)
+    );
+
+  box-shadow:
+    0 0 12px var(--kp-theme-glow, rgba(91,164,255,.22));
+}
+
+
+/* -----------------------------------------
+   CTA EXPERIENCE
+----------------------------------------- */
+
+.overview-actions .continue-selling{
+  position:relative;
+  overflow:hidden;
+
+  transform:translateZ(0);
+
+  transition:
+    transform .22s ease,
+    box-shadow .22s ease,
+    border-color .22s ease;
+}
+
+.overview-actions .continue-selling::after{
+  content:"";
+
+  position:absolute;
+  top:-60%;
+  bottom:-60%;
+  left:-45%;
+
+  width:34%;
+
+  transform:rotate(18deg);
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,.32),
+      transparent
+    );
+
+  animation:
+    kpButtonShimmer 5.5s ease-in-out 1.5s infinite;
+
+  pointer-events:none;
+}
+
+.overview-actions .continue-selling:hover{
+  transform:translateY(-2px);
+
+  box-shadow:
+    0 14px 34px var(--kp-theme-glow, rgba(91,164,255,.22));
+}
+
+.overview-actions .continue-selling:active{
+  transform:translateY(0) scale(.985);
+}
+
+
+/* Generate Leads gets a subtle ambient pulse */
+
+.overview-lead-generator{
+  animation:
+    kpLeadButtonPulse 4.8s ease-in-out infinite;
+}
+
+
+/* -----------------------------------------
+   METRIC CARD CASCADE
+----------------------------------------- */
+
+.metrics .card{
+  opacity:0;
+  transform:
+    translateY(16px)
+    scale(.985);
+
+  animation:
+    kpMetricEntrance .58s cubic-bezier(.22,.8,.25,1) forwards;
+
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background-color .2s ease;
+}
+
+.metrics .card:nth-child(1){
+  animation-delay:.30s;
+}
+
+.metrics .card:nth-child(2){
+  animation-delay:.36s;
+}
+
+.metrics .card:nth-child(3){
+  animation-delay:.42s;
+}
+
+.metrics .card:nth-child(4){
+  animation-delay:.48s;
+}
+
+.metrics .card:nth-child(5){
+  animation-delay:.54s;
+}
+
+.metrics .card:nth-child(6){
+  animation-delay:.60s;
+}
+
+.metrics .card:hover{
+  transform:translateY(-3px);
+
+  border-color:
+    color-mix(
+      in srgb,
+      var(--kp-theme-a, #8fd3ff) 28%,
+      rgba(255,255,255,.08)
+    );
+
+  box-shadow:
+    0 12px 30px rgba(0,0,0,.18),
+    0 0 22px var(--kp-theme-soft, rgba(71,118,255,.12));
+}
+
+
+/* Metric number emphasis */
+
+.metrics .metric strong{
+  display:inline-block;
+
+  animation:
+    kpMetricNumber .7s cubic-bezier(.22,.8,.25,1) both;
+
+  text-shadow:
+    0 0 20px var(--kp-theme-soft, rgba(71,118,255,.12));
+}
+
+
+/* -----------------------------------------
+   MAIN OVERVIEW CARDS
+----------------------------------------- */
+
+.grid > .card{
+  opacity:0;
+
+  transform:translateY(16px);
+
+  animation:
+    kpOverviewCardEntrance .58s cubic-bezier(.22,.8,.25,1)
+    .62s forwards;
+
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease;
+}
+
+.grid > .card:nth-child(2){
+  animation-delay:.70s;
+}
+
+.grid > .card:nth-child(3){
+  animation-delay:.78s;
+}
+
+.grid > .card:hover{
+  transform:translateY(-2px);
+
+  border-color:
+    color-mix(
+      in srgb,
+      var(--kp-theme-a, #8fd3ff) 20%,
+      rgba(255,255,255,.07)
+    );
+
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.14),
+    0 0 18px var(--kp-theme-soft, rgba(71,118,255,.10));
+}
+
+
+/* -----------------------------------------
+   QUEUE ENTRANCE
+----------------------------------------- */
+
+.overview-queue-desktop tbody tr{
+  opacity:0;
+  transform:translateX(-8px);
+
+  animation:
+    kpQueueRow .4s ease forwards;
+}
+
+.overview-queue-desktop tbody tr:nth-child(1){
+  animation-delay:.72s;
+}
+
+.overview-queue-desktop tbody tr:nth-child(2){
+  animation-delay:.77s;
+}
+
+.overview-queue-desktop tbody tr:nth-child(3){
+  animation-delay:.82s;
+}
+
+.overview-queue-desktop tbody tr:nth-child(4){
+  animation-delay:.87s;
+}
+
+.overview-queue-desktop tbody tr:nth-child(5){
+  animation-delay:.92s;
+}
+
+
+.overview-queue-mobile > *{
+  opacity:0;
+  transform:translateY(8px);
+
+  animation:
+    kpQueueMobileCard .4s ease forwards;
+}
+
+.overview-queue-mobile > *:nth-child(1){
+  animation-delay:.70s;
+}
+
+.overview-queue-mobile > *:nth-child(2){
+  animation-delay:.78s;
+}
+
+.overview-queue-mobile > *:nth-child(3){
+  animation-delay:.86s;
+}
+
+
+/* -----------------------------------------
+   EYEBROW ENERGY
+----------------------------------------- */
+
+.hero .eyebrow{
+  letter-spacing:.15em;
+
+  text-shadow:
+    0 0 14px var(--kp-theme-glow, rgba(91,164,255,.22));
+}
+
+
+/* -----------------------------------------
+   ANIMATION KEYFRAMES
+----------------------------------------- */
+
+@keyframes kpOverviewRise{
+  from{
+    opacity:0;
+    transform:translateY(15px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+
+@keyframes kpOverviewDate{
+  from{
+    opacity:0;
+    transform:translateX(12px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateX(0);
+  }
+}
+
+
+@keyframes kpHeroGlowFloat{
+  0%{
+    transform:
+      translate3d(-20px,-10px,0)
+      scale(.92);
+
+    opacity:.62;
+  }
+
+  50%{
+    transform:
+      translate3d(10px,18px,0)
+      scale(1.08);
+
+    opacity:.9;
+  }
+
+  100%{
+    transform:
+      translate3d(-8px,8px,0)
+      scale(1);
+
+    opacity:.72;
+  }
+}
+
+
+@keyframes kpHeroScan{
+  0%,
+  100%{
+    transform:translateX(-40%);
+    opacity:.12;
+  }
+
+  50%{
+    transform:translateX(220%);
+    opacity:.48;
+  }
+}
+
+
+@keyframes kpHeadlineSheen{
+  0%,
+  72%,
+  100%{
+    background-position:100% 0;
+  }
+
+  82%{
+    background-position:0 0;
+  }
+}
+
+
+@keyframes kpButtonShimmer{
+  0%,
+  65%{
+    left:-45%;
+    opacity:0;
+  }
+
+  72%{
+    opacity:1;
+  }
+
+  87%{
+    left:125%;
+    opacity:0;
+  }
+
+  100%{
+    left:125%;
+    opacity:0;
+  }
+}
+
+
+@keyframes kpLeadButtonPulse{
+  0%,
+  100%{
+    box-shadow:
+      0 8px 22px transparent;
+  }
+
+  50%{
+    box-shadow:
+      0 10px 28px var(--kp-theme-soft, rgba(71,118,255,.14));
+  }
+}
+
+
+@keyframes kpMetricEntrance{
+  from{
+    opacity:0;
+
+    transform:
+      translateY(16px)
+      scale(.985);
+  }
+
+  to{
+    opacity:1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+@keyframes kpMetricNumber{
+  from{
+    opacity:.25;
+    transform:translateY(5px) scale(.94);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+}
+
+
+@keyframes kpOverviewCardEntrance{
+  from{
+    opacity:0;
+    transform:translateY(16px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+
+@keyframes kpQueueRow{
+  from{
+    opacity:0;
+    transform:translateX(-8px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateX(0);
+  }
+}
+
+
+@keyframes kpQueueMobileCard{
+  from{
+    opacity:0;
+    transform:translateY(8px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+
+/* -----------------------------------------
+   MOBILE TUNING
+----------------------------------------- */
+
+@media(max-width:700px){
+
+  .hero::before{
+    width:380px;
+    height:380px;
+
+    top:-245px;
+    right:-165px;
+  }
+
+  .hero::after{
+    width:150px;
+  }
+
+  .metrics .card:hover,
+  .grid > .card:hover{
+    transform:none;
+  }
+
+}
+
+
+/* -----------------------------------------
+   ACCESSIBILITY
+----------------------------------------- */
+
+@media(prefers-reduced-motion:reduce){
+
+  .hero::before,
+  .hero::after,
+  .hero > div:first-child > *,
+  .hero .date,
+  .hero h2,
+  .overview-actions .continue-selling,
+  .overview-actions .continue-selling::after,
+  .overview-lead-generator,
+  .metrics .card,
+  .metrics .metric strong,
+  .grid > .card,
+  .overview-queue-desktop tbody tr,
+  .overview-queue-mobile > *{
+    animation:none !important;
+  }
+
+  .hero > div:first-child > *,
+  .hero .date,
+  .metrics .card,
+  .grid > .card,
+  .overview-queue-desktop tbody tr,
+  .overview-queue-mobile > *{
+    opacity:1 !important;
+    transform:none !important;
+  }
+
+}
+
+
