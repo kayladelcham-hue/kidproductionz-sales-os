@@ -7084,3 +7084,14 @@ small{
     width:100%;
   }
 }
+
+
+/* === KP OVERVIEW GENERATE LEADS TEXT FIX === */
+
+.overview-lead-generator{
+  color:#fff !important;
+}
+
+.overview-lead-generator:hover{
+  color:#fff !important;
+}
