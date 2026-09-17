@@ -10617,3 +10617,76 @@ html[data-kp-theme] textarea:focus{
 
 }
 
+
+
+/* === KP PRODUCT CLEANUP PASS === */
+
+.runs-empty{
+  text-align:left;
+  padding:28px;
+}
+
+.runs-empty h2{
+  margin:8px 0 6px;
+}
+
+@media(max-width:700px){
+
+  /*
+    Keep actual page content above the floating bottom nav.
+  */
+
+  .shell > main{
+    padding-bottom:
+      calc(122px + env(safe-area-inset-bottom)) !important;
+
+    scroll-padding-bottom:
+      calc(122px + env(safe-area-inset-bottom));
+  }
+
+  .grid,
+  .queue-sections,
+  .prospects,
+  .prospects-v2,
+  .campaign-grid,
+  .up-next,
+  .kp-lead-generator{
+    padding-bottom:
+      calc(122px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /*
+    Queue filter controls read more like actual filters.
+  */
+
+  .filter select{
+    min-width:max-content;
+
+    padding-left:13px;
+    padding-right:34px;
+
+    color:rgba(255,255,255,.88) !important;
+
+    background-color:
+      rgba(255,255,255,.045) !important;
+
+    border:
+      1px solid rgba(255,255,255,.09) !important;
+
+    border-radius:14px !important;
+
+    font-weight:700;
+  }
+
+  .filter select option{
+    background:#11161b;
+    color:#fff;
+  }
+
+  .runs-empty{
+    margin:14px;
+    border-radius:22px;
+  }
+
+}
+
