@@ -10161,3 +10161,96 @@ html[data-kp-theme] textarea:focus{
 /* Hide legacy schedule Today badge */
 .schedule::before,.schedule::after,.agenda-card::before,.agenda-card::after{content:none!important;display:none!important;}
 
+
+/* === KP FINAL CONTROL POLISH === */
+
+@media(max-width:700px){
+
+  /* Unified X / arrow / utility controls */
+  .mobile-menu-close,
+  .mobile-menu-btn,
+  .overview-queue-carousel-head button,
+  .metric-carousel-controls button,
+  .section-toggle,
+  .agenda-head button{
+    background:rgba(255,255,255,.045)!important;
+    color:#fff!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    box-shadow:none!important;
+    border-radius:14px!important;
+    font-family:inherit!important;
+    font-weight:800!important;
+  }
+
+  .mobile-menu-close,
+  .mobile-menu-btn{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    font-size:20px!important;
+    line-height:1!important;
+  }
+
+  .mobile-menu-close:active,
+  .mobile-menu-btn:active,
+  .overview-queue-carousel-head button:active,
+  .metric-carousel-controls button:active,
+  .section-toggle:active,
+  .agenda-head button:active{
+    background:var(--kp-theme-soft,rgba(71,118,255,.16))!important;
+    border-color:color-mix(
+      in srgb,
+      var(--kp-theme-a,#8fd3ff) 35%,
+      rgba(255,255,255,.10)
+    )!important;
+  }
+
+  /* Campaign selector */
+  header{
+    display:grid!important;
+    grid-template-columns:44px 1fr!important;
+    gap:12px!important;
+    align-items:center!important;
+  }
+
+  header select{
+    grid-column:1 / -1!important;
+    width:100%!important;
+    max-width:none!important;
+    min-height:52px!important;
+    padding:0 46px 0 16px!important;
+
+    background:rgba(255,255,255,.045)!important;
+    color:#fff!important;
+
+    border:1px solid rgba(255,255,255,.10)!important;
+    border-radius:16px!important;
+
+    font-size:15px!important;
+    font-weight:750!important;
+
+    -webkit-appearance:none!important;
+    appearance:none!important;
+
+    background-image:
+      linear-gradient(45deg,transparent 50%,rgba(255,255,255,.8) 50%),
+      linear-gradient(135deg,rgba(255,255,255,.8) 50%,transparent 50%)!important;
+
+    background-position:
+      calc(100% - 20px) 22px,
+      calc(100% - 14px) 22px!important;
+
+    background-size:6px 6px,6px 6px!important;
+    background-repeat:no-repeat!important;
+  }
+
+  header select option{
+    background:#11161b!important;
+    color:#fff!important;
+  }
+
+}
