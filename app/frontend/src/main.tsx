@@ -586,27 +586,77 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
 function App(){const [page,setPage]=useState('Overview');const [mobileMenuOpen,setMobileMenuOpen]=useState(false);const [campaign,setCampaign]=useState('orlando_beauty');const [campaigns,setCampaigns]=useState<any[]>([]);const loadCampaigns=()=>api.campaigns().then((x:any)=>{const rows=Array.isArray(x)?x:(x.campaigns||[]);setCampaigns(rows);if(rows.length&&!rows.some(c=>c.campaign_id===campaign))setCampaign(rows[0].campaign_id)}).catch(()=>setCampaigns([]));useEffect(()=>{loadCampaigns()},[]);return <div className="shell"><aside><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{nav.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{n}</button>)}</nav><div className="safe"><span/>System Ready</div></aside><main><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}>â˜°</button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{page}</h1></div><select value={campaign} onChange={e=>setCampaign(e.target.value)}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{page==='Overview'?<Overview campaign={campaign} onNavigate={setPage}/>:page==='Daily Queue'?<QueuePage campaign={campaign}/>:page==='Up Next'?<UpNext campaign={campaign}/>:page==='Lead Generator'?<LeadGenerator campaign={campaign} onNavigate={setPage}/>:page==='Prospects'?<Prospects campaign={campaign}/>:page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:page==='Runs'?<Runs/>:<Settings campaign={campaign}/>}{mobileMenuOpen&&<><div className="mobile-menu-backdrop" onClick={()=>setMobileMenuOpen(false)}/><aside className="mobile-menu-drawer"><button aria-label="Close navigation" className="mobile-menu-close" onClick={()=>setMobileMenuOpen(false)}>Ã—</button>{["Overview","Up Next","Lead Generator","Daily Queue","Prospects","Campaigns","Runs","Settings"].map(n=><button key={n} onClick={()=>{setPage(n);setMobileMenuOpen(false)}}>{n}</button>)}</aside></>} </main><div className="bottom-nav">{[["Home","Overview"],["Up Next","Up Next"],["Queue","Daily Queue"],["Prospects","Prospects"],["More","Settings"]].map(([l,v])=><button key={l} onClick={()=>setPage(v)}>{l}</button>)}</div></div>}
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
 function QueueTable({items,onSelect}:{items:QueueItem[];onSelect?:(item:QueueItem)=>void}){return <div className="table-wrap"><table><thead><tr><th>Position</th><th>Business</th><th>Score</th><th>Grade</th><th>Route</th><th>Priority</th><th>Reason</th></tr></thead><tbody>{(items||[]).map((x:any,i:number)=><tr key={x.prospect_id||x.lead_id||x.fixture_id||i} onClick={()=>onSelect?.(x)}><td>{x.queue_position??i+1}</td><td><b>{x.business_name||x.name||x.business||'-'}</b></td><td><ScoreBadge value={x.score}/></td><td><GradeBadge value={x.grade}/></td><td><RouteBadge value={x.route}/></td><td><PriorityBadge value={x.priority}/></td><td>{x.route_reason||'-'}</td></tr>)}</tbody></table></div>}
-function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=>void}){const {data,error}=useQueue(campaign);const [m,setM]=useState<any>(null);const [me,setMe]=useState(false);const [calendar,setCalendar]=useState<any>(null);const [calendarLoading,setCalendarLoading]=useState(true);const load=()=>{setMe(false);api.metrics(campaign).then(setM).catch(()=>setMe(true))};useEffect(()=>{load()},[campaign]);useEffect(()=>{api.calendarUpcoming().then(setCalendar).catch(()=>setCalendar({status:'UNAVAILABLE',events:[]})).finally(()=>setCalendarLoading(false))},[]);const metrics=[['In Queue',m?.queue],['Attempted / Contacted',m?.attempted_or_contacted],['Replies',m?.replies],['Consultations',m?.consultations_set],['Booked',m?.booked],['Booked Revenue',m?`$${Number(m.booked_revenue||0).toFixed(2)}`:undefined]];return <><div className="hero"><div><p className="eyebrow">TODAY'S SALES VIEW</p><h2>Turn today's pipeline into conversations.</h2><p className="muted">Your priority prospects, activity, and opportunities in one place.</p><p className="daily-quote">{dailyQuote()}</p><div className="overview-actions"><button className="continue-selling" onClick={()=>onNavigate?.("Up Next")}>Continue Selling</button><button className="continue-selling overview-lead-generator" onClick={()=>onNavigate?.("Lead Generator")}>Generate Leads</button></div><small className="eyebrow">TODAY'S FOCUS</small></div><div className="date">READ-ONLY<br/><b>DRY RUN</b></div></div>{error&&<div className="notice">API unavailable. Start the local API to load campaign artifacts.</div>}<div className="metrics">{metrics.map(([l,v])=><div className="card metric" key={l}><span>{l}</span><strong>{me?'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â':v??'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦'}</strong><small>{me?'Metrics unavailable':'Live sales activity'}</small></div>)}</div><div className="grid"><div className="card"><h3>Today's Queue</h3>{data?<>
+function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=>void}){const [mobileQueueIndex,setMobileQueueIndex]=useState(0);const {data,error}=useQueue(campaign);const [m,setM]=useState<any>(null);const [me,setMe]=useState(false);const [calendar,setCalendar]=useState<any>(null);const [calendarLoading,setCalendarLoading]=useState(true);const load=()=>{setMe(false);api.metrics(campaign).then(setM).catch(()=>setMe(true))};useEffect(()=>{setMobileQueueIndex(0)},[campaign]);useEffect(()=>{load()},[campaign]);useEffect(()=>{api.calendarUpcoming().then(setCalendar).catch(()=>setCalendar({status:'UNAVAILABLE',events:[]})).finally(()=>setCalendarLoading(false))},[]);const metrics=[['In Queue',m?.queue],['Attempted / Contacted',m?.attempted_or_contacted],['Replies',m?.replies],['Consultations',m?.consultations_set],['Booked',m?.booked],['Booked Revenue',m?`$${Number(m.booked_revenue||0).toFixed(2)}`:undefined]];return <><div className="hero"><div><p className="eyebrow">TODAY'S SALES VIEW</p><h2>Turn today's pipeline into conversations.</h2><p className="muted">Your priority prospects, activity, and opportunities in one place.</p><p className="daily-quote">{dailyQuote()}</p><div className="overview-actions"><button className="continue-selling" onClick={()=>onNavigate?.("Up Next")}>Continue Selling</button><button className="continue-selling overview-lead-generator" onClick={()=>onNavigate?.("Lead Generator")}>Generate Leads</button></div><small className="eyebrow">TODAY'S FOCUS</small></div><div className="date">READ-ONLY<br/><b>DRY RUN</b></div></div>{error&&<div className="notice">API unavailable. Start the local API to load campaign artifacts.</div>}<div className="metrics">{metrics.map(([l,v])=><div className="card metric" key={l}><span>{l}</span><strong>{me?'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â':v??'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦'}</strong><small>{me?'Metrics unavailable':'Live sales activity'}</small></div>)}</div><div className="grid"><div className="card"><h3>Today's Queue</h3>{data?<>
 <div className="overview-queue-desktop">
   <QueueTable items={data.daily_queue}/>
 </div>
 <div className="overview-queue-mobile">
-  {data.daily_queue.slice(0,3).map((x:any,i:number)=>
-    <div className="overview-queue-card" key={x.prospect_id||x.lead_id||i}>
-      <b>{x.business_name||x.name||x.business||'-'}</b>
-      <div className="badges">
-        <ScoreBadge value={x.score}/>
-        <GradeBadge value={x.grade}/>
-        <PriorityBadge value={x.priority}/>
-        <RouteBadge value={x.route}/>
+
+  {data.daily_queue.length>0&&(()=>{
+    const safeIndex=Math.min(
+      mobileQueueIndex,
+      Math.max(0,data.daily_queue.length-1)
+    );
+
+    const x:any=data.daily_queue[safeIndex];
+
+    return <>
+
+      <div className="overview-queue-carousel-head">
+        <button
+          aria-label="Previous prospect"
+          disabled={safeIndex===0}
+          onClick={()=>setMobileQueueIndex(i=>Math.max(0,i-1))}
+        >
+          ?
+        </button>
+
+        <span>
+          {safeIndex+1} / {data.daily_queue.length}
+        </span>
+
+        <button
+          aria-label="Next prospect"
+          disabled={safeIndex>=data.daily_queue.length-1}
+          onClick={()=>setMobileQueueIndex(i=>
+            Math.min(data.daily_queue.length-1,i+1)
+          )}
+        >
+          ?
+        </button>
       </div>
-      <small className="muted">{x.route_reason||''}</small>
-    </div>
-  )}
+
+      <div
+        className="overview-queue-card overview-queue-carousel-card"
+        key={x.prospect_id||x.lead_id||safeIndex}
+      >
+        <b>{x.business_name||x.name||x.business||'-'}</b>
+
+        <div className="badges">
+          <ScoreBadge value={x.score}/>
+          <GradeBadge value={x.grade}/>
+          <PriorityBadge value={x.priority}/>
+          <RouteBadge value={x.route}/>
+        </div>
+
+        <small className="muted">
+          {x.route_reason||''}
+        </small>
+      </div>
+
+    </>
+  })()}
+
   <div className="actions">
-    <button onClick={()=>onNavigate?.('Up Next')}>Continue Selling</button>
-    <button onClick={()=>onNavigate?.('Daily Queue')}>View Full Queue</button>
+    <button onClick={()=>onNavigate?.('Up Next')}>
+      Continue Selling
+    </button>
+
+    <button onClick={()=>onNavigate?.('Daily Queue')}>
+      View Full Queue
+    </button>
   </div>
+
 </div>
 </>:<div className="empty small">Loading queueÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦</div>}</div><div><div className="card schedule"><div className="section-head"><h3>Today's Schedule</h3><button onClick={()=>{setCalendarLoading(true);api.calendarUpcoming().then(setCalendar).catch(()=>setCalendar({status:"UNAVAILABLE",events:[]})).finally(()=>setCalendarLoading(false))}}>Refresh</button></div>{calendarLoading?<div className="skeleton-list"><div className="skeleton"/><div className="skeleton"/></div>:calendar?.status==='UNAVAILABLE'||calendar?.status==='DISABLED'?<p className="muted">Calendar unavailable.</p>:calendar?.events?.length?calendar.events.map((e:any)=><div className="event" key={e.id}><ScheduleWhen value={e.start}/><span>{e.title||'Untitled event'}</span>{e.location&&<small>{e.location}</small>}{e.html_link&&<a href={e.html_link} target="_blank" rel="noreferrer">Open in Google Calendar</a>}</div>):<p className="muted">Your calendar is clear.</p>}</div><div className="card"><h3>Campaign Safety</h3><div className="status"><i/> Configuration validated<br/><i/> Dry Run ON<br/><i/> Automatic Network Actions OFF<br/><i/> HubSpot Writes OFF<br/><i/> Automatic Outbound OFF</div></div></div></div></>}function QueuePage({campaign}:{campaign:string}){const {data,error}=useQueue(campaign);const [batch,setBatch]=useState<any>(null);const [selected,setSelected]=useState<number[]>([]);const [confirmBatch,setConfirmBatch]=useState(false);const [running,setRunning]=useState(false);const [search,setSearch]=useState('');const [grade,setGrade]=useState('All');const [priority,setPriority]=useState('All');const [route,setRoute]=useState('All');const [sales,setSales]=useState('All');const [hubspot,setHubspot]=useState('All');const [category,setCategory]=useState('All');const [city,setCity]=useState('All');const [queueProspect,setQueueProspect]=useState<QueueItem|null>(null);const [open,setOpen]=useState({DAILY_QUEUE:true,DEFERRED:false,RESEARCH:false,INELIGIBLE:false});if(error)return <div className="card empty"><h2>API unavailable</h2></div>;if(!data)return <div className="card empty">Loading queue...</div>;const all=[...data.daily_queue,...data.deferred,...data.research,...data.ineligible];const values=(k:string)=>Array.from(new Set(all.map((x:any)=>x[k]).filter(Boolean))).sort();const filtered=(items:any[])=>items.filter((x:any)=>{const n=(x.business_name||x.name||x.business||'').toLowerCase();const g=String(x.grade||'');return(!search||n.includes(search.toLowerCase()))&&(grade==='All'||(grade==='B'&&g.startsWith('B'))||(grade==='C'&&g.startsWith('C'))||(grade==='Reject'&&g==='Reject/Hold'))&&(priority==='All'||x.priority===priority)&&(route==='All'||x.route===route)&&(sales==='All'||(x.sales_status||'NOT_CONTACTED')===sales)&&(hubspot==='All'||(hubspot==='Synced'?x.hubspot_sync_status==='SYNCED':hubspot==='Failed'?x.hubspot_sync_status==='SYNC_FAILED':hubspot==='Review Required'?x.hubspot_sync_status==='REVIEW_REQUIRED':x.hubspot_sync_status!=='SYNCED'))&&(category==='All'||x.category===category)&&(city==='All'||x.city===city)});const sections=[['DAILY_QUEUE',data.daily_queue,'Daily Queue'],['DEFERRED',data.deferred,'Deferred'],['RESEARCH',data.research,'Research'],['INELIGIBLE',data.ineligible,'Ineligible']];const reset=()=>{setSearch('');setGrade('All');setPriority('All');setRoute('All');setSales('All');setHubspot('All');setCategory('All');setCity('All')};const previewBatch=()=>api.batchPreview(campaign).then(x=>{setBatch(x);setSelected(x.selected_default||[]);setConfirmBatch(false)});const executeBatch=()=>{setRunning(true);api.batchSync({campaign,prospect_ids:selected,confirmed:true}).then(x=>setBatch({...batch,results:x.results,summary:x.summary})).finally(()=>{setRunning(false);setConfirmBatch(false)})};return <div className="queue-sections"><div className="card"><div className="search-bar"><input type="search" placeholder="Search Daily Queue..." value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="filter"><select value={grade} onChange={e=>setGrade(e.target.value)}><option>All</option><option value="B">B / Qualified</option><option value="C">C / Review</option><option value="Reject">Reject/Hold</option></select><select value={priority} onChange={e=>setPriority(e.target.value)}><option>All</option>{['P1','P2','P3'].map(x=><option key={x}>{x}</option>)}</select><select value={route} onChange={e=>setRoute(e.target.value)}><option>All</option>{values('route').map(x=><option key={x}>{x}</option>)}</select><select value={sales} onChange={e=>setSales(e.target.value)}><option>All</option>{['NOT_CONTACTED','ATTEMPTED','CONTACTED','REPLIED','CONSULTATION_SET','FOLLOW_UP','NOT_INTERESTED','BOOKED'].map(x=><option key={x} value={x}>{prettyLabel(x)}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option>{values('category').map(x=><option key={x}>{x}</option>)}</select><select value={city} onChange={e=>setCity(e.target.value)}><option>All</option>{values('city').map(x=><option key={x}>{x}</option>)}</select><button onClick={reset}>Reset Filters</button><button onClick={previewBatch} disabled={!data.daily_queue.length}>Sync to HubSpot</button></div>{batch&&<div className="preview modal-enter"><h3>HubSpot Sync Preview</h3><p>Create New: {batch.counts?.CREATE_NEW||0} ÃƒÆ’Ã¢â‚¬Å¡ |  Update Existing: {batch.counts?.UPDATE_EXISTING||0} ÃƒÆ’Ã¢â‚¬Å¡ |  Review: {batch.counts?.REVIEW_REQUIRED||0}</p><button onClick={()=>setSelected(batch.selected_default||[])}>Select All Safe</button><button onClick={()=>setSelected([])}>Clear Selection</button>{!batch.results&&!confirmBatch&&<button disabled={!selected.length} onClick={()=>setConfirmBatch(true)}>Continue ({selected.length})</button>}{confirmBatch&&<div><p>Confirm HubSpot Batch Sync: {selected.length} selected.</p><button onClick={executeBatch} disabled={running}>{running?'Syncing...':'Confirm HubSpot Batch Sync'}</button><button onClick={()=>setConfirmBatch(false)}>Cancel</button></div>}{batch.results&&batch.results.map((r:any)=><p key={r.prospect_id}>{r.prospect_id}: {r.sync_status}</p>)}</div>}</div>{sections.map(([key,items,title])=>{const visible=filtered(items as any[]);const expanded=(open as any)[key as string];return <div className="card" key={key as string}><button className={`section-toggle ${expanded?'expanded':''}`} onClick={()=>setOpen(x=>({...x,[key as string]:!expanded}))}><span className="queue-chevron" aria-hidden="true"/><span className="queue-section-title">{title}</span><span className="queue-section-count">{visible.length} / {(items as any[]).length}</span></button>{expanded&&(visible.length?<QueueTable items={visible} onSelect={setQueueProspect}/>:<p className="muted">No prospects match the current filters.</p>)}</div>})}{queueProspect&&<ProspectDrawer item={queueProspect} onClose={()=>setQueueProspect(null)}/>}</div>}
 function Prospects({campaign}:{campaign:string}){const [data,setData]=useState<QueueItem[]|null>(null);const [error,setError]=useState(false);const [q,setQ]=useState('');const [selected,setSelected]=useState<QueueItem|null>(null);useEffect(()=>{setData(null);setError(false);api.prospects(campaign).then((response:any)=>setData(Array.isArray(response)?response:(Array.isArray(response?.prospects)?response.prospects:[]))).catch(()=>setError(true))},[campaign]);if(error)return <div className="card empty"><h2>API unavailable</h2></div>;const rows=(data||[]).filter((x:any)=>(x.business_name||x.name||x.business||'').toLowerCase().includes(q.toLowerCase()));return <div className="prospects"><div className="card"><div className="search-bar"><input type="search" placeholder="Search Prospects..." value={q} onChange={e=>setQ(e.target.value)}/></div>{data===null?<div className="empty">Loading prospects...</div>:<QueueTable items={rows} onSelect={setSelected}/>}</div>{selected&&<ProspectDrawer item={selected} onClose={()=>setSelected(null)}/>}</div>}
