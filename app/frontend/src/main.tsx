@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react'; import {createRoot} from 'react-dom/client'; import './styles.css'; import {api,campaignApi,uploadCampaign,authApi,Queue,QueueItem} from './api';
 import logo from './assets/kidproductionz-logo.png'; import {ScoreBadge,GradeBadge,RouteBadge,PriorityBadge,StatusBadge} from './badges'; import {dailyQuote} from './data/salesQuotes';
-const nav=['Overview','Campaigns','Prospects','Daily Queue','Runs','Settings','Up Next'];
+const nav=['Overview','Up Next','Lead Generator','Daily Queue','Prospects','Campaigns','Runs','Settings'];
 
 const prettyLabel=(value:any)=>{
   const raw=String(value??'').trim();
@@ -222,7 +222,202 @@ function UpNext({campaign}:{campaign:string}){
   </div>
 }
 
-function App(){const [page,setPage]=useState('Overview');const [mobileMenuOpen,setMobileMenuOpen]=useState(false);const [campaign,setCampaign]=useState('orlando_beauty');const [campaigns,setCampaigns]=useState<any[]>([]);const loadCampaigns=()=>api.campaigns().then((x:any)=>{const rows=Array.isArray(x)?x:(x.campaigns||[]);setCampaigns(rows);if(rows.length&&!rows.some(c=>c.campaign_id===campaign))setCampaign(rows[0].campaign_id)}).catch(()=>setCampaigns([]));useEffect(()=>{loadCampaigns()},[]);return <div className="shell"><aside><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{nav.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{n}</button>)}</nav><div className="safe"><span/>System Ready</div></aside><main><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}>☰</button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{page}</h1></div><select value={campaign} onChange={e=>setCampaign(e.target.value)}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{page==='Overview'?<Overview campaign={campaign} onNavigate={setPage}/>:page==='Daily Queue'?<QueuePage campaign={campaign}/>:page==='Up Next'?<UpNext campaign={campaign}/>:page==='Prospects'?<Prospects campaign={campaign}/>:page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:page==='Runs'?<Runs/>:<Settings campaign={campaign}/>}{mobileMenuOpen&&<><div className="mobile-menu-backdrop" onClick={()=>setMobileMenuOpen(false)}/><aside className="mobile-menu-drawer"><button aria-label="Close navigation" className="mobile-menu-close" onClick={()=>setMobileMenuOpen(false)}>×</button>{["Overview","Up Next","Daily Queue","Prospects","Campaigns","Runs","Settings"].map(n=><button key={n} onClick={()=>{setPage(n);setMobileMenuOpen(false)}}>{n}</button>)}</aside></>} </main><div className="bottom-nav">{[["Home","Overview"],["Up Next","Up Next"],["Queue","Daily Queue"],["Prospects","Prospects"],["More","Settings"]].map(([l,v])=><button key={l} onClick={()=>setPage(v)}>{l}</button>)}</div></div>}
+
+function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:string)=>void}){
+  const [businessType,setBusinessType]=useState('Hair salons');
+  const [city,setCity]=useState('');
+  const [state,setState]=useState('');
+  const [limit,setLimit]=useState(10);
+  const [loading,setLoading]=useState(false);
+  const [result,setResult]=useState<any>(null);
+  const [error,setError]=useState('');
+
+  const states=[
+    'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID',
+    'IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS',
+    'MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK',
+    'OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV',
+    'WI','WY','DC'
+  ];
+
+  const query=
+    businessType.trim()&&city.trim()&&state
+      ? `${businessType.trim()} in ${city.trim()}, ${state}`
+      : '';
+
+  const generate=async()=>{
+    if(!query||!campaign||loading)return;
+
+    setLoading(true);
+    setError('');
+    setResult(null);
+
+    try{
+      const data=await api.outscraperGenerate({
+        campaign,
+        query,
+        limit:Math.max(1,Math.min(100,Number(limit)||10)),
+        category:businessType.trim(),
+        city:city.trim(),
+        state,
+        confirmed:true
+      });
+
+      setResult(data);
+    }catch(e:any){
+      setError(e?.message||'Lead generation failed.');
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  const summary=result?.summary||{};
+
+  return <div className="kp-lead-generator">
+
+    <div className="hero">
+      <div>
+        <p className="eyebrow">PROSPECTING ENGINE</p>
+        <h2>Generate qualified leads.</h2>
+        <p className="muted">
+          Search any U.S. city, qualify prospects, remove duplicates,
+          and save new leads directly into Sales OS.
+        </p>
+      </div>
+    </div>
+
+    <div className="card kp-generator-card">
+
+      <div className="kp-generator-campaign">
+        <small className="eyebrow">ACTIVE CAMPAIGN</small>
+        <b>{prettyLabel(campaign)}</b>
+      </div>
+
+      <div className="kp-generator-fields">
+
+        <label>
+          <span>Business Type</span>
+          <input
+            value={businessType}
+            disabled={loading}
+            placeholder="Hair salons"
+            onChange={e=>setBusinessType(e.target.value)}
+          />
+        </label>
+
+        <label>
+          <span>City</span>
+          <input
+            value={city}
+            disabled={loading}
+            placeholder="Atlanta"
+            onChange={e=>setCity(e.target.value)}
+          />
+        </label>
+
+        <label>
+          <span>State</span>
+          <select
+            value={state}
+            disabled={loading}
+            onChange={e=>setState(e.target.value)}
+          >
+            <option value="">Select state</option>
+            {states.map(x=><option key={x} value={x}>{x}</option>)}
+          </select>
+        </label>
+
+        <label>
+          <span>Lead Count</span>
+          <input
+            type="number"
+            min="1"
+            max="100"
+            value={limit}
+            disabled={loading}
+            onChange={e=>setLimit(Number(e.target.value))}
+          />
+        </label>
+
+      </div>
+
+      <div className="kp-generator-search">
+        <small className="eyebrow">SEARCH</small>
+        <b>{query||'Complete the fields above'}</b>
+      </div>
+
+      <button
+        className="continue-selling kp-generate-button"
+        disabled={!query||loading}
+        onClick={generate}
+      >
+        {loading?'Generating & Qualifying...':'Generate & Qualify Leads'}
+      </button>
+
+      <p className="muted kp-generator-note">
+        No calls or emails are sent automatically. Maximum 100 leads per run.
+      </p>
+
+      {error&&<div className="notice">{error}</div>}
+
+    </div>
+
+    {result&&<div className="kp-generator-results">
+
+      <div className="card">
+        <p className="eyebrow">GENERATION COMPLETE</p>
+        <h3>{summary.saved??0} new leads added</h3>
+
+        <div className="kp-generator-stats">
+          <div><b>{summary.generated??0}</b><span>Found</span></div>
+          <div><b>{summary.database_duplicates??0}</b><span>Existing</span></div>
+          <div><b>{summary.saved??0}</b><span>New</span></div>
+          <div><b>{summary.qualified??0}</b><span>Qualified</span></div>
+          <div><b>{summary.research??0}</b><span>Research</span></div>
+          <div><b>{summary.rejected??0}</b><span>Rejected</span></div>
+        </div>
+      </div>
+
+      {Array.isArray(result.saved)&&result.saved.length>0&&
+        <div className="card">
+          <div className="kp-generator-result-head">
+            <div>
+              <p className="eyebrow">NEW PROSPECTS</p>
+              <h3>{result.saved.length} saved</h3>
+            </div>
+
+            <button onClick={()=>onNavigate?.('Prospects')}>
+              View Prospects
+            </button>
+          </div>
+
+          <div className="kp-generator-leads">
+            {result.saved.map((x:any)=>
+              <div className="kp-generator-lead" key={x.id}>
+                <div>
+                  <b>{x.name}</b>
+                  <small>{x.queue||'PROSPECT'}</small>
+                </div>
+                <strong>{x.score??'-'}</strong>
+              </div>
+            )}
+          </div>
+        </div>
+      }
+
+      {Array.isArray(result.duplicates)&&result.duplicates.length>0&&
+        <div className="card">
+          <p className="eyebrow">DUPLICATES SKIPPED</p>
+          <h3>{result.duplicates.length} already in Sales OS</h3>
+        </div>
+      }
+
+    </div>}
+
+  </div>
+}
+
+function App(){const [page,setPage]=useState('Overview');const [mobileMenuOpen,setMobileMenuOpen]=useState(false);const [campaign,setCampaign]=useState('orlando_beauty');const [campaigns,setCampaigns]=useState<any[]>([]);const loadCampaigns=()=>api.campaigns().then((x:any)=>{const rows=Array.isArray(x)?x:(x.campaigns||[]);setCampaigns(rows);if(rows.length&&!rows.some(c=>c.campaign_id===campaign))setCampaign(rows[0].campaign_id)}).catch(()=>setCampaigns([]));useEffect(()=>{loadCampaigns()},[]);return <div className="shell"><aside><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{nav.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{n}</button>)}</nav><div className="safe"><span/>System Ready</div></aside><main><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}>☰</button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{page}</h1></div><select value={campaign} onChange={e=>setCampaign(e.target.value)}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{page==='Overview'?<Overview campaign={campaign} onNavigate={setPage}/>:page==='Daily Queue'?<QueuePage campaign={campaign}/>:page==='Up Next'?<UpNext campaign={campaign}/>:page==='Lead Generator'?<LeadGenerator campaign={campaign} onNavigate={setPage}/>:page==='Prospects'?<Prospects campaign={campaign}/>:page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:page==='Runs'?<Runs/>:<Settings campaign={campaign}/>}{mobileMenuOpen&&<><div className="mobile-menu-backdrop" onClick={()=>setMobileMenuOpen(false)}/><aside className="mobile-menu-drawer"><button aria-label="Close navigation" className="mobile-menu-close" onClick={()=>setMobileMenuOpen(false)}>×</button>{["Overview","Up Next","Lead Generator","Daily Queue","Prospects","Campaigns","Runs","Settings"].map(n=><button key={n} onClick={()=>{setPage(n);setMobileMenuOpen(false)}}>{n}</button>)}</aside></>} </main><div className="bottom-nav">{[["Home","Overview"],["Up Next","Up Next"],["Queue","Daily Queue"],["Prospects","Prospects"],["More","Settings"]].map(([l,v])=><button key={l} onClick={()=>setPage(v)}>{l}</button>)}</div></div>}
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
 function QueueTable({items,onSelect}:{items:QueueItem[];onSelect?:(item:QueueItem)=>void}){return <div className="table-wrap"><table><thead><tr><th>Position</th><th>Business</th><th>Score</th><th>Grade</th><th>Route</th><th>Priority</th><th>Reason</th></tr></thead><tbody>{(items||[]).map((x:any,i:number)=><tr key={x.prospect_id||x.lead_id||x.fixture_id||i} onClick={()=>onSelect?.(x)}><td>{x.queue_position??i+1}</td><td><b>{x.business_name||x.name||x.business||'-'}</b></td><td><ScoreBadge value={x.score}/></td><td><GradeBadge value={x.grade}/></td><td><RouteBadge value={x.route}/></td><td><PriorityBadge value={x.priority}/></td><td>{x.route_reason||'-'}</td></tr>)}</tbody></table></div>}
 function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=>void}){const {data,error}=useQueue(campaign);const [m,setM]=useState<any>(null);const [me,setMe]=useState(false);const [calendar,setCalendar]=useState<any>(null);const [calendarLoading,setCalendarLoading]=useState(true);const load=()=>{setMe(false);api.metrics(campaign).then(setM).catch(()=>setMe(true))};useEffect(()=>{load()},[campaign]);useEffect(()=>{api.calendarUpcoming().then(setCalendar).catch(()=>setCalendar({status:'UNAVAILABLE',events:[]})).finally(()=>setCalendarLoading(false))},[]);const metrics=[['In Queue',m?.queue],['Attempted / Contacted',m?.attempted_or_contacted],['Replies',m?.replies],['Consultations',m?.consultations_set],['Booked',m?.booked],['Booked Revenue',m?`$${Number(m.booked_revenue||0).toFixed(2)}`:undefined]];return <><div className="hero"><div><p className="eyebrow">TODAY'S SALES VIEW</p><h2>Turn today's pipeline into conversations.</h2><p className="muted">Your priority prospects, activity, and opportunities in one place.</p><p className="daily-quote">{dailyQuote()}</p><button className="continue-selling" onClick={()=>onNavigate?.("Up Next")}>Continue Selling</button><small className="eyebrow">TODAY'S FOCUS</small></div><div className="date">READ-ONLY<br/><b>DRY RUN</b></div></div>{error&&<div className="notice">API unavailable. Start the local API to load campaign artifacts.</div>}<div className="metrics">{metrics.map(([l,v])=><div className="card metric" key={l}><span>{l}</span><strong>{me?'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â':v??'ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦'}</strong><small>{me?'Metrics unavailable':'Live sales activity'}</small></div>)}</div><div className="grid"><div className="card"><h3>Today's Queue</h3>{data?<>
