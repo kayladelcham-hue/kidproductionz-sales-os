@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import os
 import json
 import sys
@@ -452,7 +452,7 @@ def save_hubspot_settings(req:HubSpotSettings):
     path=Path(os.getenv('APP_ENV_FILE', str(ROOT/'.env'))); path.parent.mkdir(parents=True,exist_ok=True)
     if path.exists(): shutil.copy2(path, path.with_name(path.name+'.bak.'+datetime.now().strftime('%Y%m%d%H%M%S')))
     values={'HUBSPOT_PORTAL_ID':req.portal_id,'HUBSPOT_PIPELINE_ID':req.pipeline_id,'HUBSPOT_STAGE_ID':req.stage_id,'HUBSPOT_WRITE_ENABLED':str(req.write_enabled).lower()}
-    if req.access_token and 'â€¢' not in req.access_token: values['HUBSPOT_ACCESS_TOKEN']=req.access_token
+    if req.access_token and 'Ã¢â‚¬Â¢' not in req.access_token: values['HUBSPOT_ACCESS_TOKEN']=req.access_token
     lines=path.read_text(encoding='utf-8').splitlines() if path.exists() else []; keys={k for k in values}; out=[l for l in lines if not any(l.startswith(k+'=') for k in keys)]; out += [f'{k}={v}' for k,v in values.items()]; path.write_text('\n'.join(out)+'\n',encoding='utf-8'); os.environ.update(values)
     return hubspot_settings()
 
@@ -846,8 +846,6 @@ def outscraper_generate(req: OutscraperGenerateRequest):
         candidates = (
             preview.get("daily_queue", [])
             + preview.get("deferred", [])
-            + preview.get("research", [])
-            + preview.get("ineligible", [])
         )
 
         persisted = persist_generated_prospects(
@@ -963,4 +961,5 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
+
 

@@ -8013,3 +8013,47 @@ html[data-kp-theme] textarea:focus{
 }
 
 
+
+
+/* === KP LEAD CONFIRMATION === */
+
+.kp-final-confirm{
+  position:relative;
+  overflow:hidden;
+}
+
+.kp-final-confirm::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      var(--kp-theme-soft, rgba(71,118,255,.12)),
+      transparent 48%
+    );
+}
+
+.kp-confirm-actions{
+  position:relative;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.kp-confirm-actions button{
+  min-height:44px;
+}
+
+@media(max-width:600px){
+  .kp-confirm-actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .kp-confirm-actions button{
+    width:100%;
+  }
+}
+

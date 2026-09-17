@@ -229,6 +229,8 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
   const [state,setState]=useState('');
   const [limit,setLimit]=useState(10);
   const [loading,setLoading]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const [preview,setPreview]=useState<any>(null);
   const [result,setResult]=useState<any>(null);
   const [error,setError]=useState('');
 
@@ -250,7 +252,42 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
 
     setLoading(true);
     setError('');
+    setPreview(null);
     setResult(null);
+
+    try{
+      const data=await api.outscraperQualifyPreview({
+        campaign,
+        query,
+        limit:Math.max(1,Math.min(100,Number(limit)||10)),
+        category:businessType.trim(),
+        city:city.trim(),
+        state
+      });
+
+      setPreview(data);
+    }catch(e:any){
+      setError(e?.message||'Lead qualification failed.');
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  const qualified=[
+    ...((preview?.daily_queue||[]) as any[]),
+    ...((preview?.deferred||[]) as any[])
+  ];
+
+  const research=(preview?.research||[]) as any[];
+  const rejected=(preview?.ineligible||[]) as any[];
+
+  const previewSource=preview?.source_summary||{};
+
+  const confirmAdd=async()=>{
+    if(!query||!campaign||saving||!preview||qualified.length===0)return;
+
+    setSaving(true);
+    setError('');
 
     try{
       const data=await api.outscraperGenerate({
@@ -264,10 +301,11 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
       });
 
       setResult(data);
+      setPreview(null);
     }catch(e:any){
-      setError(e?.message||'Lead generation failed.');
+      setError(e?.message||'Could not add leads to Sales OS.');
     }finally{
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -299,7 +337,7 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
           <span>Business Type</span>
           <input
             value={businessType}
-            disabled={loading}
+            disabled={loading||saving||!!preview}
             placeholder="Hair salons"
             onChange={e=>setBusinessType(e.target.value)}
           />
@@ -309,7 +347,7 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
           <span>City</span>
           <input
             value={city}
-            disabled={loading}
+            disabled={loading||saving||!!preview}
             placeholder="Atlanta"
             onChange={e=>setCity(e.target.value)}
           />
@@ -319,7 +357,7 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
           <span>State</span>
           <select
             value={state}
-            disabled={loading}
+            disabled={loading||saving||!!preview}
             onChange={e=>setState(e.target.value)}
           >
             <option value="">Select state</option>
@@ -334,7 +372,7 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
             min="1"
             max="100"
             value={limit}
-            disabled={loading}
+            disabled={loading||saving||!!preview}
             onChange={e=>setLimit(Number(e.target.value))}
           />
         </label>
@@ -346,21 +384,131 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
         <b>{query||'Complete the fields above'}</b>
       </div>
 
-      <button
-        className="continue-selling kp-generate-button"
-        disabled={!query||loading}
-        onClick={generate}
-      >
-        {loading?'Generating & Qualifying...':'Generate & Qualify Leads'}
-      </button>
+      {!preview&&!result&&
+        <button
+          className="continue-selling kp-generate-button"
+          disabled={!query||loading}
+          onClick={generate}
+        >
+          {loading?'Generating & Qualifying...':'Generate & Qualify Leads'}
+        </button>
+      }
 
       <p className="muted kp-generator-note">
-        No calls or emails are sent automatically. Maximum 100 leads per run.
+        Nothing is added until you confirm. No calls or emails are sent automatically.
       </p>
 
       {error&&<div className="notice">{error}</div>}
 
     </div>
+
+    {preview&&<div className="kp-generator-results">
+
+      <div className="card">
+        <p className="eyebrow">QUALIFICATION PREVIEW</p>
+        <h3>Review before adding leads</h3>
+
+        <div className="kp-generator-stats">
+          <div>
+            <b>{previewSource.received??qualified.length+research.length+rejected.length}</b>
+            <span>Found</span>
+          </div>
+
+          <div>
+            <b>{qualified.length}</b>
+            <span>Qualified</span>
+          </div>
+
+          <div>
+            <b>{research.length}</b>
+            <span>Research</span>
+          </div>
+
+          <div>
+            <b>{rejected.length}</b>
+            <span>Rejected</span>
+          </div>
+        </div>
+      </div>
+
+      {qualified.length>0&&
+        <div className="card">
+          <p className="eyebrow">READY TO ADD</p>
+          <h3>{qualified.length} qualified lead{qualified.length===1?'':'s'}</h3>
+
+          <div className="kp-generator-leads">
+            {qualified.map((x:any,i:number)=>
+              <div
+                className="kp-generator-lead"
+                key={x.prospect_id||x.lead_id||x.place_id||x.google_id||`${x.name}-${i}`}
+              >
+                <div>
+                  <b>{x.business_name||x.name||x.business||'Prospect'}</b>
+                  <small>{x.queue_status||x.queue||'QUALIFIED'}</small>
+                </div>
+
+                <strong>{x.score??'-'}</strong>
+              </div>
+            )}
+          </div>
+        </div>
+      }
+
+      {research.length>0&&
+        <div className="card">
+          <p className="eyebrow">RESEARCH</p>
+          <h3>{research.length} need more information</h3>
+          <p className="muted">
+            These are shown for transparency and will not be added.
+          </p>
+        </div>
+      }
+
+      {rejected.length>0&&
+        <div className="card">
+          <p className="eyebrow">NOT QUALIFIED</p>
+          <h3>{rejected.length} rejected</h3>
+          <p className="muted">
+            These will not be added to Sales OS.
+          </p>
+        </div>
+      }
+
+      <div className="card kp-final-confirm">
+        <p className="eyebrow">FINAL CONFIRMATION</p>
+
+        <h3>
+          Add {qualified.length} qualified lead{qualified.length===1?'':'s'} to Sales OS?
+        </h3>
+
+        <p className="muted">
+          Existing prospects will still be removed by database deduplication before saving.
+        </p>
+
+        <div className="kp-confirm-actions">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={()=>setPreview(null)}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="continue-selling"
+            disabled={saving||qualified.length===0}
+            onClick={confirmAdd}
+          >
+            {saving
+              ? 'Adding Leads...'
+              : `Add ${qualified.length} Lead${qualified.length===1?'':'s'}`
+            }
+          </button>
+        </div>
+      </div>
+
+    </div>}
 
     {result&&<div className="kp-generator-results">
 
@@ -386,9 +534,18 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
               <h3>{result.saved.length} saved</h3>
             </div>
 
-            <button onClick={()=>onNavigate?.('Prospects')}>
-              View Prospects
-            </button>
+            <div className="kp-confirm-actions">
+              <button onClick={()=>{
+                setResult(null);
+                setPreview(null);
+              }}>
+                Generate More
+              </button>
+
+              <button onClick={()=>onNavigate?.('Prospects')}>
+                View Prospects
+              </button>
+            </div>
           </div>
 
           <div className="kp-generator-leads">
