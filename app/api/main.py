@@ -702,9 +702,9 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))
 
-        from v5q_qualification import evaluate
-        from v5u_routing_bridge import routing
-        from v5x_queue import build_queue
+        from scoring import evaluate
+        from outreach_routing import routing
+        from v5x_queue import build as build_queue
 
         result = search_google_maps(
             query=req.query,
