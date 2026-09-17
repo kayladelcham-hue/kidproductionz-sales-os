@@ -7055,3 +7055,32 @@ small{
   }
 }
 
+
+
+/* === KP OVERVIEW LEAD GENERATOR CTA === */
+
+.overview-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.overview-actions .continue-selling{
+  margin:0;
+}
+
+.overview-lead-generator{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.16);
+}
+
+@media(max-width:520px){
+  .overview-actions{
+    flex-direction:column;
+  }
+
+  .overview-actions .continue-selling{
+    width:100%;
+  }
+}
