@@ -705,6 +705,7 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
         from scoring import evaluate
         from outreach_routing import routing
         from v5x_queue import build as build_queue
+        from qualification_config import load as load_qualification_config
 
         result = search_google_maps(
             query=req.query,
@@ -712,9 +713,9 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
             category=req.category,
         )
 
-        cfg = json.loads(
-            (ROOT / 'config' / 'ideal_client_profile.json')
-            .read_text(encoding='utf-8')
+        cfg = load_qualification_config(
+            ROOT,
+            req.campaign,
         )
 
         rcfg = json.loads(

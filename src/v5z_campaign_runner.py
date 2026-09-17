@@ -5,6 +5,7 @@ from openpyxl import load_workbook
 from v5e_execution_adapter import build
 from v5f_input_adapter import validate
 from scoring import evaluate
+from qualification_config import load as load_qualification_config
 from outreach_routing import routing
 from v5x_queue import build as build_queue
 from v5y_queue_artifacts import write as write_queue
@@ -34,7 +35,7 @@ def run(root, campaign, source, sheet=None, dry_run=False):
     manifest=validate(root,campaign,source,sheet)
     if manifest.get('status')!='ACCEPTED_FOR_PROCESSING':
         return {'status':'REJECTED','campaign_id':campaign,'input':manifest,'safety':safety}
-    cfg=json.loads((root/'config/ideal_client_profile.json').read_text(encoding='utf-8'))
+    cfg=load_qualification_config(root,campaign)
     rcfg=json.loads((root/'config/outreach_config.json').read_text(encoding='utf-8'))
     records=[]
     for i,raw in enumerate(_rows(source,sheet)):
