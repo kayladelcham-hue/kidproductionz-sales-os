@@ -769,6 +769,8 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
             records
         )
 
+        candidates = queue_result.get('candidates', [])
+
         return {
             'status': 'QUALIFIED_PREVIEW_READY',
             'campaign': req.campaign,
@@ -780,10 +782,22 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
                 'duplicates_removed': result.get('duplicates_removed', 0),
             },
             'qualification_summary': queue_result.get('summary', {}),
-            'daily_queue': queue_result.get('daily_queue', []),
-            'deferred': queue_result.get('deferred', []),
-            'research': queue_result.get('research', []),
-            'ineligible': queue_result.get('ineligible', []),
+            'daily_queue': [
+                x for x in candidates
+                if x.get('queue_status') == 'DAILY_QUEUE'
+            ],
+            'deferred': [
+                x for x in candidates
+                if x.get('queue_status') == 'DEFERRED'
+            ],
+            'research': [
+                x for x in candidates
+                if x.get('queue_status') == 'RESEARCH'
+            ],
+            'ineligible': [
+                x for x in candidates
+                if x.get('queue_status') == 'INELIGIBLE'
+            ],
         }
 
     except Exception as exc:
