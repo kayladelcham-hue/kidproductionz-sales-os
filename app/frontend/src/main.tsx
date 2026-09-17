@@ -495,6 +495,7 @@ function InterfaceThemeSettings(){
     {id:'emerald',name:'Emerald',colors:['#79f2c0','#00a878']},
     {id:'crimson',name:'Crimson',colors:['#ff8b9a','#d51f45']},
     {id:'gold',name:'Gold',colors:['#ffe29a','#d89b22']},
+    {id:'rose',name:'Rose Gold',colors:['#ffd1dc','#c9798f']},
     {id:'ice',name:'Ice',colors:['#d9fbff','#65cfe8']}
   ];
 

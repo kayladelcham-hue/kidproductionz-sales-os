@@ -7141,6 +7141,15 @@ small{
 }
 
 /* Ice */
+
+/* Rose Gold */
+:root[data-kp-theme="rose"]{
+  --kp-theme-a:#ffd1dc;
+  --kp-theme-b:#c9798f;
+  --kp-theme-soft:rgba(201,121,143,.16);
+  --kp-theme-glow:rgba(255,177,198,.22);
+}
+
 :root[data-kp-theme="ice"]{
   --kp-theme-a:#d9fbff;
   --kp-theme-b:#65cfe8;
