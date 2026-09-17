@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import os, json
 from contextlib import contextmanager
 from pathlib import Path
@@ -327,8 +328,44 @@ def persist_generated_prospects(campaign, items):
             select(Campaign).where(Campaign.slug == campaign)
         ).scalar_one_or_none()
 
+        # A source-controlled campaign may exist before its database row.
+        # Create the DB record lazily from the trusted campaign config so
+        # generated prospects always receive a valid numeric campaign_id.
         if not campaign_row:
-            raise KeyError(f"Campaign not found: {campaign}")
+            config_path = (
+                Path(__file__).resolve().parents[2]
+                / "config"
+                / "campaigns"
+                / f"{campaign}.json"
+            )
+
+            if not config_path.exists():
+                raise KeyError(f"Campaign not found: {campaign}")
+
+            config = json.loads(
+                config_path.read_text(encoding="utf-8")
+            )
+
+            if config.get("campaign_id") != campaign:
+                raise ValueError(
+                    f"Campaign config mismatch: {campaign}"
+                )
+
+            campaign_row = Campaign(
+                slug=campaign,
+                name=config.get("name") or campaign,
+                market=json.dumps(config.get("market") or {}),
+                active=1,
+                config_ref=str(
+                    Path("config")
+                    / "campaigns"
+                    / f"{campaign}.json"
+                ),
+                status="ACTIVE",
+            )
+
+            s.add(campaign_row)
+            s.flush()
 
         existing = list(
             s.execute(
