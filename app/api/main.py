@@ -671,6 +671,130 @@ def outscraper_preview(req: OutscraperPreviewRequest):
         )
 
 
+
+
+class OutscraperQualifyRequest(BaseModel):
+    campaign: str
+    query: str
+    limit: int = 10
+    category: str = ''
+
+
+@app.post('/api/leads/outscraper/qualify-preview')
+def outscraper_qualify_preview(req: OutscraperQualifyRequest):
+    """
+    Fetch live Outscraper leads and run them through the
+    existing KidProductionz qualification and routing engine.
+
+    PREVIEW ONLY:
+    no Postgres prospect writes
+    no queue writes
+    no HubSpot writes
+    no outbound actions
+    """
+    try:
+        from .outscraper_service import search_google_maps
+
+        import json
+        import sys
+
+        src_dir = ROOT / 'src'
+        if str(src_dir) not in sys.path:
+            sys.path.insert(0, str(src_dir))
+
+        from v5q_qualification import evaluate
+        from v5u_routing_bridge import routing
+        from v5x_queue import build_queue
+
+        result = search_google_maps(
+            query=req.query,
+            limit=req.limit,
+            category=req.category,
+        )
+
+        cfg = json.loads(
+            (ROOT / 'config' / 'ideal_client_profile.json')
+            .read_text(encoding='utf-8')
+        )
+
+        rcfg = json.loads(
+            (ROOT / 'config' / 'outreach_config.json')
+            .read_text(encoding='utf-8')
+        )
+
+        records = []
+
+        for raw in result.get('leads', []):
+            rec = dict(raw)
+
+            rec.update({
+                'website': rec.get('website', ''),
+                'phone': rec.get('phone', ''),
+                'email': rec.get('email', ''),
+                'social': rec.get('instagram', rec.get('social', '')),
+                'domain': rec.get('website', ''),
+                'other_contact': '',
+                'status': '',
+                'permanently_closed': '',
+                'temporarily_closed': '',
+                'visual': '',
+                'visual_evidence': '',
+                'ownership': '',
+                'ownership_evidence': '',
+                'owner': '',
+            })
+
+            scored = evaluate(rec, cfg)
+
+            routed = dict(rec)
+            routed.update(scored)
+
+            route, reason, clean = routing(routed, rcfg)
+
+            final = dict(rec)
+            final.update(scored)
+            final.update({
+                'route': route,
+                'route_reason': reason,
+                'phone': clean.get('phone', rec.get('phone', '')),
+                'website': clean.get('website', rec.get('website', '')),
+                'social': clean.get('social', rec.get('social', '')),
+            })
+
+            records.append(final)
+
+        queue_result = build_queue(
+            ROOT,
+            req.campaign,
+            records
+        )
+
+        return {
+            'status': 'QUALIFIED_PREVIEW_READY',
+            'campaign': req.campaign,
+            'query': req.query,
+            'source_summary': {
+                'requested': result.get('requested_limit', 0),
+                'received': result.get('received_count', 0),
+                'unique': result.get('unique_count', 0),
+                'duplicates_removed': result.get('duplicates_removed', 0),
+            },
+            'qualification_summary': queue_result.get('summary', {}),
+            'daily_queue': queue_result.get('daily_queue', []),
+            'deferred': queue_result.get('deferred', []),
+            'research': queue_result.get('research', []),
+            'ineligible': queue_result.get('ineligible', []),
+        }
+
+    except Exception as exc:
+        logger.exception('Outscraper qualification preview failed')
+
+        raise HTTPException(
+            status_code=422,
+            detail=f'Qualification preview failed safely: {type(exc).__name__}: {_safe_error_message(str(exc))}',
+        )
+
+
 @app.get('/{path:path}')
 def spa_fallback(path:str):
     if path.startswith('api/'): raise HTTPException(404,'API route not found')
