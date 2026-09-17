@@ -69,4 +69,4 @@ outscraperPreview:(body:{query:string;limit:number;category?:string})=>post<any>
 export const campaignApi={preview:(body:any)=>post<any>('/api/campaigns/run-preview',body),run:(body:any)=>post<any>('/api/campaigns/run',body)};
 export async function uploadCampaign(file:File){const fd=new FormData();fd.append('file',file);const r=await fetch(`${BASE}/api/campaigns/upload`,{method:'POST',body:fd});if(!r.ok)throw new Error(`UPLOAD_${r.status}`);return r.json()}
 
-
+export const generateOutscraperLeads=(body:any)=>post<any>('/api/leads/outscraper/generate',body);
