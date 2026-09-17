@@ -23,9 +23,29 @@ def evaluate(lead, cfg):
     reject("permanently_closed", permanent, "PERMANENTLY_CLOSED")
     reject("temporarily_closed", temporary, "TEMPORARILY_CLOSED")
     matched = []
+
+    # Normalize full state names and abbreviations before service-area matching.
+    # Example: "Georgia" -> "GA", "Florida" -> "FL".
+    raw_state = str(lead.get("state") or "").strip()
+    state_aliases = {
+        key(alias): str(code).strip().upper()
+        for alias, code in cfg.get("state_aliases", {}).items()
+    }
+    normalized_state = state_aliases.get(
+        key(raw_state),
+        raw_state.upper(),
+    )
+
     for name, market in cfg["markets"].items():
-        if market["enabled"] and lead["state"] == market["state"] and key(lead["city"]) in {key(c) for c in market["cities"]}:
+        market_state = str(market.get("state") or "").strip().upper()
+
+        if (
+            market["enabled"]
+            and normalized_state == market_state
+            and key(lead["city"]) in {key(c) for c in market["cities"]}
+        ):
             matched.append(name)
+
     area_known = bool(lead["city"] and lead["state"])
     in_area = bool(matched)
     lead["market"] = "; ".join(matched)
