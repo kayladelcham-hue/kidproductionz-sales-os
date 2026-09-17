@@ -613,6 +613,64 @@ def sync_hubspot(prospect:ProspectInput, confirmed:bool|None=None):
         except Exception: result.setdefault('warnings',[]).append('Local CRM state persistence failed')
     return result
 
+
+
+# ============================================================
+# OUTSCRAPER LEAD GENERATION
+# ============================================================
+
+class OutscraperPreviewRequest(BaseModel):
+    query: str
+    limit: int = 10
+    category: str = ''
+
+
+@app.post('/api/leads/outscraper/preview')
+def outscraper_preview(req: OutscraperPreviewRequest):
+    """
+    Fetch and normalize Google Maps businesses from Outscraper.
+
+    SAFE PREVIEW:
+    - no prospect writes
+    - no queue writes
+    - no CRM writes
+    - no outbound actions
+    """
+    try:
+        from .outscraper_service import search_google_maps
+
+        result = search_google_maps(
+            query=req.query,
+            limit=req.limit,
+            category=req.category,
+        )
+
+        return {
+            'status': 'PREVIEW_READY',
+            **result,
+        }
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        )
+
+    except RuntimeError as exc:
+        message = str(exc)
+
+        if message == 'OUTSCRAPER_API_KEY_NOT_CONFIGURED':
+            raise HTTPException(
+                status_code=503,
+                detail='Outscraper API key is not configured',
+            )
+
+        raise HTTPException(
+            status_code=502,
+            detail=message,
+        )
+
+
 @app.get('/{path:path}')
 def spa_fallback(path:str):
     if path.startswith('api/'): raise HTTPException(404,'API route not found')
