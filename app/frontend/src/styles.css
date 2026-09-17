@@ -11024,3 +11024,49 @@ html[data-kp-theme] textarea:focus{
   }
 
 }
+
+/* === KP MOBILE WIDTH SAFETY FIX === */
+
+@media(max-width:700px){
+
+  .queue-sections,
+  .prospects,
+  .prospects-v2,
+  .campaign-grid,
+  .up-next,
+  .kp-lead-generator,
+  .grid{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    overflow-x:hidden!important;
+  }
+
+  .queue-sections > .card,
+  .runs-empty{
+    width:auto!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-sizing:border-box!important;
+  }
+
+  .runs-empty{
+    margin-top:14px!important;
+    margin-bottom:14px!important;
+  }
+
+  .card{
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+
+  .shell > main{
+    max-width:100vw!important;
+    min-width:0!important;
+    overflow-x:hidden!important;
+  }
+
+}
