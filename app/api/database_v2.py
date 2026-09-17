@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import json
 import os, json
 from contextlib import contextmanager
@@ -37,6 +37,12 @@ def update_sales_activity(prospect_id,status=None,notes=None,booked_value=None):
         if status is not None:p.sales_status=status
         if notes is not None:p.notes=notes
         if booked_value is not None:p.booked_value=booked_value
+        return _dict(p)
+def move_prospect_queue(prospect_id, queue):
+    with session_scope() as s:
+        p=s.get(Prospect,prospect_id)
+        if not p:return None
+        p.queue=queue
         return _dict(p)
 def activity_metrics(campaign=None):
     with SessionLocal() as s:
@@ -520,4 +526,5 @@ def persist_generated_prospects(campaign, items):
         }
 
 __all__=['engine','SessionLocal','session_scope','Base','init_db','seed_campaigns','persist_upload','update_sales_activity','activity_metrics','ensure_queue_item','persist_crm_state','get_crm_state','log_external_action','connect','list_campaigns','list_prospects','get_campaign','create_campaign','update_campaign','delete_campaign','get_settings','save_settings','save_google_connection','load_google_connection','clear_google_connection']
+
 

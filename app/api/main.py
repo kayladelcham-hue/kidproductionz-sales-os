@@ -300,6 +300,12 @@ class SalesActivity(BaseModel):
     status:str|None=None; notes:str|None=None; booked_value:float|None=None
 @app.get('/api/metrics')
 def metrics(campaign:str|None=None): return activity_metrics(campaign)
+@app.patch('/api/prospects/{prospect_id}/defer')
+def prospect_defer(prospect_id:int):
+    row=move_prospect_queue(prospect_id,'DEFERRED')
+    if not row: raise HTTPException(404,'Prospect not found')
+    return row
+
 @app.patch('/api/prospects/{prospect_id}/activity')
 def prospect_activity(prospect_id:int, activity:SalesActivity):
     try: return update_sales_activity(prospect_id, activity.status, activity.notes, activity.booked_value)
@@ -961,5 +967,6 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
+
 
 
