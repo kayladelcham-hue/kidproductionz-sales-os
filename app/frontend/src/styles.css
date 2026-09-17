@@ -10857,3 +10857,170 @@ html[data-kp-theme] textarea:focus{
   }
 
 }
+
+/* === KP DOCKED MOBILE NAV === */
+
+@media(max-width:700px){
+
+  /*
+    TRUE MOBILE APP SHELL
+    Row 1 = scrollable application
+    Row 2 = permanent navigation
+  */
+
+  html,
+  body,
+  #root{
+    width:100%;
+    height:100%;
+    min-height:100%;
+    overflow:hidden!important;
+  }
+
+  .shell{
+    width:100%;
+    height:100dvh!important;
+    min-height:100dvh!important;
+
+    display:grid!important;
+    grid-template-rows:minmax(0,1fr) auto!important;
+    grid-template-columns:1fr!important;
+
+    overflow:hidden!important;
+  }
+
+  .shell > aside{
+    display:none!important;
+  }
+
+  .shell > main{
+    grid-row:1!important;
+
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+
+    -webkit-overflow-scrolling:touch;
+
+    padding-bottom:20px!important;
+    scroll-padding-bottom:24px!important;
+  }
+
+
+  /*
+    NAV IS NOW PART OF THE LAYOUT.
+    IT DOES NOT FLOAT OVER CONTENT.
+  */
+
+  .bottom-nav{
+    grid-row:2!important;
+
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+
+    width:100%!important;
+    min-height:72px!important;
+
+    margin:0!important;
+
+    padding:
+      7px
+      10px
+      calc(7px + env(safe-area-inset-bottom))!important;
+
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:4px!important;
+
+    border-radius:0!important;
+
+    border:
+      0!important;
+
+    border-top:
+      1px solid rgba(255,255,255,.08)!important;
+
+    background:
+      rgba(15,18,23,.98)!important;
+
+    backdrop-filter:blur(24px)!important;
+    -webkit-backdrop-filter:blur(24px)!important;
+
+    box-shadow:
+      0 -12px 35px rgba(0,0,0,.24)!important;
+
+    z-index:80!important;
+  }
+
+  .bottom-nav button{
+    min-width:0!important;
+    min-height:54px!important;
+
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+
+    padding:4px!important;
+
+    background:transparent!important;
+    border:0!important;
+    border-radius:14px!important;
+
+    color:rgba(255,255,255,.66)!important;
+
+    font-family:inherit!important;
+    font-size:12px!important;
+    font-weight:750!important;
+
+    text-align:center!important;
+  }
+
+  .bottom-nav button:active{
+    color:#fff!important;
+
+    background:
+      var(--kp-theme-soft,rgba(71,118,255,.14))!important;
+  }
+
+
+  /*
+    REMOVE OLD COMPENSATION FOR FLOATING NAV.
+    WE DON'T NEED 120PX OF FAKE SPACE ANYMORE.
+  */
+
+  .grid,
+  .queue-sections,
+  .prospects,
+  .prospects-v2,
+  .campaign-grid,
+  .up-next,
+  .kp-lead-generator{
+    padding-bottom:24px!important;
+  }
+
+  .drawer{
+    bottom:
+      calc(
+        72px
+        + env(safe-area-inset-bottom)
+      )!important;
+
+    max-height:
+      calc(
+        100dvh
+        - 90px
+        - env(safe-area-inset-top)
+        - env(safe-area-inset-bottom)
+      )!important;
+  }
+
+  .kp-final-confirm{
+    bottom:12px!important;
+  }
+
+}
