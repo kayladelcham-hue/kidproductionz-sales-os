@@ -9430,3 +9430,200 @@ html[data-kp-theme] textarea:focus{
 }
 
 
+
+
+/* === KP MOBILE CAROUSEL FIX === */
+
+.metrics-mobile-carousel{
+  display:none;
+}
+
+@media(max-width:700px){
+
+  /* hide old overflowing metrics strip */
+  .metrics-desktop{
+    display:none !important;
+  }
+
+  .metrics-mobile-carousel{
+    display:block;
+
+    width:100%;
+
+    padding:
+      18px
+      18px
+      10px;
+
+    box-sizing:border-box;
+  }
+
+  .metric-carousel-controls,
+  .overview-queue-carousel-head{
+    display:grid;
+
+    grid-template-columns:
+      72px
+      1fr
+      72px;
+
+    gap:10px;
+
+    align-items:center;
+
+    margin-bottom:12px;
+  }
+
+  .metric-carousel-controls span,
+  .overview-queue-carousel-head span{
+    text-align:center;
+
+    font-size:12px;
+
+    font-weight:800;
+
+    letter-spacing:.1em;
+
+    color:rgba(255,255,255,.55);
+  }
+
+  .metric-carousel-controls button,
+  .overview-queue-carousel-head button{
+    width:100%;
+
+    min-height:42px;
+
+    padding:0 8px;
+
+    border-radius:13px;
+
+    font-size:12px;
+
+    font-weight:800;
+
+    background:rgba(255,255,255,.05);
+
+    color:#fff;
+
+    border:1px solid rgba(255,255,255,.08);
+  }
+
+  .metric-carousel-controls button:disabled,
+  .overview-queue-carousel-head button:disabled{
+    opacity:.25;
+  }
+
+  .metric-carousel-card{
+    width:100% !important;
+
+    min-height:128px;
+
+    margin:0 !important;
+
+    padding:20px !important;
+
+    border-radius:22px;
+
+    box-sizing:border-box;
+
+    animation:
+      kpMobileShuffle .25s ease both;
+  }
+
+  .metric-carousel-card span{
+    display:block;
+
+    font-size:12px;
+
+    font-weight:750;
+
+    color:rgba(255,255,255,.58);
+  }
+
+  .metric-carousel-card strong{
+    display:block;
+
+    margin-top:12px;
+
+    font-size:34px;
+
+    line-height:1;
+  }
+
+  .metric-carousel-card small{
+    display:block;
+
+    margin-top:10px;
+
+    color:rgba(255,255,255,.48);
+  }
+
+
+  /* Fix queue card visibility */
+
+  .overview-queue-carousel-card{
+    display:block !important;
+
+    width:100% !important;
+
+    min-height:155px !important;
+
+    opacity:1 !important;
+
+    visibility:visible !important;
+
+    transform:none;
+
+    margin:
+      0
+      0
+      14px !important;
+
+    padding:20px !important;
+
+    box-sizing:border-box;
+
+    background:
+      rgba(255,255,255,.035) !important;
+
+    border:
+      1px solid rgba(255,255,255,.09) !important;
+
+    border-radius:20px;
+
+    animation:
+      kpMobileShuffle .25s ease both !important;
+  }
+
+  .overview-queue-carousel-card > b{
+    display:block !important;
+
+    color:#fff !important;
+
+    font-size:19px !important;
+
+    margin-bottom:14px;
+  }
+
+  .overview-queue-carousel-card small{
+    display:block;
+
+    margin-top:10px;
+
+    color:rgba(255,255,255,.58) !important;
+  }
+
+  @keyframes kpMobileShuffle{
+    from{
+      opacity:0;
+      transform:translateX(10px);
+    }
+
+    to{
+      opacity:1;
+      transform:translateX(0);
+    }
+  }
+
+}
+

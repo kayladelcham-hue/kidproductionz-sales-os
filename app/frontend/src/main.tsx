@@ -586,7 +586,54 @@ function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:
 function App(){const [page,setPage]=useState('Overview');const [mobileMenuOpen,setMobileMenuOpen]=useState(false);const [campaign,setCampaign]=useState('orlando_beauty');const [campaigns,setCampaigns]=useState<any[]>([]);const loadCampaigns=()=>api.campaigns().then((x:any)=>{const rows=Array.isArray(x)?x:(x.campaigns||[]);setCampaigns(rows);if(rows.length&&!rows.some(c=>c.campaign_id===campaign))setCampaign(rows[0].campaign_id)}).catch(()=>setCampaigns([]));useEffect(()=>{loadCampaigns()},[]);return <div className="shell"><aside><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{nav.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{n}</button>)}</nav><div className="safe"><span/>System Ready</div></aside><main><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}>â˜°</button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{page}</h1></div><select value={campaign} onChange={e=>setCampaign(e.target.value)}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{page==='Overview'?<Overview campaign={campaign} onNavigate={setPage}/>:page==='Daily Queue'?<QueuePage campaign={campaign}/>:page==='Up Next'?<UpNext campaign={campaign}/>:page==='Lead Generator'?<LeadGenerator campaign={campaign} onNavigate={setPage}/>:page==='Prospects'?<Prospects campaign={campaign}/>:page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:page==='Runs'?<Runs/>:<Settings campaign={campaign}/>}{mobileMenuOpen&&<><div className="mobile-menu-backdrop" onClick={()=>setMobileMenuOpen(false)}/><aside className="mobile-menu-drawer"><button aria-label="Close navigation" className="mobile-menu-close" onClick={()=>setMobileMenuOpen(false)}>Ã—</button>{["Overview","Up Next","Lead Generator","Daily Queue","Prospects","Campaigns","Runs","Settings"].map(n=><button key={n} onClick={()=>{setPage(n);setMobileMenuOpen(false)}}>{n}</button>)}</aside></>} </main><div className="bottom-nav">{[["Home","Overview"],["Up Next","Up Next"],["Queue","Daily Queue"],["Prospects","Prospects"],["More","Settings"]].map(([l,v])=><button key={l} onClick={()=>setPage(v)}>{l}</button>)}</div></div>}
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
 function QueueTable({items,onSelect}:{items:QueueItem[];onSelect?:(item:QueueItem)=>void}){return <div className="table-wrap"><table><thead><tr><th>Position</th><th>Business</th><th>Score</th><th>Grade</th><th>Route</th><th>Priority</th><th>Reason</th></tr></thead><tbody>{(items||[]).map((x:any,i:number)=><tr key={x.prospect_id||x.lead_id||x.fixture_id||i} onClick={()=>onSelect?.(x)}><td>{x.queue_position??i+1}</td><td><b>{x.business_name||x.name||x.business||'-'}</b></td><td><ScoreBadge value={x.score}/></td><td><GradeBadge value={x.grade}/></td><td><RouteBadge value={x.route}/></td><td><PriorityBadge value={x.priority}/></td><td>{x.route_reason||'-'}</td></tr>)}</tbody></table></div>}
-function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=>void}){const [mobileQueueIndex,setMobileQueueIndex]=useState(0);const {data,error}=useQueue(campaign);const [m,setM]=useState<any>(null);const [me,setMe]=useState(false);const [calendar,setCalendar]=useState<any>(null);const [calendarLoading,setCalendarLoading]=useState(true);const load=()=>{setMe(false);api.metrics(campaign).then(setM).catch(()=>setMe(true))};useEffect(()=>{setMobileQueueIndex(0)},[campaign]);useEffect(()=>{load()},[campaign]);useEffect(()=>{api.calendarUpcoming().then(setCalendar).catch(()=>setCalendar({status:'UNAVAILABLE',events:[]})).finally(()=>setCalendarLoading(false))},[]);const metrics=[['In Queue',m?.queue],['Attempted / Contacted',m?.attempted_or_contacted],['Replies',m?.replies],['Consultations',m?.consultations_set],['Booked',m?.booked],['Booked Revenue',m?`$${Number(m.booked_revenue||0).toFixed(2)}`:undefined]];return <><div className="hero"><div><p className="eyebrow">TODAY'S SALES VIEW</p><h2>Turn today's pipeline into conversations.</h2><p className="muted">Your priority prospects, activity, and opportunities in one place.</p><p className="daily-quote">{dailyQuote()}</p><div className="overview-actions"><button className="continue-selling" onClick={()=>onNavigate?.("Up Next")}>Continue Selling</button><button className="continue-selling overview-lead-generator" onClick={()=>onNavigate?.("Lead Generator")}>Generate Leads</button></div><small className="eyebrow">TODAY'S FOCUS</small></div><div className="date">READ-ONLY<br/><b>DRY RUN</b></div></div>{error&&<div className="notice">API unavailable. Start the local API to load campaign artifacts.</div>}<div className="metrics">{metrics.map(([l,v])=><div className="card metric" key={l}><span>{l}</span><strong>{me?'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â':v??'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦'}</strong><small>{me?'Metrics unavailable':'Live sales activity'}</small></div>)}</div><div className="grid"><div className="card"><h3>Today's Queue</h3>{data?<>
+function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=>void}){const [mobileQueueIndex,setMobileQueueIndex]=useState(0);const [mobileMetricIndex,setMobileMetricIndex]=useState(0);const {data,error}=useQueue(campaign);const [m,setM]=useState<any>(null);const [me,setMe]=useState(false);const [calendar,setCalendar]=useState<any>(null);const [calendarLoading,setCalendarLoading]=useState(true);const load=()=>{setMe(false);api.metrics(campaign).then(setM).catch(()=>setMe(true))};useEffect(()=>{setMobileQueueIndex(0)},[campaign]);useEffect(()=>{load()},[campaign]);useEffect(()=>{api.calendarUpcoming().then(setCalendar).catch(()=>setCalendar({status:'UNAVAILABLE',events:[]})).finally(()=>setCalendarLoading(false))},[]);const metrics=[['In Queue',m?.queue],['Attempted / Contacted',m?.attempted_or_contacted],['Replies',m?.replies],['Consultations',m?.consultations_set],['Booked',m?.booked],['Booked Revenue',m?`$${Number(m.booked_revenue||0).toFixed(2)}`:undefined]];return <><div className="hero"><div><p className="eyebrow">TODAY'S SALES VIEW</p><h2>Turn today's pipeline into conversations.</h2><p className="muted">Your priority prospects, activity, and opportunities in one place.</p><p className="daily-quote">{dailyQuote()}</p><div className="overview-actions"><button className="continue-selling" onClick={()=>onNavigate?.("Up Next")}>Continue Selling</button><button className="continue-selling overview-lead-generator" onClick={()=>onNavigate?.("Lead Generator")}>Generate Leads</button></div><small className="eyebrow">TODAY'S FOCUS</small></div><div className="date">READ-ONLY<br/><b>DRY RUN</b></div></div>{error&&<div className="notice">API unavailable. Start the local API to load campaign artifacts.</div>}<div className="metrics metrics-desktop">
+  {metrics.map(([l,v])=>
+    <div className="card metric" key={l}>
+      <span>{l}</span>
+      <strong>{me?'--':v??'...'}</strong>
+      <small>{me?'Metrics unavailable':'Live sales activity'}</small>
+    </div>
+  )}
+</div>
+
+<div className="metrics-mobile-carousel">
+  {(()=>{
+    const safeMetricIndex=Math.min(
+      mobileMetricIndex,
+      Math.max(0,metrics.length-1)
+    );
+
+    const metric=metrics[safeMetricIndex];
+    const l=metric?.[0];
+    const v=metric?.[1];
+
+    return <>
+      <div className="metric-carousel-controls">
+        <button
+          disabled={safeMetricIndex===0}
+          onClick={()=>setMobileMetricIndex(i=>Math.max(0,i-1))}
+        >
+          Prev
+        </button>
+
+        <span>{safeMetricIndex+1} / {metrics.length}</span>
+
+        <button
+          disabled={safeMetricIndex>=metrics.length-1}
+          onClick={()=>setMobileMetricIndex(i=>Math.min(metrics.length-1,i+1))}
+        >
+          Next
+        </button>
+      </div>
+
+      <div className="card metric metric-carousel-card" key={String(l)}>
+        <span>{l}</span>
+        <strong>{me?'--':v??'...'}</strong>
+        <small>{me?'Metrics unavailable':'Live sales activity'}</small>
+      </div>
+    </>
+  })()}
+</div><div className="grid"><div className="card"><h3>Today's Queue</h3>{data?<>
 <div className="overview-queue-desktop">
   <QueueTable items={data.daily_queue}/>
 </div>
@@ -608,7 +655,7 @@ function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=
           disabled={safeIndex===0}
           onClick={()=>setMobileQueueIndex(i=>Math.max(0,i-1))}
         >
-          ?
+          Prev
         </button>
 
         <span>
@@ -622,7 +669,7 @@ function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=
             Math.min(data.daily_queue.length-1,i+1)
           )}
         >
-          ?
+          Prev
         </button>
       </div>
 
