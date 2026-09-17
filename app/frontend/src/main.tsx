@@ -705,7 +705,99 @@ function Overview({campaign,onNavigate}:{campaign:string;onNavigate?:(p:string)=
   </div>
 
 </div>
-</>:<div className="empty small">Loading queueÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦</div>}</div><div><div className="card schedule"><div className="section-head"><h3>Today's Schedule</h3><button onClick={()=>{setCalendarLoading(true);api.calendarUpcoming().then(setCalendar).catch(()=>setCalendar({status:"UNAVAILABLE",events:[]})).finally(()=>setCalendarLoading(false))}}>Refresh</button></div>{calendarLoading?<div className="skeleton-list"><div className="skeleton"/><div className="skeleton"/></div>:calendar?.status==='UNAVAILABLE'||calendar?.status==='DISABLED'?<p className="muted">Calendar unavailable.</p>:calendar?.events?.length?calendar.events.map((e:any)=><div className="event" key={e.id}><ScheduleWhen value={e.start}/><span>{e.title||'Untitled event'}</span>{e.location&&<small>{e.location}</small>}{e.html_link&&<a href={e.html_link} target="_blank" rel="noreferrer">Open in Google Calendar</a>}</div>):<p className="muted">Your calendar is clear.</p>}</div><div className="card"><h3>Campaign Safety</h3><div className="status"><i/> Configuration validated<br/><i/> Dry Run ON<br/><i/> Automatic Network Actions OFF<br/><i/> HubSpot Writes OFF<br/><i/> Automatic Outbound OFF</div></div></div></div></>}function QueuePage({campaign}:{campaign:string}){const {data,error}=useQueue(campaign);const [batch,setBatch]=useState<any>(null);const [selected,setSelected]=useState<number[]>([]);const [confirmBatch,setConfirmBatch]=useState(false);const [running,setRunning]=useState(false);const [search,setSearch]=useState('');const [grade,setGrade]=useState('All');const [priority,setPriority]=useState('All');const [route,setRoute]=useState('All');const [sales,setSales]=useState('All');const [hubspot,setHubspot]=useState('All');const [category,setCategory]=useState('All');const [city,setCity]=useState('All');const [queueProspect,setQueueProspect]=useState<QueueItem|null>(null);const [open,setOpen]=useState({DAILY_QUEUE:true,DEFERRED:false,RESEARCH:false,INELIGIBLE:false});if(error)return <div className="card empty"><h2>API unavailable</h2></div>;if(!data)return <div className="card empty">Loading queue...</div>;const all=[...data.daily_queue,...data.deferred,...data.research,...data.ineligible];const values=(k:string)=>Array.from(new Set(all.map((x:any)=>x[k]).filter(Boolean))).sort();const filtered=(items:any[])=>items.filter((x:any)=>{const n=(x.business_name||x.name||x.business||'').toLowerCase();const g=String(x.grade||'');return(!search||n.includes(search.toLowerCase()))&&(grade==='All'||(grade==='B'&&g.startsWith('B'))||(grade==='C'&&g.startsWith('C'))||(grade==='Reject'&&g==='Reject/Hold'))&&(priority==='All'||x.priority===priority)&&(route==='All'||x.route===route)&&(sales==='All'||(x.sales_status||'NOT_CONTACTED')===sales)&&(hubspot==='All'||(hubspot==='Synced'?x.hubspot_sync_status==='SYNCED':hubspot==='Failed'?x.hubspot_sync_status==='SYNC_FAILED':hubspot==='Review Required'?x.hubspot_sync_status==='REVIEW_REQUIRED':x.hubspot_sync_status!=='SYNCED'))&&(category==='All'||x.category===category)&&(city==='All'||x.city===city)});const sections=[['DAILY_QUEUE',data.daily_queue,'Daily Queue'],['DEFERRED',data.deferred,'Deferred'],['RESEARCH',data.research,'Research'],['INELIGIBLE',data.ineligible,'Ineligible']];const reset=()=>{setSearch('');setGrade('All');setPriority('All');setRoute('All');setSales('All');setHubspot('All');setCategory('All');setCity('All')};const previewBatch=()=>api.batchPreview(campaign).then(x=>{setBatch(x);setSelected(x.selected_default||[]);setConfirmBatch(false)});const executeBatch=()=>{setRunning(true);api.batchSync({campaign,prospect_ids:selected,confirmed:true}).then(x=>setBatch({...batch,results:x.results,summary:x.summary})).finally(()=>{setRunning(false);setConfirmBatch(false)})};return <div className="queue-sections"><div className="card"><div className="search-bar"><input type="search" placeholder="Search Daily Queue..." value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="filter"><select value={grade} onChange={e=>setGrade(e.target.value)}><option>All</option><option value="B">B / Qualified</option><option value="C">C / Review</option><option value="Reject">Reject/Hold</option></select><select value={priority} onChange={e=>setPriority(e.target.value)}><option>All</option>{['P1','P2','P3'].map(x=><option key={x}>{x}</option>)}</select><select value={route} onChange={e=>setRoute(e.target.value)}><option>All</option>{values('route').map(x=><option key={x}>{x}</option>)}</select><select value={sales} onChange={e=>setSales(e.target.value)}><option>All</option>{['NOT_CONTACTED','ATTEMPTED','CONTACTED','REPLIED','CONSULTATION_SET','FOLLOW_UP','NOT_INTERESTED','BOOKED'].map(x=><option key={x} value={x}>{prettyLabel(x)}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option>{values('category').map(x=><option key={x}>{x}</option>)}</select><select value={city} onChange={e=>setCity(e.target.value)}><option>All</option>{values('city').map(x=><option key={x}>{x}</option>)}</select><button onClick={reset}>Reset Filters</button><button onClick={previewBatch} disabled={!data.daily_queue.length}>Sync to HubSpot</button></div>{batch&&<div className="preview modal-enter"><h3>HubSpot Sync Preview</h3><p>Create New: {batch.counts?.CREATE_NEW||0} ÃƒÆ’Ã¢â‚¬Å¡ |  Update Existing: {batch.counts?.UPDATE_EXISTING||0} ÃƒÆ’Ã¢â‚¬Å¡ |  Review: {batch.counts?.REVIEW_REQUIRED||0}</p><button onClick={()=>setSelected(batch.selected_default||[])}>Select All Safe</button><button onClick={()=>setSelected([])}>Clear Selection</button>{!batch.results&&!confirmBatch&&<button disabled={!selected.length} onClick={()=>setConfirmBatch(true)}>Continue ({selected.length})</button>}{confirmBatch&&<div><p>Confirm HubSpot Batch Sync: {selected.length} selected.</p><button onClick={executeBatch} disabled={running}>{running?'Syncing...':'Confirm HubSpot Batch Sync'}</button><button onClick={()=>setConfirmBatch(false)}>Cancel</button></div>}{batch.results&&batch.results.map((r:any)=><p key={r.prospect_id}>{r.prospect_id}: {r.sync_status}</p>)}</div>}</div>{sections.map(([key,items,title])=>{const visible=filtered(items as any[]);const expanded=(open as any)[key as string];return <div className="card" key={key as string}><button className={`section-toggle ${expanded?'expanded':''}`} onClick={()=>setOpen(x=>({...x,[key as string]:!expanded}))}><span className="queue-chevron" aria-hidden="true"/><span className="queue-section-title">{title}</span><span className="queue-section-count">{visible.length} / {(items as any[]).length}</span></button>{expanded&&(visible.length?<QueueTable items={visible} onSelect={setQueueProspect}/>:<p className="muted">No prospects match the current filters.</p>)}</div>})}{queueProspect&&<ProspectDrawer item={queueProspect} onClose={()=>setQueueProspect(null)}/>}</div>}
+</>:<div className="empty small">Loading queueÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦</div>}</div><div><div className="card schedule agenda-card">
+  <div className="section-head agenda-head">
+    <div>
+      <p className="eyebrow">CALENDAR</p>
+      <h3>Today's Schedule</h3>
+    </div>
+
+    <button onClick={()=>{
+      setCalendarLoading(true);
+      api.calendarUpcoming()
+        .then(setCalendar)
+        .catch(()=>setCalendar({status:"UNAVAILABLE",events:[]}))
+        .finally(()=>setCalendarLoading(false))
+    }}>
+      Refresh
+    </button>
+  </div>
+
+  {calendarLoading
+    ? <div className="skeleton-list"><div className="skeleton"/><div className="skeleton"/></div>
+
+    : calendar?.status==='UNAVAILABLE'||calendar?.status==='DISABLED'
+      ? <p className="muted">Calendar unavailable.</p>
+
+    : calendar?.events?.length
+      ? <div className="agenda-list">
+          {calendar.events.map((e:any,i:number)=>{
+            const d=new Date(e.start||'');
+            const prev=i>0?new Date(calendar.events[i-1]?.start||''):null;
+
+            const showDay=
+              i===0 ||
+              !prev ||
+              d.toDateString()!==prev.toDateString();
+
+            const day=Number.isNaN(d.getTime())
+              ? 'Upcoming'
+              : d.toLocaleDateString([],{
+                  weekday:'short',
+                  month:'short',
+                  day:'numeric'
+                });
+
+            const time=Number.isNaN(d.getTime())
+              ? ''
+              : d.toLocaleTimeString([],{
+                  hour:'numeric',
+                  minute:'2-digit'
+                });
+
+            return <React.Fragment key={e.id||e.html_link||i}>
+
+              {showDay&&
+                <div className="agenda-day-heading">
+                  <span>{day}</span>
+                  <i/>
+                </div>
+              }
+
+              <div className="agenda-event">
+
+                <div className="agenda-time">
+                  {time}
+                </div>
+
+                <div className="agenda-event-body">
+                  <b>{e.title||'Untitled event'}</b>
+
+                  {e.location&&
+                    <small>{e.location}</small>
+                  }
+                </div>
+
+                {e.html_link&&
+                  <a
+                    className="agenda-open"
+                    href={e.html_link}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open
+                  </a>
+                }
+
+              </div>
+
+            </React.Fragment>
+          })}
+        </div>
+
+      : <p className="muted">Your calendar is clear.</p>
+  }
+</div><div className="card"><h3>Campaign Safety</h3><div className="status"><i/> Configuration validated<br/><i/> Dry Run ON<br/><i/> Automatic Network Actions OFF<br/><i/> HubSpot Writes OFF<br/><i/> Automatic Outbound OFF</div></div></div></div></>}function QueuePage({campaign}:{campaign:string}){const {data,error}=useQueue(campaign);const [batch,setBatch]=useState<any>(null);const [selected,setSelected]=useState<number[]>([]);const [confirmBatch,setConfirmBatch]=useState(false);const [running,setRunning]=useState(false);const [search,setSearch]=useState('');const [grade,setGrade]=useState('All');const [priority,setPriority]=useState('All');const [route,setRoute]=useState('All');const [sales,setSales]=useState('All');const [hubspot,setHubspot]=useState('All');const [category,setCategory]=useState('All');const [city,setCity]=useState('All');const [queueProspect,setQueueProspect]=useState<QueueItem|null>(null);const [open,setOpen]=useState({DAILY_QUEUE:true,DEFERRED:false,RESEARCH:false,INELIGIBLE:false});if(error)return <div className="card empty"><h2>API unavailable</h2></div>;if(!data)return <div className="card empty">Loading queue...</div>;const all=[...data.daily_queue,...data.deferred,...data.research,...data.ineligible];const values=(k:string)=>Array.from(new Set(all.map((x:any)=>x[k]).filter(Boolean))).sort();const filtered=(items:any[])=>items.filter((x:any)=>{const n=(x.business_name||x.name||x.business||'').toLowerCase();const g=String(x.grade||'');return(!search||n.includes(search.toLowerCase()))&&(grade==='All'||(grade==='B'&&g.startsWith('B'))||(grade==='C'&&g.startsWith('C'))||(grade==='Reject'&&g==='Reject/Hold'))&&(priority==='All'||x.priority===priority)&&(route==='All'||x.route===route)&&(sales==='All'||(x.sales_status||'NOT_CONTACTED')===sales)&&(hubspot==='All'||(hubspot==='Synced'?x.hubspot_sync_status==='SYNCED':hubspot==='Failed'?x.hubspot_sync_status==='SYNC_FAILED':hubspot==='Review Required'?x.hubspot_sync_status==='REVIEW_REQUIRED':x.hubspot_sync_status!=='SYNCED'))&&(category==='All'||x.category===category)&&(city==='All'||x.city===city)});const sections=[['DAILY_QUEUE',data.daily_queue,'Daily Queue'],['DEFERRED',data.deferred,'Deferred'],['RESEARCH',data.research,'Research'],['INELIGIBLE',data.ineligible,'Ineligible']];const reset=()=>{setSearch('');setGrade('All');setPriority('All');setRoute('All');setSales('All');setHubspot('All');setCategory('All');setCity('All')};const previewBatch=()=>api.batchPreview(campaign).then(x=>{setBatch(x);setSelected(x.selected_default||[]);setConfirmBatch(false)});const executeBatch=()=>{setRunning(true);api.batchSync({campaign,prospect_ids:selected,confirmed:true}).then(x=>setBatch({...batch,results:x.results,summary:x.summary})).finally(()=>{setRunning(false);setConfirmBatch(false)})};return <div className="queue-sections"><div className="card"><div className="search-bar"><input type="search" placeholder="Search Daily Queue..." value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="filter"><select value={grade} onChange={e=>setGrade(e.target.value)}><option>All</option><option value="B">B / Qualified</option><option value="C">C / Review</option><option value="Reject">Reject/Hold</option></select><select value={priority} onChange={e=>setPriority(e.target.value)}><option>All</option>{['P1','P2','P3'].map(x=><option key={x}>{x}</option>)}</select><select value={route} onChange={e=>setRoute(e.target.value)}><option>All</option>{values('route').map(x=><option key={x}>{x}</option>)}</select><select value={sales} onChange={e=>setSales(e.target.value)}><option>All</option>{['NOT_CONTACTED','ATTEMPTED','CONTACTED','REPLIED','CONSULTATION_SET','FOLLOW_UP','NOT_INTERESTED','BOOKED'].map(x=><option key={x} value={x}>{prettyLabel(x)}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option>{values('category').map(x=><option key={x}>{x}</option>)}</select><select value={city} onChange={e=>setCity(e.target.value)}><option>All</option>{values('city').map(x=><option key={x}>{x}</option>)}</select><button onClick={reset}>Reset Filters</button><button onClick={previewBatch} disabled={!data.daily_queue.length}>Sync to HubSpot</button></div>{batch&&<div className="preview modal-enter"><h3>HubSpot Sync Preview</h3><p>Create New: {batch.counts?.CREATE_NEW||0} ÃƒÆ’Ã¢â‚¬Å¡ |  Update Existing: {batch.counts?.UPDATE_EXISTING||0} ÃƒÆ’Ã¢â‚¬Å¡ |  Review: {batch.counts?.REVIEW_REQUIRED||0}</p><button onClick={()=>setSelected(batch.selected_default||[])}>Select All Safe</button><button onClick={()=>setSelected([])}>Clear Selection</button>{!batch.results&&!confirmBatch&&<button disabled={!selected.length} onClick={()=>setConfirmBatch(true)}>Continue ({selected.length})</button>}{confirmBatch&&<div><p>Confirm HubSpot Batch Sync: {selected.length} selected.</p><button onClick={executeBatch} disabled={running}>{running?'Syncing...':'Confirm HubSpot Batch Sync'}</button><button onClick={()=>setConfirmBatch(false)}>Cancel</button></div>}{batch.results&&batch.results.map((r:any)=><p key={r.prospect_id}>{r.prospect_id}: {r.sync_status}</p>)}</div>}</div>{sections.map(([key,items,title])=>{const visible=filtered(items as any[]);const expanded=(open as any)[key as string];return <div className="card" key={key as string}><button className={`section-toggle ${expanded?'expanded':''}`} onClick={()=>setOpen(x=>({...x,[key as string]:!expanded}))}><span className="queue-chevron" aria-hidden="true"/><span className="queue-section-title">{title}</span><span className="queue-section-count">{visible.length} / {(items as any[]).length}</span></button>{expanded&&(visible.length?<QueueTable items={visible} onSelect={setQueueProspect}/>:<p className="muted">No prospects match the current filters.</p>)}</div>})}{queueProspect&&<ProspectDrawer item={queueProspect} onClose={()=>setQueueProspect(null)}/>}</div>}
 function Prospects({campaign}:{campaign:string}){const [data,setData]=useState<QueueItem[]|null>(null);const [error,setError]=useState(false);const [q,setQ]=useState('');const [selected,setSelected]=useState<QueueItem|null>(null);useEffect(()=>{setData(null);setError(false);api.prospects(campaign).then((response:any)=>setData(Array.isArray(response)?response:(Array.isArray(response?.prospects)?response.prospects:[]))).catch(()=>setError(true))},[campaign]);if(error)return <div className="card empty"><h2>API unavailable</h2></div>;const rows=(data||[]).filter((x:any)=>(x.business_name||x.name||x.business||'').toLowerCase().includes(q.toLowerCase()));return <div className="prospects"><div className="card"><div className="search-bar"><input type="search" placeholder="Search Prospects..." value={q} onChange={e=>setQ(e.target.value)}/></div>{data===null?<div className="empty">Loading prospects...</div>:<QueueTable items={rows} onSelect={setSelected}/>}</div>{selected&&<ProspectDrawer item={selected} onClose={()=>setSelected(null)}/>}</div>}
 function ProspectDrawer({item,onClose,onNext,initialEmailOpen=false}:{item:QueueItem;onClose:()=>void;onNext?:()=>void;initialEmailOpen?:boolean}){const prospectId=item.prospect_id??item.id;const [status,setStatus]=useState((item as any).sales_status||'NOT_CONTACTED');const [notes,setNotes]=useState((item as any).notes||'');const [value,setValue]=useState((item as any).booked_value??'');const [saving,setSaving]=useState(false);const [message,setMessage]=useState('');const [crm,setCrm]=useState<any>(null);const [integrations,setIntegrations]=useState<any>(null);const [emailOpen,setEmailOpen]=useState(initialEmailOpen);const [calendarOpen,setCalendarOpen]=useState(false);const [subject,setSubject]=useState('KidProductionz Introduction');const [body,setBody]=useState('Hi, I would love to connect about content opportunities.');const [emailTo,setEmailTo]=useState(item.email||'');const [calendarTitle,setCalendarTitle]=useState(`KidProductionz Consultation - ${(item as any).business_name||item.name||item.business||''}`);const [calendarStart,setCalendarStart]=useState('');const [calendarEnd,setCalendarEnd]=useState('');const [calendarDuration,setCalendarDuration]=useState(30);const [calendarTimezone,setCalendarTimezone]=useState('America/New_York');const [calendarLocation,setCalendarLocation]=useState('');const [calendarNotes,setCalendarNotes]=useState('');const [calendarAttendee,setCalendarAttendee]=useState(item.email||'');const [calendarPreview,setCalendarPreview]=useState<any>(null);const [integrationError,setIntegrationError]=useState('');const [preview,setPreview]=useState<any>(null);const [syncing,setSyncing]=useState(false);const [confirm,setConfirm]=useState(false);
 

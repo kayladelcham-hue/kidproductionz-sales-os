@@ -9917,3 +9917,243 @@ html[data-kp-theme] textarea:focus{
 
 }
 
+
+
+/* === KP MOBILE CALENDAR AGENDA === */
+
+.agenda-card{
+  overflow:hidden;
+}
+
+.agenda-head{
+  align-items:center;
+}
+
+.agenda-head .eyebrow{
+  margin-bottom:4px;
+}
+
+.agenda-head h3{
+  margin:0;
+}
+
+.agenda-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.agenda-day-heading{
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  margin:
+    18px
+    0
+    4px;
+}
+
+.agenda-day-heading:first-child{
+  margin-top:4px;
+}
+
+.agenda-day-heading span{
+  flex:0 0 auto;
+
+  padding:
+    7px
+    11px;
+
+  border-radius:999px;
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--kp-theme-a,#8fd3ff) 30%,
+      rgba(255,255,255,.08)
+    );
+
+  background:
+    var(--kp-theme-soft,rgba(71,118,255,.10));
+
+  color:
+    var(--kp-theme-a,#8fd3ff);
+
+  font-size:12px;
+  font-weight:800;
+}
+
+.agenda-day-heading i{
+  height:1px;
+  flex:1;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.14),
+      transparent
+    );
+}
+
+.agenda-event{
+  display:grid;
+
+  grid-template-columns:
+    74px
+    minmax(0,1fr)
+    auto;
+
+  gap:14px;
+
+  align-items:center;
+
+  padding:
+    15px
+    16px;
+
+  border-radius:18px;
+
+  border:
+    1px solid rgba(255,255,255,.08);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.018)
+    );
+}
+
+.agenda-time{
+  color:
+    rgba(255,255,255,.70);
+
+  font-size:13px;
+  font-weight:800;
+
+  white-space:nowrap;
+}
+
+.agenda-event-body{
+  min-width:0;
+}
+
+.agenda-event-body b{
+  display:block;
+
+  color:#fff;
+
+  font-size:15px;
+  line-height:1.35;
+
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+
+.agenda-event-body small{
+  display:block;
+
+  margin-top:5px;
+
+  color:
+    rgba(255,255,255,.52);
+
+  line-height:1.4;
+
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+
+  overflow-wrap:anywhere;
+}
+
+.agenda-open{
+  display:inline-flex;
+
+  align-items:center;
+  justify-content:center;
+
+  min-height:38px;
+
+  padding:
+    0
+    13px;
+
+  border-radius:12px;
+
+  border:
+    1px solid rgba(255,255,255,.10);
+
+  background:
+    rgba(255,255,255,.045);
+
+  color:#fff;
+
+  font-size:12px;
+  font-weight:800;
+
+  text-decoration:none;
+
+  white-space:nowrap;
+}
+
+@media(max-width:700px){
+
+  .agenda-card{
+    padding:
+      18px !important;
+  }
+
+  .agenda-event{
+    grid-template-columns:
+      64px
+      minmax(0,1fr);
+
+    align-items:start;
+  }
+
+  .agenda-time{
+    padding-top:2px;
+  }
+
+  .agenda-open{
+    grid-column:2;
+
+    width:max-content;
+
+    margin-top:2px;
+  }
+
+  .agenda-event-body b{
+    font-size:16px;
+  }
+
+}
+
+@media(max-width:390px){
+
+  .agenda-event{
+    grid-template-columns:1fr;
+
+    gap:8px;
+  }
+
+  .agenda-time{
+    color:
+      var(--kp-theme-a,#8fd3ff);
+  }
+
+  .agenda-open{
+    grid-column:1;
+
+    width:100%;
+  }
+
+}
+
