@@ -678,6 +678,8 @@ class OutscraperQualifyRequest(BaseModel):
     query: str
     limit: int = 10
     category: str = ''
+    city: str = ''
+    state: str = ''
 
 
 @app.post('/api/leads/outscraper/qualify-preview')
@@ -716,6 +718,8 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
         cfg = load_qualification_config(
             ROOT,
             req.campaign,
+            req.city,
+            req.state,
         )
 
         rcfg = json.loads(

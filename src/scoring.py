@@ -1,6 +1,7 @@
 """All business thresholds, awards, penalties, and vocabulary come from JSON."""
 from normalize import key, phrase
 from chains import classify
+from location_normalization import normalize_state
 
 def evaluate(lead, cfg):
     w, p, t = cfg["weights"], cfg["penalties"], cfg["thresholds"]
@@ -24,25 +25,15 @@ def evaluate(lead, cfg):
     reject("temporarily_closed", temporary, "TEMPORARILY_CLOSED")
     matched = []
 
-    # Normalize full state names and abbreviations before service-area matching.
-    # Example: "Georgia" -> "GA", "Florida" -> "FL".
-    raw_state = str(lead.get("state") or "").strip()
-    state_aliases = {
-        key(alias): str(code).strip().upper()
-        for alias, code in cfg.get("state_aliases", {}).items()
-    }
-    normalized_state = state_aliases.get(
-        key(raw_state),
-        raw_state.upper(),
-    )
+    normalized_state = normalize_state(lead.get("state"))
 
     for name, market in cfg["markets"].items():
-        market_state = str(market.get("state") or "").strip().upper()
+        market_state = normalize_state(market.get("state"))
 
         if (
-            market["enabled"]
+            market.get("enabled")
             and normalized_state == market_state
-            and key(lead["city"]) in {key(c) for c in market["cities"]}
+            and key(lead["city"]) in {key(c) for c in market.get("cities", [])}
         ):
             matched.append(name)
 
