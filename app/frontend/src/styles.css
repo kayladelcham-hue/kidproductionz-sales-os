@@ -12811,3 +12811,16 @@ html[data-kp-theme] textarea:focus{
   }
 }
 
+
+/* Mobile prospect chevron — CSS drawn to avoid character encoding issues */
+.prospect-chevron {
+  font-size: 0 !important;
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  border-right: 2px solid currentColor;
+  border-top: 2px solid currentColor;
+  transform: rotate(45deg);
+  flex: 0 0 auto;
+  margin-right: 4px;
+}
