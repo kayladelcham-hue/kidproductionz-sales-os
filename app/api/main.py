@@ -164,7 +164,9 @@ def auth_login(req: LoginRequest):
 @app.post('/api/auth/logout')
 def auth_logout(request: Request):
     token=request.cookies.get(_AUTH_COOKIE)
-    if token: _sessions.discard(token)
+    if token:
+        _sessions.discard(token)
+        delete_user_session(_hash_value(token))
     response=JSONResponse({'authenticated':False}); response.delete_cookie(_AUTH_COOKIE); return response
 
 @app.get('/api/auth/me')
