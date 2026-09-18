@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from sqlalchemy import create_engine, select, update, func, text, delete, inspect
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.exc import IntegrityError
 from .models import Base, Campaign, Prospect, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession
 def _url():
     u=os.getenv('DATABASE_URL','sqlite:///data/kidproductionz.db')
@@ -21,6 +22,48 @@ def session_scope():
     try: yield s; s.commit()
     except Exception: s.rollback(); raise
     finally: s.close()
+def ensure_user(email, name, password_hash, is_admin=False):
+    """Create a user once without changing an existing account's credentials."""
+    normalized_email = email.strip().lower()
+    if not normalized_email or not password_hash:
+        raise ValueError('User email and password hash are required')
+    try:
+        with session_scope() as s:
+            user = s.execute(
+                select(User).where(User.email == normalized_email)
+            ).scalar_one_or_none()
+            if not user:
+                user = User(
+                    email=normalized_email,
+                    name=name.strip() or normalized_email,
+                    password_hash=password_hash,
+                    is_admin=int(bool(is_admin)),
+                    status='ACTIVE',
+                )
+                s.add(user)
+                s.flush()
+            return _dict(user)
+    except IntegrityError:
+        # A simultaneous first login may have created the same unique email.
+        user = get_user_by_email(normalized_email)
+        if user is None:
+            raise
+        return user
+
+
+def claim_unowned_campaigns(user_id):
+    """Attach legacy, unowned campaigns without transferring existing owners."""
+    with session_scope() as s:
+        if s.get(User, user_id) is None:
+            raise ValueError('User not found')
+        result = s.execute(
+            update(Campaign)
+            .where(Campaign.owner_id.is_(None))
+            .values(owner_id=user_id)
+        )
+        return result.rowcount
+
+
 def get_user_by_email(email):
     with SessionLocal() as s:
         user = s.execute(
