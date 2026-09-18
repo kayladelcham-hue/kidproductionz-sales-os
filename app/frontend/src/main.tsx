@@ -865,8 +865,74 @@ function Settings({campaign}:{campaign:string}){const [i,setI]=useState<any>(nul
   }
 }}>Disconnect Google</button>
 </>}</div>{msg&&<div className="notice">{msg}</div>}</div>}
-function AuthGate(){const [state,setState]=useState<any>(null);const [user,setUser]=useState('');const [password,setPassword]=useState('');const [error,setError]=useState('');useEffect(()=>{authApi.me().then(data=>setState({authenticated:data.authenticated===true})).catch(()=>setState({authenticated:false}))},[]);if(!state)return <div className="card empty">Loadingâ€¦</div>;if(state.authenticated===true)return <App/>;const login=async(e:any)=>{e.preventDefault();try{await authApi.login(user,password);const data=await authApi.me();if(data.authenticated===true)setState(data);else setError('Unable to authenticate')}catch{setError('Invalid credentials')}};return <main className="auth-screen"><form className="card" onSubmit={login}><img src={logo} /><h1>KidProductionz Sales OS</h1><p className="muted">Sign in to continue.</p><input aria-label="Username" value={user} onChange={e=>setUser(e.target.value)} placeholder="Username"/><input aria-label="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password"/>{error&&<p className="notice">{error}</p>}<button type="submit">Sign in</button></form></main>}
-createRoot(root).render(<AuthGate/>);
+function AuthGateBeta(){
+  const [state,setState]=useState<any>(null);
+  const [mode,setMode]=useState<'login'|'signup'>('login');
+  const [user,setUser]=useState('');
+  const [name,setName]=useState('');
+  const [password,setPassword]=useState('');
+  const [invite,setInvite]=useState('');
+  const [error,setError]=useState('');
+
+  useEffect(()=>{
+    authApi.me()
+      .then(data=>setState({authenticated:data.authenticated===true}))
+      .catch(()=>setState({authenticated:false}));
+  },[]);
+
+  if(!state)return <div className="card empty">Loadingâ€¦</div>;
+  if(state.authenticated===true)return <App/>;
+
+  const login=async(e:any)=>{
+    e.preventDefault();
+    setError('');
+    try{
+      await authApi.login(user,password);
+      const data=await authApi.me();
+      if(data.authenticated===true)setState(data);
+      else setError('Unable to authenticate');
+    }catch{
+      setError('Invalid credentials');
+    }
+  };
+
+  const signup=async(e:any)=>{
+    e.preventDefault();
+    setError('');
+    try{
+      const response=await fetch('/api/auth/signup',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'include',
+        body:JSON.stringify({email:user,name,password,invite_code:invite}),
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.detail||'Could not create account');
+      setMode('login');
+      setPassword('');
+      setInvite('');
+      setError('Account created. Sign in to continue.');
+    }catch(error:any){
+      setError(error.message||'Could not create account');
+    }
+  };
+
+  const signingUp=mode==='signup';
+
+  return <main className="auth-screen"><form className="card" onSubmit={signingUp?signup:login}>
+    <img src={logo} />
+    <h1>KidProductionz Sales OS</h1>
+    <p className="muted">{signingUp?'Join the private beta.':'Sign in to continue.'}</p>
+    {signingUp&&<input aria-label="Name" value={name} onChange={e=>setName(e.target.value)} placeholder="Full name"/>}
+    <input aria-label="Email" value={user} onChange={e=>setUser(e.target.value)} placeholder={signingUp?'Email address':'Email or username'}/>
+    <input aria-label="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password"/>
+    {signingUp&&<input aria-label="Invite code" value={invite} onChange={e=>setInvite(e.target.value)} placeholder="Beta invite code"/>}
+    {error&&<p className="notice">{error}</p>}
+    <button type="submit">{signingUp?'Create account':'Sign in'}</button>
+    <button type="button" onClick={()=>{setMode(signingUp?'login':'signup');setError('')}}>{signingUp?'Already have an account? Sign in':'Have an invite? Join the beta'}</button>
+  </form></main>
+}
+createRoot(root).render(<AuthGateBeta/>);
 
 
 
