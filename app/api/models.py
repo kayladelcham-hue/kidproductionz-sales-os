@@ -8,6 +8,7 @@ class Base(DeclarativeBase):
 class Campaign(Base):
     __tablename__='campaign'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    owner_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     slug: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     market: Mapped[str|None] = mapped_column(Text)
