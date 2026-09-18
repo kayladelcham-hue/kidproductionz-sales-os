@@ -21,6 +21,41 @@ def session_scope():
     try: yield s; s.commit()
     except Exception: s.rollback(); raise
     finally: s.close()
+def get_user_by_email(email):
+    with SessionLocal() as s:
+        user = s.execute(
+            select(User).where(User.email == email.strip().lower())
+        ).scalar_one_or_none()
+        return _dict(user)
+
+
+def save_user_session(
+    token_hash,
+    user_id,
+    csrf_token_hash=None,
+    expires_at=None,
+):
+    with session_scope() as s:
+        session = UserSession(
+            token_hash=token_hash,
+            user_id=user_id,
+            csrf_token_hash=csrf_token_hash,
+            expires_at=expires_at,
+        )
+        s.add(session)
+
+
+def get_user_session(token_hash):
+    with SessionLocal() as s:
+        session = s.get(UserSession, token_hash)
+        return _dict(session)
+
+
+def delete_user_session(token_hash):
+    with session_scope() as s:
+        session = s.get(UserSession, token_hash)
+        if session:
+            s.delete(session)
 def connect(): return engine.connect()
 def init_db(): Base.metadata.create_all(bind=engine)
 def _dict(obj):
