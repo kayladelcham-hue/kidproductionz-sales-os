@@ -101,7 +101,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         if _auth_required() and request.url.path.startswith('/api/') and request.url.path not in ('/api/health','/api/auth/login','/api/auth/me','/api/auth/logout','/api/google/oauth/callback'):
             token = request.cookies.get(_AUTH_COOKIE)
-            if not token or token not in _sessions:
+            session = get_user_session(_hash_value(token)) if token else None
+
+            if not token or not session:
                 return JSONResponse({'detail':'Authentication required'}, status_code=401)
             if request.method in ('POST','PUT','PATCH','DELETE') and request.url.path not in ('/api/auth/login','/api/auth/logout'):
                 if not token or not _csrf_tokens.get(token) or request.headers.get('X-CSRF-Token') != _csrf_tokens.get(token):
