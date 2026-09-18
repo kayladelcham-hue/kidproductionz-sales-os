@@ -141,3 +141,127 @@ def reschedule(event_id: int, req: Reschedule):
               metadata_json=json.dumps({'calendar_event_id': e.calendar_event_id,
                                         'start': e.consultation_start, 'end': e.consultation_end})))
     return {'status': 'RESCHEDULED'}
+
+# ============================================================
+# AI SALES COPILOT
+# ============================================================
+
+from . import ai_sales_bot
+
+
+class SalesBotRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+    campaign: str = Field(
+        default="orlando_beauty",
+        pattern=r'^[a-zA-Z0-9_-]+$',
+        max_length=100
+    )
+    prospect_id: int | None = None
+    conversation: list[dict] = Field(default_factory=list)
+
+
+@router.post('/api/ai/chat')
+def ai_sales_chat(req: SalesBotRequest):
+    """
+    Sales OS Copilot endpoint.
+
+    V1 is read-only:
+    - reads existing Sales OS data
+    - never sends email
+    - never modifies calendar
+    - never writes HubSpot
+    - never changes qualification
+    """
+
+    if not db.get_campaign(req.campaign):
+        raise HTTPException(404, 'Campaign not found')
+
+    # Pull campaign prospects from the existing Sales OS.
+    prospects = db.list_prospects(req.campaign)
+
+    # Normalize ORM/dict results into plain dictionaries.
+    clean_prospects = []
+
+    for item in prospects:
+        if isinstance(item, dict):
+            clean_prospects.append(item)
+        elif hasattr(item, '__dict__'):
+            clean_prospects.append({
+                key: value
+                for key, value in vars(item).items()
+                if not key.startswith('_')
+            })
+
+    selected = None
+
+    if req.prospect_id is not None:
+        selected = next(
+            (
+                p for p in clean_prospects
+                if p.get('id') == req.prospect_id
+                or p.get('prospect_id') == req.prospect_id
+            ),
+            None
+        )
+
+        if selected is None:
+            raise HTTPException(
+                404,
+                'Prospect not found in this campaign'
+            )
+
+    # Use the persisted queue information already attached
+    # to prospects rather than re-scoring anything.
+    daily_queue = [
+        p for p in clean_prospects
+        if p.get('queue_status') == 'DAILY_QUEUE'
+    ]
+
+    deferred = [
+        p for p in clean_prospects
+        if p.get('queue_status') == 'DEFERRED'
+    ]
+
+    research = [
+        p for p in clean_prospects
+        if p.get('queue_status') == 'RESEARCH'
+    ]
+
+    ineligible = [
+        p for p in clean_prospects
+        if p.get('queue_status') == 'INELIGIBLE'
+    ]
+
+    daily_queue.sort(
+        key=lambda p: (
+            p.get('queue_position') is None,
+            p.get('queue_position') or 999999
+        )
+    )
+
+    queue = {
+        'daily_queue': daily_queue,
+        'deferred': deferred,
+        'research': research,
+        'ineligible': ineligible,
+        'summary': {
+            'daily_queue_count': len(daily_queue),
+            'deferred_count': len(deferred),
+            'research_count': len(research),
+            'ineligible_count': len(ineligible),
+        },
+    }
+
+    context = ai_sales_bot.build_sales_context(
+        campaign=req.campaign,
+        prospects=clean_prospects,
+        queue=queue,
+        selected_prospect=selected,
+    )
+
+    return ai_sales_bot.chat(
+        message=req.message,
+        campaign=req.campaign,
+        context=context,
+        conversation=req.conversation,
+    )

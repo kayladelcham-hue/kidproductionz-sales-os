@@ -34,3 +34,5 @@ review/
 v3_imports/
 build-desktop-error.log
 pyinstaller_last.log
+
+.tools/
