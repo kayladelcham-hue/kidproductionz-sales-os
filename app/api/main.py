@@ -27,9 +27,12 @@ from fastapi.staticfiles import StaticFiles
 import tempfile, uuid, shutil
 import logging, re
 import secrets
+import hashlib
+import hmac
+import base64
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import re as _re
 from pydantic import BaseModel
@@ -55,6 +58,44 @@ _sessions: set[str] = set()
 _csrf_tokens: dict[str, str] = {}
 def _auth_required() -> bool:
     return os.getenv('KIDPRODUCTIONZ_AUTH_MODE', 'local').lower() not in ('local', 'disabled', 'off')
+def _hash_value(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _password_hash(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    iterations = 310000
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        iterations,
+    )
+    return (
+        f"pbkdf2_sha256${iterations}$"
+        f"{base64.urlsafe_b64encode(salt).decode()}$"
+        f"{base64.urlsafe_b64encode(digest).decode()}"
+    )
+
+
+def _password_matches(password: str, stored: str) -> bool:
+    try:
+        algorithm, iterations, salt_text, digest_text = stored.split("$")
+        if algorithm != "pbkdf2_sha256":
+            return False
+
+        salt = base64.urlsafe_b64decode(salt_text.encode())
+        expected = base64.urlsafe_b64decode(digest_text.encode())
+        actual = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            salt,
+            int(iterations),
+        )
+
+        return hmac.compare_digest(actual, expected)
+    except Exception:
+        return False
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
@@ -981,6 +1022,8 @@ def spa_fallback(path:str):
 
 class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
+
+from .models import User, UserSession
 
 
 
