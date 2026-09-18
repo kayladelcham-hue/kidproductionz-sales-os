@@ -3,7 +3,7 @@ import json
 import os, json
 from contextlib import contextmanager
 from pathlib import Path
-from sqlalchemy import create_engine, select, update, func, text, delete
+from sqlalchemy import create_engine, select, update, func, text, delete, inspect
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base, Campaign, Prospect, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession
 def _url():
@@ -21,25 +21,6 @@ def session_scope():
     try: yield s; s.commit()
     except Exception: s.rollback(); raise
     finally: s.close()
-def ensure_user(email, name, password_hash):
-    email = email.strip().lower()
-
-    with session_scope() as s:
-        user = s.execute(
-            select(User).where(User.email == email)
-        ).scalar_one_or_none()
-
-        if user:
-            return _dict(user)
-
-        user = User(
-            email=email,
-            name=name,
-            password_hash=password_hash,
-        )
-        s.add(user)
-        s.flush()
-        return _dict(user)
 def get_user_by_email(email):
     with SessionLocal() as s:
         user = s.execute(
@@ -76,7 +57,20 @@ def delete_user_session(token_hash):
         if session:
             s.delete(session)
 def connect(): return engine.connect()
-def init_db(): Base.metadata.create_all(bind=engine)
+def init_db():
+    Base.metadata.create_all(bind=engine)
+
+    inspector = inspect(engine)
+    campaign_columns = {
+        column["name"]
+        for column in inspector.get_columns("campaign")
+    }
+
+    if "owner_id" not in campaign_columns:
+        with engine.begin() as conn:
+            conn.execute(
+                text("ALTER TABLE campaign ADD COLUMN owner_id INTEGER")
+            )
 def _dict(obj):
     if obj is None:return None
     return {c.name:getattr(obj,c.name) for c in obj.__table__.columns}
