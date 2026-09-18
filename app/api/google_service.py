@@ -36,6 +36,13 @@ def _post(url,payload):
  with urllib.request.urlopen(req,timeout=10) as r:return json.loads(r.read().decode())
 def send_gmail(to,subject,body):
  m=email.message.EmailMessage(); m['To']=to; m['Subject']=subject; m.set_content(body); raw=base64.urlsafe_b64encode(m.as_bytes()).decode().rstrip('='); return _post('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{'raw':raw})
+def reschedule_calendar_event(event_id, event):
+    url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events/' + urllib.parse.quote(event_id, safe='')
+    req = urllib.request.Request(url, data=json.dumps(event).encode(), method='PATCH',
+          headers={'Authorization': 'Bearer ' + _token(), 'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req, timeout=10) as response:
+        return json.loads(response.read().decode())
+
 def create_calendar_event(event):
     try:
         return _post('https://www.googleapis.com/calendar/v3/calendars/primary/events',event)

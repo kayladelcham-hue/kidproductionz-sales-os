@@ -45,6 +45,8 @@ def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
     return message[:500]
 app=FastAPI(title='KidProductionz Sales OS',version='1.0')
+from .sales_hub import router as sales_hub_router
+app.include_router(sales_hub_router)
 
 # Private single-user session foundation. Local desktop mode remains deliberately
 # frictionless; cloud mode opts into cookie-authenticated API access.
@@ -61,7 +63,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             if not token or token not in _sessions:
                 return JSONResponse({'detail':'Authentication required'}, status_code=401)
             if request.method in ('POST','PUT','PATCH','DELETE') and request.url.path not in ('/api/auth/login','/api/auth/logout'):
-                if not token or request.headers.get('X-CSRF-Token') != _csrf_tokens.get(token):
+                if not token or not _csrf_tokens.get(token) or request.headers.get('X-CSRF-Token') != _csrf_tokens.get(token):
                     return JSONResponse({'detail':'CSRF validation failed'}, status_code=403)
         return await call_next(request)
 app.add_middleware(AuthMiddleware)

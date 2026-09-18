@@ -313,6 +313,10 @@ def persist_generated_prospects(campaign, items):
         if website:
             keys.add(("website", website))
 
+        email = norm(row.get("email"))
+        if email:
+            keys.add(("email", email))
+
         if name and address:
             keys.add(("name_address", name, address, city, state))
 

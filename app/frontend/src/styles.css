@@ -11070,3 +11070,11 @@ html[data-kp-theme] textarea:focus{
   }
 
 }
+
+.sales-hub-form { max-width: 680px; margin: 0 auto 16px; }
+.sales-hub-form label { display: grid; gap: 6px; margin: 12px 0; }
+.sales-hub-form input, .sales-hub-form select, .sales-hub-form textarea { width: 100%; min-height: 44px; box-sizing: border-box; }
+.sales-hub-form button { min-height: 44px; }
+@media (max-width: 640px) { .sales-hub-form .actions { display: flex; flex-wrap: wrap; gap: 8px; } .sales-hub-form input { font-size: 16px; } }
+
+@media (max-width: 900px) { header .add-prospect-trigger { grid-column: 1 / -1; width: 100%; min-height: 44px; } }
