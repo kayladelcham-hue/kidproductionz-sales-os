@@ -22,6 +22,31 @@ class Campaign(Base):
     daily_queue_limit: Mapped[int|None] = mapped_column(Integer)
     status: Mapped[str|None] = mapped_column(Text)
 
+class User(Base):
+    __tablename__ = "user_account"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="ACTIVE")
+    is_admin: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    created_at: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default="CURRENT_TIMESTAMP"
+    )
+
+
+class UserSession(Base):
+    __tablename__ = "user_session"
+
+    token_hash: Mapped[str] = mapped_column(Text, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    csrf_token_hash: Mapped[str | None] = mapped_column(Text)
+    expires_at: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default="CURRENT_TIMESTAMP"
+    )
+
 class Prospect(Base):
     __tablename__='prospect'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -154,3 +179,6 @@ class AppSetting(Base):
     value: Mapped[str] = mapped_column(Text, nullable=False)
 
 __all__=['Base','Campaign','Prospect','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting']
+
+"User",
+"UserSession",

@@ -5,8 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from sqlalchemy import create_engine, select, update, func, text, delete
 from sqlalchemy.orm import sessionmaker, Session
-from .models import Base, Campaign, Prospect, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting
-
+from .models import Base, Campaign, Prospect, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession
 def _url():
     u=os.getenv('DATABASE_URL','sqlite:///data/kidproductionz.db')
     if u.startswith('postgresql://'): u='postgresql+psycopg://'+u[len('postgresql://'):]
