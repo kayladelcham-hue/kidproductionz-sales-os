@@ -1,0 +1,226 @@
+{
+  "version": "2.0",
+  "run_id": "20260913T011707975314Z_e2fbb18e",
+  "snapshot_id": "e79d527f5ad444649a28b56a327457b9",
+  "portal_id": "247159003",
+  "checked_at": "2026-09-13T01:17:07.473326+00:00",
+  "input": "C:\\Users\\CJ\\Documents\\ChatGPT\\Kid Productionz Lead Automation\\processed\\qualified_leads_20260912T235447927192Z_d7bb8a99.csv",
+  "input_sha256": "7a7c885f65b9a3dbf55afee299a41b30428b8c0aa63b4f4190d07853d4283f69",
+  "counts": {
+    "NEW": 198,
+    "EXISTING": 46,
+    "REVIEW": 28
+  },
+  "snapshot_partitions": {
+    "active": {
+      "pages": 2,
+      "records": 165,
+      "exhausted": true
+    },
+    "archived": {
+      "pages": 1,
+      "records": 0,
+      "exhausted": true
+    }
+  },
+  "snapshot_started_at": "2026-09-13T01:17:06.023720+00:00",
+  "snapshot_completed_at": "2026-09-13T01:17:07.361116+00:00",
+  "config": {
+    "version": "2.0",
+    "portal_id": "247159003",
+    "api_base": "https://api.hubapi.com",
+    "token_env": "HUBSPOT_READONLY_TOKEN",
+    "properties": [
+      "name",
+      "domain",
+      "hs_additional_domains",
+      "website",
+      "phone",
+      "address",
+      "address2",
+      "city",
+      "state",
+      "zip",
+      "country"
+    ],
+    "required_properties": [
+      "name",
+      "domain",
+      "phone",
+      "address",
+      "city",
+      "state"
+    ],
+    "retrieval": {
+      "page_size": 100,
+      "timeout_seconds": 30,
+      "max_retries": 3,
+      "max_pages_per_partition": 100000
+    },
+    "snapshot": {
+      "max_age_hours": 24,
+      "include_archived": true
+    },
+    "thresholds": {
+      "existing": 90,
+      "review": 40,
+      "competing": 70,
+      "name_similarity": 0.92
+    },
+    "confidence": {
+      "name_address": 95,
+      "domain_phone_name": 95,
+      "domain_name_city": 90,
+      "fuzzy_phone_address": 90,
+      "domain_only": 70,
+      "name_city": 70,
+      "phone_only": 55,
+      "address_only": 55,
+      "fuzzy_only": 40,
+      "shared_identifier": 55
+    },
+    "normalization": {
+      "legal_suffixes": [
+        "llc",
+        "inc",
+        "incorporated",
+        "ltd",
+        "corp",
+        "corporation"
+      ],
+      "street_aliases": {
+        "street": "st",
+        "road": "rd",
+        "avenue": "ave",
+        "boulevard": "blvd",
+        "drive": "dr",
+        "lane": "ln",
+        "court": "ct",
+        "parkway": "pkwy",
+        "highway": "hwy"
+      },
+      "state_aliases": {
+        "florida": "FL",
+        "georgia": "GA",
+        "alabama": "AL",
+        "alaska": "AK",
+        "arizona": "AZ",
+        "arkansas": "AR",
+        "california": "CA",
+        "colorado": "CO",
+        "connecticut": "CT",
+        "delaware": "DE",
+        "district of columbia": "DC",
+        "hawaii": "HI",
+        "idaho": "ID",
+        "illinois": "IL",
+        "indiana": "IN",
+        "iowa": "IA",
+        "kansas": "KS",
+        "kentucky": "KY",
+        "louisiana": "LA",
+        "maine": "ME",
+        "maryland": "MD",
+        "massachusetts": "MA",
+        "michigan": "MI",
+        "minnesota": "MN",
+        "mississippi": "MS",
+        "missouri": "MO",
+        "montana": "MT",
+        "nebraska": "NE",
+        "nevada": "NV",
+        "new hampshire": "NH",
+        "new jersey": "NJ",
+        "new mexico": "NM",
+        "new york": "NY",
+        "north carolina": "NC",
+        "north dakota": "ND",
+        "ohio": "OH",
+        "oklahoma": "OK",
+        "oregon": "OR",
+        "pennsylvania": "PA",
+        "rhode island": "RI",
+        "south carolina": "SC",
+        "south dakota": "SD",
+        "tennessee": "TN",
+        "texas": "TX",
+        "utah": "UT",
+        "vermont": "VT",
+        "virginia": "VA",
+        "washington": "WA",
+        "west virginia": "WV",
+        "wisconsin": "WI",
+        "wyoming": "WY"
+      },
+      "generic_name_tokens": [
+        "salon",
+        "hair",
+        "beauty",
+        "studio",
+        "shop",
+        "spa",
+        "nails",
+        "the",
+        "and",
+        "of"
+      ],
+      "suite_pattern": "(?:\\b(?:suite|ste|unit|suit)\\s*|#\\s*)([a-z0-9-]+)",
+      "country_aliases": {
+        "us": "us",
+        "usa": "us",
+        "united states": "us",
+        "united states of america": "us"
+      }
+    },
+    "shared_domains": [
+      "salonlofts.com",
+      "booksy.com",
+      "vagaro.com",
+      "styleseat.com",
+      "square.site",
+      "squareup.com",
+      "glossgenius.com",
+      "fresha.com",
+      "instagram.com",
+      "facebook.com",
+      "google.com",
+      "yelp.com"
+    ],
+    "brand_domains": [
+      "haircuttery.com",
+      "greatclips.com",
+      "supercuts.com",
+      "sportclips.com",
+      "ulta.com",
+      "sallybeauty.com",
+      "floydsbarbershop.com"
+    ],
+    "platforms": [
+      {
+        "domain": "salonlofts.com",
+        "operator_name_patterns": [
+          "^salon lofts$",
+          "^salon lofts maitland south$"
+        ],
+        "operator_path_prefixes": [
+          "/salons/"
+        ]
+      }
+    ]
+  },
+  "outputs": {
+    "NEW": "C:\\Users\\CJ\\Documents\\ChatGPT\\Kid Productionz Lead Automation\\crm_checks\\20260913T011707975314Z_e2fbb18e\\new_leads_20260913T011707975314Z_e2fbb18e.csv",
+    "EXISTING": "C:\\Users\\CJ\\Documents\\ChatGPT\\Kid Productionz Lead Automation\\crm_checks\\20260913T011707975314Z_e2fbb18e\\existing_leads_20260913T011707975314Z_e2fbb18e.csv",
+    "REVIEW": "C:\\Users\\CJ\\Documents\\ChatGPT\\Kid Productionz Lead Automation\\crm_checks\\20260913T011707975314Z_e2fbb18e\\review_leads_20260913T011707975314Z_e2fbb18e.csv",
+    "candidates": "C:\\Users\\CJ\\Documents\\ChatGPT\\Kid Productionz Lead Automation\\crm_checks\\20260913T011707975314Z_e2fbb18e\\match_candidates_20260913T011707975314Z_e2fbb18e.csv"
+  },
+  "warnings": [
+    "No CRM writes or import actions performed.",
+    "Snapshot covers API-visible companies; account ID is supplied by configuration.",
+    "Pagination is not a transactional snapshot; CRM changes during retrieval can affect coverage.",
+    "Matching confidence is rule strength, not a probability.",
+    "NEW means no credible match in this snapshot, not permission to import.",
+    "Property values and contact reachability are not verified online."
+  ],
+  "missing_optional_properties": []
+}

@@ -1,0 +1,194 @@
+﻿"""AI Sales Copilot orchestration layer.
+
+The copilot interprets Sales OS data. It does NOT replace scoring,
+routing, qualification, queue logic, or existing action safeguards.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+SYSTEM_PROMPT = """
+You are the KidProductionz Sales OS Copilot.
+
+Your job is to help the user understand and act on REAL Sales OS data.
+
+RULES:
+1. Never invent prospect facts, conversations, contact information,
+   business observations, relationships, or buying signals.
+2. Treat the Sales OS database and supplied context as the source of truth.
+3. Never change qualification scores or routing decisions yourself.
+4. Explain scoring and routing using the evidence supplied by Sales OS.
+5. If information is missing, say that it is missing.
+6. Distinguish facts from recommendations.
+7. Keep sales recommendations practical, concise, and actionable.
+8. Never claim an external action was completed unless the system confirms it.
+9. Email, calendar, CRM, and other external writes require confirmation.
+10. Drafting is allowed without confirmation.
+"""
+
+
+def classify_intent(message: str) -> str:
+    """Lightweight deterministic intent hint for the copilot."""
+    text = (message or "").lower()
+
+    if any(x in text for x in ("who should i call", "who should i contact",
+                               "best leads", "top prospects", "priority leads")):
+        return "QUEUE_ANALYSIS"
+
+    if any(x in text for x in ("why did", "why is", "score", "qualified",
+                               "qualification", "grade")):
+        return "QUALIFICATION_EXPLANATION"
+
+    if any(x in text for x in ("draft", "what should i say", "email",
+                               "dm ", "message")):
+        return "OUTREACH_DRAFT"
+
+    if any(x in text for x in ("follow up", "follow-up", "overdue",
+                               "next action")):
+        return "FOLLOW_UP"
+
+    if any(x in text for x in ("pipeline", "metrics", "performance",
+                               "conversion")):
+        return "PIPELINE_ANALYSIS"
+
+    return "GENERAL_SALES"
+
+
+def build_sales_context(
+    campaign: str,
+    prospects: list[dict[str, Any]] | None = None,
+    queue: dict[str, Any] | None = None,
+    follow_ups: list[dict[str, Any]] | None = None,
+    metrics: dict[str, Any] | None = None,
+    selected_prospect: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Construct bounded Sales OS context for the AI layer.
+
+    Keeping this separate makes it easier to control exactly what
+    information is ever supplied to an AI provider.
+    """
+
+    return {
+        "campaign": campaign,
+        "selected_prospect": selected_prospect,
+        "prospects": prospects or [],
+        "queue": queue or {},
+        "follow_ups": follow_ups or [],
+        "metrics": metrics or {},
+    }
+
+
+def action(
+    action_type: str,
+    prospect_id: int | None = None,
+    payload: dict[str, Any] | None = None,
+    requires_confirmation: bool = True,
+) -> dict[str, Any]:
+    """Create a structured action suggestion for the frontend."""
+
+    return {
+        "type": action_type,
+        "prospect_id": prospect_id,
+        "payload": payload or {},
+        "requires_confirmation": requires_confirmation,
+    }
+
+
+def safe_response(
+    reply: str,
+    intent: str,
+    prospects_used: list[int] | None = None,
+    suggested_actions: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Normalize copilot responses for the frontend."""
+
+    actions = suggested_actions or []
+
+    return {
+        "reply": reply,
+        "intent": intent,
+        "prospects_used": prospects_used or [],
+        "suggested_actions": actions,
+        "requires_confirmation": any(
+            bool(item.get("requires_confirmation"))
+            for item in actions
+        ),
+    }
+
+
+def chat(
+    message: str,
+    campaign: str,
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    V1 deterministic copilot shell.
+
+    This deliberately does not call an LLM yet. First we verify that
+    Sales OS -> copilot -> API -> frontend works correctly.
+
+    The LLM provider can then be inserted here without changing the
+    surrounding application architecture.
+    """
+
+    intent = classify_intent(message)
+
+    selected = context.get("selected_prospect")
+
+    if selected:
+        name = selected.get("name") or selected.get("business") or "this prospect"
+        prospect_id = selected.get("id") or selected.get("prospect_id")
+
+        reply = (
+            f"I have {name} loaded from the {campaign} campaign. "
+            "I can explain their qualification, review their routing, "
+            "help plan the next action, or prepare outreach using the "
+            "information stored in Sales OS."
+        )
+
+        return safe_response(
+            reply=reply,
+            intent=intent,
+            prospects_used=[prospect_id] if prospect_id else [],
+        )
+
+    queue = context.get("queue") or {}
+    daily = queue.get("daily_queue") or []
+
+    if intent == "QUEUE_ANALYSIS" and daily:
+        top = daily[:5]
+        names = [
+            x.get("name") or x.get("business") or f"Prospect {x.get('id', '?')}"
+            for x in top
+        ]
+
+        reply = (
+            "Your current priority queue starts with: "
+            + ", ".join(names)
+            + ". These rankings come from the existing Sales OS "
+              "qualification and queue engine."
+        )
+
+        ids = [
+            x.get("id") or x.get("prospect_id")
+            for x in top
+            if x.get("id") or x.get("prospect_id")
+        ]
+
+        return safe_response(
+            reply=reply,
+            intent=intent,
+            prospects_used=ids,
+        )
+
+    return safe_response(
+        reply=(
+            f"I'm connected to the {campaign} Sales OS context. "
+            "Ask me about your prospects, qualification decisions, "
+            "priority queue, follow-ups, pipeline, or outreach."
+        ),
+        intent=intent,
+    )
