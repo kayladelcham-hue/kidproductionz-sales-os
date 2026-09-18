@@ -21,6 +21,25 @@ def session_scope():
     try: yield s; s.commit()
     except Exception: s.rollback(); raise
     finally: s.close()
+def ensure_user(email, name, password_hash):
+    email = email.strip().lower()
+
+    with session_scope() as s:
+        user = s.execute(
+            select(User).where(User.email == email)
+        ).scalar_one_or_none()
+
+        if user:
+            return _dict(user)
+
+        user = User(
+            email=email,
+            name=name,
+            password_hash=password_hash,
+        )
+        s.add(user)
+        s.flush()
+        return _dict(user)
 def get_user_by_email(email):
     with SessionLocal() as s:
         user = s.execute(
