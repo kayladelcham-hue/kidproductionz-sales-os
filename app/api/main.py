@@ -42,7 +42,7 @@ from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, save_user_session, get_user_session, delete_user_session
+from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, save_user_session, get_user_session, delete_user_session, ensure_user
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
@@ -114,16 +114,51 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post('/api/auth/login')
+@app.post('/api/auth/login')
 def auth_login(req: LoginRequest):
-    expected_user=os.getenv('KIDPRODUCTIONZ_AUTH_USERNAME','admin')
-    expected_password=os.getenv('KIDPRODUCTIONZ_AUTH_PASSWORD','')
-    if not expected_password or not secrets.compare_digest(req.username or expected_user, expected_user) or not secrets.compare_digest(req.password, expected_password):
-        raise HTTPException(401, 'Invalid credentials')
-    token=secrets.token_urlsafe(32); _sessions.add(token)
-    response=JSONResponse({'authenticated':True,'username':expected_user})
-    response.set_cookie(_AUTH_COOKIE, token, httponly=True, samesite='lax', secure=os.getenv('APP_ENV','').lower() in ('production','cloud'))
-    return response
+    expected_user = os.getenv('KIDPRODUCTIONZ_AUTH_USERNAME', 'admin')
+    expected_password = os.getenv('KIDPRODUCTIONZ_AUTH_PASSWORD', '')
 
+    if (
+        not expected_password
+        or not secrets.compare_digest(req.username or expected_user, expected_user)
+    ):
+        raise HTTPException(401, 'Invalid credentials')
+
+    user = get_user_by_email(expected_user)
+
+    if not user:
+        user = ensure_user(
+            expected_user,
+            expected_user,
+            _password_hash(expected_password),
+        )
+
+    if not _password_matches(req.password, user['password_hash']):
+        raise HTTPException(401, 'Invalid credentials')
+
+    token = secrets.token_urlsafe(32)
+    _sessions.add(token)
+
+    save_user_session(
+        _hash_value(token),
+        user['id'],
+    )
+
+    response = JSONResponse({
+        'authenticated': True,
+        'username': expected_user,
+    })
+
+    response.set_cookie(
+        _AUTH_COOKIE,
+        token,
+        httponly=True,
+        samesite='lax',
+        secure=os.getenv('APP_ENV', '').lower() in ('production', 'cloud'),
+    )
+
+    return response
 @app.post('/api/auth/logout')
 def auth_logout(request: Request):
     token=request.cookies.get(_AUTH_COOKIE)
