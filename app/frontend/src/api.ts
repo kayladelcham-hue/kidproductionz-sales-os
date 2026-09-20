@@ -63,7 +63,7 @@ async function mutate<T>(path:string,method:'PATCH'|'PUT'|'DELETE',body?:any):Pr
   if(r.status===403){csrfToken=null;throw new Error('CSRF_403');}
   if(!r.ok)throw new Error(`API_${r.status}`);return r.json()
 }
-export const authApi={me:()=>get<any>('/api/auth/me'),login:(username:string,password:string)=>post<any>('/api/auth/login',{username,password}),logout:()=>post<any>('/api/auth/logout',{})};
+export const authApi={me:()=>get<any>('/api/auth/me'),login:async(username:string,password:string)=>{const r=await fetch(BASE+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});if(!r.ok){const text=await r.text();throw new Error(text||'Login failed')}return r.json()},logout:()=>post<any>('/api/auth/logout',{})};
 export const api={
 aiChat:(body:any)=>post<any>('/api/ai/chat',body),
 manualProspect:(body:any)=>post<any>('/api/prospects/manual',body),followUps:(campaign:string)=>get<any[]>(`/api/follow-ups?campaign=${encodeURIComponent(campaign)}`),nextAction:(id:number,body:any)=>post<any>(`/api/prospects/${id}/next-action`,body),reschedule:(id:number,body:any)=>post<any>(`/api/follow-ups/events/${id}/reschedule`,body),
