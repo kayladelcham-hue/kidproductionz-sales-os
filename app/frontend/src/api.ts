@@ -14,7 +14,7 @@ async function ensureCsrf():Promise<string>{
 }
 async function post<T>(path:string,body:any,retry=true):Promise<T>{
   const headers:Record<string,string>={'Content-Type':'application/json'};
-  const protectedRequest=path!=='/api/auth/login' && path!=='/api/auth/logout';
+  const protectedRequest=!['/api/auth/login','/api/auth/logout','/api/auth/signup'].includes(path);
 
   if(protectedRequest){
     headers['X-CSRF-Token']=await ensureCsrf();

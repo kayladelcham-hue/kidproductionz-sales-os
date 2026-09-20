@@ -99,7 +99,7 @@ def _password_matches(password: str, stored: str) -> bool:
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        if _auth_required() and request.url.path.startswith('/api/') and request.url.path not in ('/api/health','/api/auth/login','/api/auth/me','/api/auth/logout','/api/google/oauth/callback'):
+        if _auth_required() and request.url.path.startswith('/api/') and request.url.path not in ('/api/health','/api/auth/login','/api/auth/me','/api/auth/logout','/api/google/oauth/callback','/api/auth/signup'):
             token = request.cookies.get(_AUTH_COOKIE)
             session = get_user_session(_hash_value(token)) if token else None
             if not token or not session:
@@ -118,6 +118,71 @@ app.add_middleware(AuthMiddleware)
 class LoginRequest(BaseModel):
     username: str = ''
     password: str
+
+
+class BetaSignupRequest(BaseModel):
+    email: str
+    name: str = ''
+    password: str
+    invite_code: str = ''
+
+@app.post('/api/auth/signup')
+def beta_signup(req: BetaSignupRequest):
+    email = (req.email or '').strip().lower()
+    name = (req.name or '').strip()
+    password = req.password or ''
+    supplied_invite = (req.invite_code or '').strip()
+
+    if not email or '@' not in email:
+        raise HTTPException(status_code=400, detail='Enter a valid email address')
+
+    if len(password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail='Password must be at least 8 characters'
+        )
+
+    expected_invite = (
+        os.getenv('KIDPRODUCTIONZ_BETA_INVITE_CODE', '')
+        or os.getenv('BETA_INVITE_CODE', '')
+        or os.getenv('KIDPRODUCTIONZ_INVITE_CODE', '')
+    ).strip()
+
+    if not expected_invite:
+        raise HTTPException(
+            status_code=503,
+            detail='Beta signup is not configured'
+        )
+
+    if not supplied_invite or not secrets.compare_digest(
+        supplied_invite,
+        expected_invite
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail='Invalid beta invite code'
+        )
+
+    existing = get_user_by_email(email)
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail='An account with this email already exists'
+        )
+
+    user = ensure_user(
+        email,
+        name or email,
+        _password_hash(password),
+        is_admin=False,
+    )
+
+    return {
+        'created': True,
+        'email': user.get('email', email),
+        'name': user.get('name', name or email),
+    }
 
 @app.post('/api/auth/login')
 def auth_login(req: LoginRequest):
@@ -1100,8 +1165,7 @@ from .models import User, UserSession
 
 
 
-# TEMPORARY beta-user diagnostic.
-# Requires AUTH_DIAGNOSTIC_TOKEN and never exposes password hashes.
+
 @app.get('/diagnostics/beta-users')
 def diagnostic_beta_users(request: Request):
     expected = os.getenv('AUTH_DIAGNOSTIC_TOKEN', '')
