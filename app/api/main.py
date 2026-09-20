@@ -42,7 +42,7 @@ from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, save_user_session, get_user_session, delete_user_session, ensure_user, claim_unowned_campaigns
+from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, save_user_session, get_user_session, delete_user_session, ensure_user, claim_unowned_campaigns, get_owned_prospect
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
@@ -50,6 +50,8 @@ def _safe_error_message(message:str)->str:
 app=FastAPI(title='KidProductionz Sales OS',version='1.0')
 from .sales_hub import router as sales_hub_router
 app.include_router(sales_hub_router)
+from .lifecycle import router as lifecycle_router
+app.include_router(lifecycle_router)
 
 # Private single-user session foundation. Local desktop mode remains deliberately
 # frictionless; cloud mode opts into cookie-authenticated API access.
@@ -600,23 +602,27 @@ def metrics(request: Request, campaign:str|None=None):
 
     return result
 @app.patch('/api/prospects/{prospect_id}/defer')
-def prospect_defer(prospect_id:int):
-    row=move_prospect_queue(prospect_id,'DEFERRED')
+def prospect_defer(prospect_id:int, request:Request):
+    row=move_prospect_queue(prospect_id,'DEFERRED',_owner_id(request))
     if not row: raise HTTPException(404,'Prospect not found')
     return row
 
 @app.patch('/api/prospects/{prospect_id}/activity')
-def prospect_activity(prospect_id:int, activity:SalesActivity):
-    try: return update_sales_activity(prospect_id, activity.status, activity.notes, activity.booked_value)
+def prospect_activity(prospect_id:int, activity:SalesActivity, request:Request):
+    try:
+        row=update_sales_activity(prospect_id, activity.status, activity.notes, activity.booked_value, _owner_id(request))
+        if not row: raise HTTPException(404,'Prospect not found')
+        return row
     except ValueError as exc: raise HTTPException(400,str(exc))
     except KeyError: raise HTTPException(404,'Prospect not found')
 class ExternalAction(BaseModel):
     prospect_id:int; action_type:str; metadata:dict|None=None
 @app.post('/api/prospects/{prospect_id}/external-action')
-def external_action(prospect_id:int, action:ExternalAction):
+def external_action(prospect_id:int, action:ExternalAction, request:Request):
     if action.prospect_id!=prospect_id: raise HTTPException(400,'Prospect ID mismatch')
     if action.action_type not in {'CALL_OPENED','EMAIL_DRAFTED','EMAIL_SENT','SOCIAL_OPENED','WEBSITE_OPENED','BOOKING_LINK_COPIED','CALENDAR_EVENT_CREATED','HUBSPOT_OPENED'}: raise HTTPException(400,'Invalid action type')
-    log_external_action(prospect_id,action.action_type,action.metadata); return {'status':'LOGGED'}
+    if not log_external_action(prospect_id,action.action_type,action.metadata,_owner_id(request)): raise HTTPException(404,'Prospect not found')
+    return {'status':'LOGGED'}
 class CalendarRequest(BaseModel):
     prospect_id:int; title:str|None=None; consultation_start:str; consultation_end:str; timezone:str|None=None; location:str|None=None; notes:str|None=None; attendee_email:str|None=None; confirmed:bool=False
 def _calendar_dt(value:str, timezone_name:str)->datetime:
@@ -626,12 +632,14 @@ def _calendar_dt(value:str, timezone_name:str)->datetime:
     except Exception: raise HTTPException(400,'Invalid calendar timezone')
     return dt.replace(tzinfo=zone) if dt.tzinfo is None else dt.astimezone(zone)
 @app.post('/api/integrations/calendar/preview')
-def calendar_preview(req:CalendarRequest):
+def calendar_preview(req:CalendarRequest, request:Request):
+    if not get_owned_prospect(req.prospect_id,_owner_id(request)): raise HTTPException(404,'Prospect not found')
     start=_calendar_dt(req.consultation_start,req.timezone or 'UTC'); end=_calendar_dt(req.consultation_end,req.timezone or 'UTC')
     if end<=start: raise HTTPException(400,'Calendar end must be after start')
     return {'status':'READY_TO_CREATE','title':req.title or 'KidProductionz Consultation','prospect_id':req.prospect_id,'consultation_start':start.isoformat(timespec='seconds'),'consultation_end':end.isoformat(timespec='seconds'),'timezone':req.timezone or 'UTC','location':req.location,'notes':req.notes,'attendee_email':req.attendee_email}
 @app.post('/api/integrations/calendar/create')
-def calendar_create(req:CalendarRequest):
+def calendar_create(req:CalendarRequest, request:Request):
+    if not get_owned_prospect(req.prospect_id,_owner_id(request)): raise HTTPException(404,'Prospect not found')
     if not req.confirmed: raise HTTPException(400,'Explicit confirmation required')
     if os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower()!='true': raise HTTPException(403,'Google Calendar is disabled')
     try:
@@ -642,7 +650,7 @@ def calendar_create(req:CalendarRequest):
         if req.location: event_doc['location']=req.location
         if req.attendee_email: event_doc['attendees']=[{'email':req.attendee_email}]
         event=google_service.create_calendar_event(event_doc)
-        log_external_action(req.prospect_id,'CALENDAR_EVENT_CREATED',{'calendar_event_id':event.get('id')})
+        log_external_action(req.prospect_id,'CALENDAR_EVENT_CREATED',{'calendar_event_id':event.get('id')},_owner_id(request))
         with connect() as c:
             c.execute(
                 text('''
@@ -679,7 +687,8 @@ def calendar_create(req:CalendarRequest):
                 req.prospect_id,
                 'CONSULTATION_SET',
                 None,
-                None
+                None,
+                _owner_id(request)
             )
         except Exception as status_exc:
             logger.exception(
@@ -698,12 +707,13 @@ def calendar_create(req:CalendarRequest):
 class GmailRequest(BaseModel):
     prospect_id:int; to:str|None=None; subject:str; body:str; confirmed:bool=False
 @app.post('/api/integrations/gmail/send')
-def gmail_send(req:GmailRequest):
+def gmail_send(req:GmailRequest, request:Request):
+    if not get_owned_prospect(req.prospect_id,_owner_id(request)): raise HTTPException(404,'Prospect not found')
     if not req.to: raise HTTPException(400,'Prospect email is unavailable')
     if not req.confirmed: raise HTTPException(400,'Explicit confirmation required')
     if os.getenv('GMAIL_ENABLED','false').lower()!='true': raise HTTPException(403,'Gmail is disabled')
     try:
-        result=google_service.send_gmail(req.to,req.subject,req.body); log_external_action(req.prospect_id,'EMAIL_SENT',{'provider_message_id':result.get('id')})
+        result=google_service.send_gmail(req.to,req.subject,req.body); log_external_action(req.prospect_id,'EMAIL_SENT',{'provider_message_id':result.get('id')},_owner_id(request))
         with connect() as c:
             c.execute(
                 text('''

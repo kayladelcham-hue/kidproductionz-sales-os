@@ -81,6 +81,30 @@ class Prospect(Base):
     consultation_set_at: Mapped[str|None] = mapped_column(Text)
     booked_at: Mapped[str|None] = mapped_column(Text)
     external_key: Mapped[str|None] = mapped_column(Text)
+    # Prospect remains the canonical contact table for backward compatibility.
+    # lifecycle_stage changes how the same record is presented; it never copies it.
+    company: Mapped[str|None] = mapped_column(Text)
+    lifecycle_stage: Mapped[str] = mapped_column(Text, nullable=False, server_default='PROSPECT')
+    lead_source: Mapped[str|None] = mapped_column(Text)
+    customer_since: Mapped[str|None] = mapped_column(Text)
+
+class Deal(Base):
+    __tablename__='deal'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prospect_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    stage: Mapped[str] = mapped_column(Text, nullable=False, server_default='NEW_LEAD')
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default='ACTIVE')
+    deal_value: Mapped[float|None] = mapped_column(Float)
+    revenue_collected: Mapped[float] = mapped_column(Float, nullable=False, server_default='0')
+    expected_close: Mapped[str|None] = mapped_column(Text)
+    next_action: Mapped[str|None] = mapped_column(Text)
+    next_action_at: Mapped[str|None] = mapped_column(Text)
+    lost_reason: Mapped[str|None] = mapped_column(Text)
+    opened_at: Mapped[str] = mapped_column(Text, nullable=False, server_default='CURRENT_TIMESTAMP')
+    closed_at: Mapped[str|None] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default='CURRENT_TIMESTAMP')
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False, server_default='CURRENT_TIMESTAMP')
 
 class Run(Base):
     __tablename__='run'
@@ -179,7 +203,7 @@ class AppSetting(Base):
     key: Mapped[str] = mapped_column(Text, primary_key=True)
     value: Mapped[str] = mapped_column(Text, nullable=False)
 
-__all__=['Base','Campaign','Prospect','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting']
+__all__=['Base','Campaign','Prospect','Deal','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting']
 
 "User",
 "UserSession",

@@ -1,12 +1,13 @@
 ﻿from __future__ import annotations
 import json
 import os, json
+from datetime import datetime, timezone
 from contextlib import contextmanager
 from pathlib import Path
 from sqlalchemy import create_engine, select, update, func, text, delete, inspect
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import IntegrityError
-from .models import Base, Campaign, Prospect, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession
+from .models import Base, Campaign, Prospect, Deal, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession
 def _url():
     u=os.getenv('DATABASE_URL','sqlite:///data/kidproductionz.db')
     if u.startswith('postgresql://'): u='postgresql+psycopg://'+u[len('postgresql://'):]
@@ -114,23 +115,93 @@ def init_db():
             conn.execute(
                 text("ALTER TABLE campaign ADD COLUMN owner_id INTEGER")
             )
+
+    # Additive, idempotent migration for beta databases. The prospect table is
+    # intentionally retained as the canonical contact table so no IDs or related
+    # consultation/activity records are rewritten.
+    prospect_columns = {
+        column["name"]
+        for column in inspect(engine).get_columns("prospect")
+    }
+    lifecycle_added = "lifecycle_stage" not in prospect_columns
+    additions = {
+        "company": "TEXT",
+        "lifecycle_stage": "TEXT NOT NULL DEFAULT 'PROSPECT'",
+        "lead_source": "TEXT",
+        "customer_since": "TEXT",
+    }
+    with engine.begin() as conn:
+        for column, definition in additions.items():
+            if column not in prospect_columns:
+                conn.execute(text(f"ALTER TABLE prospect ADD COLUMN {column} {definition}"))
+        if lifecycle_added:
+            conn.execute(text("""
+                UPDATE prospect
+                SET lifecycle_stage = CASE
+                    WHEN sales_status = 'BOOKED' THEN 'CUSTOMER'
+                    WHEN sales_status IN ('REPLIED', 'CONSULTATION_SET') THEN 'LEAD'
+                    ELSE 'PROSPECT'
+                END
+            """))
+            conn.execute(text("""
+                UPDATE prospect
+                SET customer_since = COALESCE(booked_at, last_activity_at, updated_at, created_at)
+                WHERE lifecycle_stage = 'CUSTOMER' AND customer_since IS NULL
+            """))
+
+    # Seed one opportunity for existing interested/booked contacts. This is
+    # idempotent and preserves booked_value as contracted value only.
+    with session_scope() as s:
+        existing = set(s.execute(select(Deal.prospect_id)).scalars().all())
+        contacts = s.execute(
+            select(Prospect).where(Prospect.lifecycle_stage.in_(['LEAD', 'CUSTOMER']))
+        ).scalars().all()
+        for contact in contacts:
+            if contact.id in existing:
+                continue
+            won = contact.lifecycle_stage == 'CUSTOMER'
+            stage = 'WON' if won else ('CONSULTATION' if contact.sales_status == 'CONSULTATION_SET' else 'NEW_LEAD')
+            s.add(Deal(
+                prospect_id=contact.id,
+                name=f"{contact.company or contact.name} Opportunity",
+                stage=stage,
+                status='WON' if won else 'ACTIVE',
+                deal_value=contact.booked_value,
+                revenue_collected=0,
+                closed_at=contact.booked_at if won else None,
+            ))
 def _dict(obj):
     if obj is None:return None
     return {c.name:getattr(obj,c.name) for c in obj.__table__.columns}
 def seed_campaigns(config_dir=None): return 0
 def persist_upload(metadata):
     with session_scope() as s: s.merge(Upload(**{k:v for k,v in metadata.items() if k in Upload.__table__.columns.keys()}))
-def update_sales_activity(prospect_id,status=None,notes=None,booked_value=None):
+def _owned_prospect_query(prospect_id, owner_id=None):
+    q = select(Prospect).where(Prospect.id == prospect_id)
+    if owner_id is not None:
+        q = q.join(Campaign, Prospect.campaign_id == Campaign.id).where(Campaign.owner_id == owner_id)
+    return q
+
+
+def get_owned_prospect(prospect_id, owner_id=None):
+    with SessionLocal() as s:
+        return _dict(s.execute(_owned_prospect_query(prospect_id, owner_id)).scalar_one_or_none())
+
+
+def update_sales_activity(prospect_id,status=None,notes=None,booked_value=None,owner_id=None):
     with session_scope() as s:
-        p=s.get(Prospect,prospect_id)
+        p=s.execute(_owned_prospect_query(prospect_id, owner_id)).scalar_one_or_none()
         if not p:return None
+        previous=p.sales_status
         if status is not None:p.sales_status=status
         if notes is not None:p.notes=notes
         if booked_value is not None:p.booked_value=booked_value
+        p.last_activity_at=datetime.now(timezone.utc).isoformat()
+        s.add(ExternalAction(prospect_id=p.id,action_type='SALES_ACTIVITY_UPDATED',metadata_json=json.dumps({'from_status':previous,'to_status':p.sales_status,'notes_updated':notes is not None,'booked_value':booked_value})))
         return _dict(p)
-def move_prospect_queue(prospect_id, queue):
+def move_prospect_queue(prospect_id, queue, owner_id=None):
     with session_scope() as s:
-        p=s.get(Prospect,prospect_id)
+        p=s.execute(_owned_prospect_query(prospect_id, owner_id)).scalar_one_or_none()
         if not p:return None
         p.queue=queue
         return _dict(p)
@@ -215,8 +286,12 @@ def persist_crm_state(prospect_id,result):
         else:s.add(CrmState(**vals))
 def get_crm_state(prospect_id):
     with SessionLocal() as s:return _dict(s.execute(select(CrmState).where(CrmState.prospect_id==prospect_id)).scalar_one_or_none())
-def log_external_action(prospect_id,action_type,metadata=None):
-    with session_scope() as s:s.add(ExternalAction(prospect_id=prospect_id,action_type=action_type,metadata_json=json.dumps(metadata) if metadata is not None else None))
+def log_external_action(prospect_id,action_type,metadata=None,owner_id=None):
+    with session_scope() as s:
+        p=s.execute(_owned_prospect_query(prospect_id, owner_id)).scalar_one_or_none()
+        if not p:return None
+        action=ExternalAction(prospect_id=prospect_id,action_type=action_type,metadata_json=json.dumps(metadata) if metadata is not None else None)
+        s.add(action); s.flush(); return _dict(action)
 def list_campaigns(owner_id=None):
     with SessionLocal() as s:
         q = select(Campaign).order_by(Campaign.name)

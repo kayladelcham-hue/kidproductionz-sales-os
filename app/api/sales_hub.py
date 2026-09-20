@@ -1,7 +1,7 @@
 """Campaign-scoped manual intake and follow-up actions using existing storage."""
 from datetime import datetime, timezone
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from . import database_v2 as db
@@ -14,9 +14,14 @@ router = APIRouter()
 STATUSES = {'NOT_CONTACTED', 'ATTEMPTED', 'CONTACTED', 'REPLIED', 'FOLLOW_UP',
             'CONSULTATION_SET', 'BOOKED', 'NOT_INTERESTED'}
 
-def scoped(s, campaign, prospect_id):
+def owner_id(request):
+    return getattr(request.state, 'user_id', None)
+
+
+def scoped(s, campaign, prospect_id, user_id=None):
     p = s.execute(select(Prospect).join(Campaign, Prospect.campaign_id == Campaign.id)
-                  .where(Campaign.slug == campaign, Prospect.id == prospect_id)).scalar_one_or_none()
+                  .where(Campaign.slug == campaign, Prospect.id == prospect_id)
+                  .where(Campaign.owner_id == user_id if user_id is not None else True)).scalar_one_or_none()
     if not p:
         raise HTTPException(404, 'Prospect not found in this campaign')
     return p
@@ -29,7 +34,7 @@ class ManualProspect(BaseModel):
     notes: str = Field(default='', max_length=4000)
 
 @router.post('/api/prospects/manual')
-def add_prospect(req: ManualProspect):
+def add_prospect(req: ManualProspect, request: Request):
     name, phone, email = req.name.strip(), req.phone.strip(), req.email.strip().lower()
     if not name or not (phone or email):
         raise HTTPException(400, 'Enter a name and phone or email')
@@ -37,7 +42,7 @@ def add_prospect(req: ManualProspect):
         raise HTTPException(400, 'Enter a valid phone number')
     if email and ('@' not in email or '.' not in email.rsplit('@', 1)[-1]):
         raise HTTPException(400, 'Enter a valid email')
-    if not db.get_campaign(req.campaign):
+    if not db.get_campaign(req.campaign, owner_id(request)):
         raise HTTPException(404, 'Campaign not found')
     result = db.persist_generated_prospects(req.campaign, [{
         'name': name, 'phone': phone, 'email': email, 'queue_status': 'RESEARCH',
@@ -46,15 +51,16 @@ def add_prospect(req: ManualProspect):
     if result['duplicate_count']:
         raise HTTPException(409, 'A matching prospect already exists in this campaign')
     pid = result['inserted'][0]['id']
-    db.update_sales_activity(pid, 'CONTACTED', req.notes.strip())
-    db.log_external_action(pid, 'MANUAL_PROSPECT_ADDED', {'source': 'IN_PERSON'})
+    db.update_sales_activity(pid, 'CONTACTED', req.notes.strip(), owner_id=owner_id(request))
+    db.log_external_action(pid, 'MANUAL_PROSPECT_ADDED', {'source': 'IN_PERSON'}, owner_id(request))
     return {'id': pid, 'campaign': req.campaign, 'queue': 'RESEARCH'}
 
 @router.get('/api/follow-ups')
-def follow_ups(campaign: str):
+def follow_ups(campaign: str, request: Request):
     with db.SessionLocal() as s:
         prospects = s.execute(select(Prospect).join(Campaign, Prospect.campaign_id == Campaign.id)
-                              .where(Campaign.slug == campaign)).scalars().all()
+                              .where(Campaign.slug == campaign)
+                              .where(Campaign.owner_id == owner_id(request) if owner_id(request) is not None else True)).scalars().all()
         ids = [p.id for p in prospects]
         events = s.execute(select(CalendarEvent).where(CalendarEvent.prospect_id.in_(ids))
                            .order_by(CalendarEvent.id)).scalars().all()
@@ -79,7 +85,7 @@ class NextAction(BaseModel):
     action: str = Field(default='', max_length=500)
 
 @router.post('/api/prospects/{prospect_id}/next-action')
-def next_action(prospect_id: int, req: NextAction):
+def next_action(prospect_id: int, req: NextAction, request: Request):
     if req.status not in STATUSES:
         raise HTTPException(400, 'Invalid sales status')
     due = None
@@ -92,7 +98,7 @@ def next_action(prospect_id: int, req: NextAction):
         except ValueError:
             raise HTTPException(400, 'Next action needs a valid datetime with timezone')
     with db.session_scope() as s:
-        p = scoped(s, req.campaign, prospect_id)
+        p = scoped(s, req.campaign, prospect_id, owner_id(request))
         p.sales_status, p.notes = req.status, req.notes
         p.last_activity_at = datetime.now(timezone.utc).isoformat()
         s.add(ExternalAction(prospect_id=p.id, action_type='NEXT_ACTION_UPDATED',
@@ -107,7 +113,7 @@ class Reschedule(BaseModel):
     confirmed: bool = False
 
 @router.post('/api/follow-ups/events/{event_id}/reschedule')
-def reschedule(event_id: int, req: Reschedule):
+def reschedule(event_id: int, req: Reschedule, request: Request):
     try:
         zone = ZoneInfo(req.timezone)
         start, end = datetime.fromisoformat(req.start), datetime.fromisoformat(req.end)
@@ -121,7 +127,7 @@ def reschedule(event_id: int, req: Reschedule):
         e = s.get(CalendarEvent, event_id)
         if not e:
             raise HTTPException(404, 'Consultation not found')
-        p = scoped(s, req.campaign, e.prospect_id)
+        p = scoped(s, req.campaign, e.prospect_id, owner_id(request))
         if e.provider != 'GOOGLE' or not e.calendar_event_id:
             raise HTTPException(400, 'This consultation cannot be rescheduled through Google')
         if not req.confirmed:
@@ -161,7 +167,7 @@ class SalesBotRequest(BaseModel):
 
 
 @router.post('/api/ai/chat')
-def ai_sales_chat(req: SalesBotRequest):
+def ai_sales_chat(req: SalesBotRequest, request: Request):
     """
     Sales OS Copilot endpoint.
 
@@ -173,11 +179,11 @@ def ai_sales_chat(req: SalesBotRequest):
     - never changes qualification
     """
 
-    if not db.get_campaign(req.campaign):
+    if not db.get_campaign(req.campaign, owner_id(request)):
         raise HTTPException(404, 'Campaign not found')
 
     # Pull campaign prospects from the existing Sales OS.
-    prospects = db.list_prospects(req.campaign)
+    prospects = db.list_prospects(req.campaign, owner_id(request))
 
     # Normalize ORM/dict results into plain dictionaries.
     clean_prospects = []
