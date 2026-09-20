@@ -475,7 +475,130 @@ def prospects(request: Request, campaign='orlando_beauty'):
 class SalesActivity(BaseModel):
     status:str|None=None; notes:str|None=None; booked_value:float|None=None
 @app.get('/api/metrics')
-def metrics(campaign:str|None=None): return activity_metrics(campaign)
+def metrics(request: Request, campaign:str|None=None):
+    # Metrics must use the same owner-scoped prospect set as Queue/Prospects.
+    rows = list_prospects(campaign, _owner_id(request))
+
+    status_counts = {}
+    queue_counts = {}
+    booked_value = 0.0
+
+    for row in rows:
+        status = str(row.get('sales_status') or 'NOT_CONTACTED').upper()
+        queue_status = str(
+            row.get('queue') or row.get('queue_status') or ''
+        ).upper()
+
+        status_counts[status] = status_counts.get(status, 0) + 1
+
+        if queue_status:
+            queue_counts[queue_status] = queue_counts.get(queue_status, 0) + 1
+
+        try:
+            booked_value += float(row.get('booked_value') or 0)
+        except (TypeError, ValueError):
+            pass
+
+    daily_queue = queue_counts.get('DAILY_QUEUE', 0)
+    deferred = queue_counts.get('DEFERRED', 0)
+    research = queue_counts.get('RESEARCH', 0)
+    ineligible = queue_counts.get('INELIGIBLE', 0)
+
+    booked = status_counts.get('BOOKED', 0)
+    replied = status_counts.get('REPLIED', 0)
+    consultation_set = status_counts.get('CONSULTATION_SET', 0)
+
+    touched = sum(
+        count
+        for status, count in status_counts.items()
+        if status != 'NOT_CONTACTED'
+    )
+
+    # Preserve the old metrics response shape without exposing another
+    # user's aggregate values.
+    try:
+        template = activity_metrics(campaign)
+    except Exception:
+        template = {}
+
+    def scrub(value):
+        if isinstance(value, dict):
+            return {k: scrub(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return []
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, (int, float)):
+            return 0
+        if value is None:
+            return None
+        return ''
+
+    result = scrub(template) if isinstance(template, dict) else {}
+
+    values = {
+        'total': len(rows),
+        'total_prospects': len(rows),
+        'prospect_count': len(rows),
+        'prospects': len(rows),
+
+        'queue_count': daily_queue,
+        'queued': daily_queue,
+        'daily_queue': daily_queue,
+        'daily_queue_count': daily_queue,
+
+        'deferred': deferred,
+        'deferred_count': deferred,
+        'research': research,
+        'research_count': research,
+        'ineligible': ineligible,
+        'ineligible_count': ineligible,
+
+        'qualified': daily_queue + deferred,
+        'qualified_count': daily_queue + deferred,
+
+        'not_contacted': status_counts.get('NOT_CONTACTED', 0),
+        'attempted': status_counts.get('ATTEMPTED', 0),
+        'contacted': status_counts.get('CONTACTED', 0),
+        'replied': replied,
+        'consultation_set': consultation_set,
+        'consultations': consultation_set,
+        'follow_up': status_counts.get('FOLLOW_UP', 0),
+        'not_interested': status_counts.get('NOT_INTERESTED', 0),
+        'booked': booked,
+        'booked_count': booked,
+
+        'booked_value': booked_value,
+        'total_booked_value': booked_value,
+        'revenue': booked_value,
+
+        'contacted_total': touched,
+        'response_rate': round((replied / touched) * 100, 1) if touched else 0,
+        'booking_rate': round((booked / touched) * 100, 1) if touched else 0,
+        'close_rate': round((booked / touched) * 100, 1) if touched else 0,
+    }
+
+    def apply_owned_values(obj):
+        if not isinstance(obj, dict):
+            return
+
+        for key in list(obj.keys()):
+            normalized = str(key).lower()
+
+            if normalized in values:
+                obj[key] = values[normalized]
+            elif isinstance(obj[key], dict):
+                apply_owned_values(obj[key])
+
+    apply_owned_values(result)
+
+    result.update(values)
+    result['campaign'] = campaign
+    result['status_counts'] = status_counts
+    result['sales_status_counts'] = status_counts
+    result['queue_status_counts'] = queue_counts
+
+    return result
 @app.patch('/api/prospects/{prospect_id}/defer')
 def prospect_defer(prospect_id:int):
     row=move_prospect_queue(prospect_id,'DEFERRED')
