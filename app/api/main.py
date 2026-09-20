@@ -1099,3 +1099,31 @@ from .models import User, UserSession
 
 
 
+
+# TEMPORARY beta-user diagnostic.
+# Requires AUTH_DIAGNOSTIC_TOKEN and never exposes password hashes.
+@app.get('/diagnostics/beta-users')
+def diagnostic_beta_users(request: Request):
+    expected = os.getenv('AUTH_DIAGNOSTIC_TOKEN', '')
+    supplied = request.headers.get('X-Diagnostic-Token', '')
+
+    if not expected or not supplied or not secrets.compare_digest(supplied, expected):
+        raise HTTPException(status_code=404, detail='Not found')
+
+    from .database_v2 import SessionLocal
+    from .models import User
+
+    with SessionLocal() as s:
+        users = s.query(User).order_by(User.id).all()
+        return {
+            'count': len(users),
+            'users': [
+                {
+                    'id': u.id,
+                    'email': u.email,
+                    'name': getattr(u, 'name', None),
+                    'is_admin': bool(getattr(u, 'is_admin', False)),
+                }
+                for u in users
+            ]
+        }
