@@ -161,7 +161,7 @@ def auth_login(req: LoginRequest):
         _AUTH_COOKIE,
         token,
         httponly=True,
-        samesite='lax',
+        samesite='none' if os.getenv('APP_ENV', '').lower() in ('production', 'cloud') else 'lax',
         secure=os.getenv('APP_ENV', '').lower() in ('production', 'cloud'),
     )
 
@@ -209,7 +209,17 @@ try:
 except Exception:
     # An empty/unavailable local DB must not prevent read-only API startup.
     pass
-app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http://127.0.0.1:5173','http://localhost:5176','http://127.0.0.1:5176'], allow_credentials=True, allow_methods=['GET','POST','PATCH','DELETE','OPTIONS'], allow_headers=['*'])
+_cors_origins=['http://localhost:5173','http://127.0.0.1:5173','http://localhost:5176','http://127.0.0.1:5176']
+_extra_origins=os.getenv('CORS_ALLOWED_ORIGINS','')
+if _extra_origins:
+    _cors_origins.extend([x.strip().rstrip('/') for x in _extra_origins.split(',') if x.strip()])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=['GET','POST','PATCH','DELETE','OPTIONS'],
+    allow_headers=['*']
+)
 def read_json(path):
     try:return json.loads(path.read_text(encoding='utf-8'))
     except FileNotFoundError: raise HTTPException(404,'Artifact not found')
@@ -1075,6 +1085,7 @@ class _disabled_client:
     def get(self,*a): raise RuntimeError('HubSpot client is not configured')
 
 from .models import User, UserSession
+
 
 
 
