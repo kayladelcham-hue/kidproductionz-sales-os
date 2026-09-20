@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 import os
 import json
 import sys
@@ -121,28 +121,35 @@ class LoginRequest(BaseModel):
 
 @app.post('/api/auth/login')
 def auth_login(req: LoginRequest):
-    expected_user = os.getenv('KIDPRODUCTIONZ_AUTH_USERNAME', 'admin')
-    expected_password = os.getenv('KIDPRODUCTIONZ_AUTH_PASSWORD', '')
+    # Multi-user beta authentication.
+    # Existing users authenticate against their persisted User record.
+    expected_user = (req.username or '').strip().lower()
 
-    if (
-        not expected_password
-        or not secrets.compare_digest(req.username or expected_user, expected_user)
-    ):
+    if not expected_user or not req.password:
         raise HTTPException(401, 'Invalid credentials')
 
     user = get_user_by_email(expected_user)
 
-    if not user:
+    # Preserve the original environment-admin login as a safe fallback/bootstrap.
+    admin_user = os.getenv('KIDPRODUCTIONZ_AUTH_USERNAME', 'admin').strip().lower()
+    admin_password = os.getenv('KIDPRODUCTIONZ_AUTH_PASSWORD', '')
+
+    if (
+        user is None
+        and admin_password
+        and secrets.compare_digest(expected_user, admin_user)
+        and secrets.compare_digest(req.password, admin_password)
+    ):
         user = ensure_user(
-            expected_user,
-            expected_user,
-            _password_hash(expected_password),
+            admin_user,
+            admin_user,
+            _password_hash(admin_password),
+            is_admin=True,
         )
+        claim_unowned_campaigns(user['id'])
 
-    if not _password_matches(req.password, user['password_hash']):
+    if not user or not _password_matches(req.password, user['password_hash']):
         raise HTTPException(401, 'Invalid credentials')
-
-    claim_unowned_campaigns(user['id'])
 
     token = secrets.token_urlsafe(32)
     _sessions.add(token)
