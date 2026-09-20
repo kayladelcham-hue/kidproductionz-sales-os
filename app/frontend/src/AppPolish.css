@@ -150,3 +150,8 @@ html[data-kp-mode] .shell table tbody tr::after{color:var(--xp-accent)!important
   opacity:.6;
   cursor:not-allowed;
 }
+
+.shell aside{display:flex;flex-direction:column;}
+.shell aside nav{flex:1;overflow-y:auto;}
+.logout-btn{margin-top:auto!important;flex-shrink:0;}
+
