@@ -95,3 +95,58 @@ html[data-kp-mode] .shell .xp-filters .filter :is(button,select){font-size:11px!
 html[data-kp-mode] .shell .up-next::before,html[data-kp-mode] .shell .up-next::after{display:none!important}
 html[data-kp-mode] .shell table td b{color:var(--xp-text)!important;text-shadow:none!important}
 html[data-kp-mode] .shell table tbody tr::after{color:var(--xp-accent)!important;text-shadow:none!important;filter:none!important}
+
+/* Compact Schedule Consultation */
+.schedule-consult-panel {
+  width: min(620px, 92%);
+  max-width: 620px;
+  max-height: 72vh;
+  overflow-y: auto;
+  margin: 16px auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.schedule-consult-panel input,
+.schedule-consult-panel textarea,
+.schedule-consult-panel select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.schedule-consult-panel textarea {
+  min-height: 70px;
+  max-height: 120px;
+  resize: vertical;
+}
+
+@media (max-width: 700px) {
+  .schedule-consult-panel {
+    width: 100%;
+    max-width: 100%;
+    max-height: 70vh;
+    margin: 12px 0;
+    padding: 14px;
+  }
+}
+
+.logout-btn{
+  width:calc(100% - 24px);
+  margin:12px;
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.12);
+  background:transparent;
+  color:inherit;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.logout-btn:hover{
+  background:rgba(255,255,255,.06);
+}
+
+.logout-btn:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
