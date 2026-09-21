@@ -608,7 +608,8 @@ function App(){
     page==='Add Prospect'?<AddProspect key={campaign} campaign={campaign}/>:
     page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:
     page==='Runs'?<Runs/>:<Settings campaign={campaign}/>;
-  return <div className="shell"><aside inert={mobileMenuOpen||tourOpen}><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{navigationGroups.map(g=><section className="xp-desktop-group" key={g.name}><h3>{g.name}</h3>{g.pages.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{pageName(n)}</button>)}</section>)}</nav><div className="safe"><span/>System Ready</div></aside><main inert={mobileMenuOpen||tourOpen}><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}><Icon name="menu"/></button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{pageName(page)}</h1></div><select aria-label="Current campaign" value={campaign} onChange={e=>{setCampaign(e.target.value);setHubProspect(null)}}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{content}{hubProspect&&<ProspectDrawer item={hubProspect} onClose={()=>setHubProspect(null)}/>}</main>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>}<div className="bottom-nav" inert={mobileMenuOpen||tourOpen}>{[["Home","Home","home"],["Prospects","Prospects","people"],["Leads","Leads","sell"],["Calendar","Calendar","calendar"],["Customers","Customers","queue"]].map(([l,v,icon])=><button key={l} aria-current={page===v?'page':undefined} onClick={()=>setPage(v)}><Icon name={icon}/><span>{l}</span></button>)}</div>{tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<SalesAgent campaign={campaign}/></div>
+  const lifecycle=['Prospects','Leads','Customers','Sales & Revenue'];
+  return <div className="shell"><aside inert={mobileMenuOpen||tourOpen}><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{navigationGroups.map(g=><section className="xp-desktop-group" key={g.name}><h3>{g.name}</h3>{g.pages.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{pageName(n)}</button>)}</section>)}</nav><div className="safe"><span/>System Ready</div></aside><main inert={mobileMenuOpen||tourOpen}><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}><Icon name="menu"/></button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{pageName(page)}</h1></div><select aria-label="Current campaign" value={campaign} onChange={e=>{setCampaign(e.target.value);setHubProspect(null)}}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{(page==='Home'||lifecycle.includes(page))&&<nav className="lc-flow-nav" aria-label="Sales lifecycle"><button className={page==='Home'?'active':''} onClick={()=>setPage('Home')}>Today</button>{lifecycle.map(step=><React.Fragment key={step}><span aria-hidden="true">→</span><button className={page===step?'active':''} aria-current={page===step?'page':undefined} onClick={()=>setPage(step)}>{step==='Sales & Revenue'?'Revenue':step}</button></React.Fragment>)}</nav>}{content}{hubProspect&&<ProspectDrawer item={hubProspect} onClose={()=>setHubProspect(null)}/>}</main>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>}<div className="bottom-nav" inert={mobileMenuOpen||tourOpen}>{[["Home","Home","home"],["Prospects","Prospects","people"],["Leads","Leads","sell"],["Calendar","Calendar","calendar"],["Customers","Customers","queue"]].map(([l,v,icon])=><button key={l} aria-current={page===v?'page':undefined} onClick={()=>setPage(v)}><Icon name={icon}/><span>{l}</span></button>)}</div>{tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<SalesAgent campaign={campaign}/></div>
 }
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
 function QueueTable({items,onSelect}:{items:QueueItem[];onSelect?:(item:QueueItem)=>void}){return <div className="table-wrap"><table><thead><tr><th>Position</th><th>Business</th><th>Score</th><th>Grade</th><th>Route</th><th>Priority</th><th>Reason</th></tr></thead><tbody>{(items||[]).map((x:any,i:number)=><tr key={x.prospect_id||x.lead_id||x.fixture_id||i} onClick={()=>onSelect?.(x)}><td>{x.queue_position??i+1}</td><td><b>{x.business_name||x.name||x.business||'-'}</b></td><td><ScoreBadge value={x.score}/></td><td><GradeBadge value={x.grade}/></td><td><RouteBadge value={x.route}/></td><td><PriorityBadge value={x.priority}/></td><td>{x.route_reason||'-'}</td></tr>)}</tbody></table></div>}
@@ -898,11 +899,12 @@ function AuthGateBeta(){
   const [password,setPassword]=useState('');
   const [invite,setInvite]=useState('');
   const [error,setError]=useState('');
+  const [busy,setBusy]=useState(false);
 
   useEffect(()=>{
-    authApi.me()
-      .then(data=>setState({authenticated:data.authenticated===true}))
-      .catch(()=>setState({authenticated:false}));
+    let active=true;
+    const restore=async()=>{for(let attempt=0;attempt<2;attempt++){try{const data=await authApi.me();if(active)setState({authenticated:data.authenticated===true});return}catch{if(attempt===0)await new Promise(resolve=>setTimeout(resolve,700))}}if(active){setState({authenticated:false});setError('We could not restore your session. You can try signing in again.')}};
+    void restore();return()=>{active=false};
   },[]);
 
   if(!state)return <div className="card empty">Loading…</div>;
@@ -911,14 +913,13 @@ function AuthGateBeta(){
   const login=async(e:any)=>{
     e.preventDefault();
     setError('');
+    setBusy(true);
     try{
       await authApi.login(user,password);
       const data=await authApi.me();
       if(data.authenticated===true)setState(data);
       else setError('Unable to authenticate');
-    }catch{
-      setError('Invalid credentials');
-    }
+    }catch(error:any){setError(error.message||'Could not sign in. Try again.')}finally{setBusy(false)}
   };
 
   const signup=async(e:any)=>{
@@ -953,7 +954,7 @@ function AuthGateBeta(){
     <input aria-label="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password"/>
     {signingUp&&<input aria-label="Invite code" value={invite} onChange={e=>setInvite(e.target.value)} placeholder="Beta invite code"/>}
     {error&&<p className="notice">{error}</p>}
-    <button type="submit">{signingUp?'Create account':'Sign in'}</button>
+    <button type="submit" disabled={busy}>{busy?'Signing in…':signingUp?'Create account':'Sign in'}</button>
     <button type="button" onClick={()=>{setMode(signingUp?'login':'signup');setError('')}}>{signingUp?'Already have an account? Sign in':'Have an invite? Join the beta'}</button>
   </form></main>
 }

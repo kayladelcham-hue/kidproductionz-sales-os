@@ -63,7 +63,7 @@ async function mutate<T>(path:string,method:'PATCH'|'PUT'|'DELETE',body?:any):Pr
   if(r.status===403){csrfToken=null;throw new Error('CSRF_403');}
   if(!r.ok)throw new Error(`API_${r.status}`);return r.json()
 }
-export const authApi={me:()=>get<any>('/api/auth/me'),login:async(username:string,password:string)=>{const r=await fetch(BASE+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});if(!r.ok){const text=await r.text();throw new Error(text||'Login failed')}return r.json()},logout:()=>post<any>('/api/auth/logout',{})};
+export const authApi={me:()=>get<any>('/api/auth/me'),login:async(username:string,password:string)=>{const r=await fetch(BASE+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});if(!r.ok){const data=await r.json().catch(()=>({}));throw new Error(data.detail||'Could not sign in. Check your email and password.')}return r.json()},logout:()=>post<any>('/api/auth/logout',{})};
 export const api={
 aiChat:(body:any)=>post<any>('/api/ai/chat',body),
 commandCenter:(campaign?:string)=>get<any>(`/api/home/command-center${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),

@@ -32,7 +32,7 @@ import hmac
 import base64
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import re as _re
 from pydantic import BaseModel
@@ -56,12 +56,28 @@ app.include_router(lifecycle_router)
 # Private single-user session foundation. Local desktop mode remains deliberately
 # frictionless; cloud mode opts into cookie-authenticated API access.
 _AUTH_COOKIE = 'kidproductionz_session'
+_AUTH_MAX_AGE = 60 * 60 * 24 * 30
 _sessions: set[str] = set()
 _csrf_tokens: dict[str, str] = {}
 def _auth_required() -> bool:
     return os.getenv('KIDPRODUCTIONZ_AUTH_MODE', 'local').lower() not in ('local', 'disabled', 'off')
 def _hash_value(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _session_active(session) -> bool:
+    if not session:
+        return False
+    expires_at = session.get('expires_at')
+    if not expires_at:
+        return True
+    try:
+        expires = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        return expires > datetime.now(timezone.utc)
+    except (TypeError, ValueError):
+        return False
 
 
 def _password_hash(password: str) -> str:
@@ -104,7 +120,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if _auth_required() and request.url.path.startswith('/api/') and request.url.path not in ('/api/health','/api/auth/login','/api/auth/me','/api/auth/logout','/api/google/oauth/callback','/api/auth/signup'):
             token = request.cookies.get(_AUTH_COOKIE)
             session = get_user_session(_hash_value(token)) if token else None
-            if not token or not session:
+            if not token or not _session_active(session):
                 return JSONResponse(
                     {'detail': 'Authentication required'},
                     status_code=401,
@@ -224,6 +240,7 @@ def auth_login(req: LoginRequest):
     save_user_session(
         _hash_value(token),
         user['id'],
+        expires_at=(datetime.now(timezone.utc) + timedelta(seconds=_AUTH_MAX_AGE)).isoformat(),
     )
 
     response = JSONResponse({
@@ -237,6 +254,7 @@ def auth_login(req: LoginRequest):
         httponly=True,
         samesite='none' if os.getenv('APP_ENV', '').lower() in ('production', 'cloud') else 'lax',
         secure=os.getenv('APP_ENV', '').lower() in ('production', 'cloud'),
+        max_age=_AUTH_MAX_AGE,
     )
 
     return response
@@ -253,13 +271,13 @@ def auth_me(request: Request):
     if not _auth_required(): return {'authenticated':True,'mode':'local'}
     token=request.cookies.get(_AUTH_COOKIE)
     session = get_user_session(_hash_value(token)) if token else None
-    return {'authenticated':bool(token and session)}
+    return {'authenticated':bool(token and _session_active(session))}
 
 @app.get('/api/auth/csrf')
 def auth_csrf(request: Request):
     if not _auth_required(): return {'csrf_token':'local-mode'}
     token=request.cookies.get(_AUTH_COOKIE)
-    if not token or not get_user_session(_hash_value(token)):
+    if not token or not _session_active(get_user_session(_hash_value(token))):
         raise HTTPException(401, 'Authentication required')
     value=_csrf_tokens.setdefault(token, secrets.token_urlsafe(24))
     return {'csrf_token':value}
