@@ -1,6 +1,6 @@
 /* Final presentation layer. Sales workflows and safety controls stay in their original components. */
-html[data-kp-mode]{--xp-bg:#0d121c;--xp-surface:#161d29;--xp-soft:#1e2735;--xp-text:#edf2fa;--xp-muted:#a4afc1;--xp-border:rgba(255,255,255,.09);--xp-accent:var(--kp-theme-a,#8fd3ff);--background:var(--xp-bg);--surface:var(--xp-surface);--surface-muted:var(--xp-soft);--text-primary:var(--xp-text);--text-secondary:var(--xp-muted);--border:var(--xp-border);color-scheme:dark}
-html[data-kp-mode="light"]{--xp-bg:#f3f5fa;--xp-surface:#fff;--xp-soft:#edf1f8;--xp-text:#182338;--xp-muted:#59677d;--xp-border:#dce3ef;--xp-accent:var(--kp-theme-b,#4776ff);color-scheme:light}
+html[data-kp-mode]{--xp-bg:#0d121c;--xp-surface:#161d29;--xp-panel:#161d29;--xp-soft:#1e2735;--xp-text:#edf2fa;--xp-muted:#a4afc1;--xp-border:rgba(255,255,255,.09);--xp-accent:var(--kp-theme-a,#8fd3ff);--background:var(--xp-bg);--surface:var(--xp-surface);--surface-muted:var(--xp-soft);--text-primary:var(--xp-text);--text-secondary:var(--xp-muted);--border:var(--xp-border);color-scheme:dark}
+html[data-kp-mode="light"]{--xp-bg:#f3f5fa;--xp-surface:#fff;--xp-panel:#fff;--xp-soft:#edf1f8;--xp-text:#182338;--xp-muted:#59677d;--xp-border:#dce3ef;--xp-accent:var(--kp-theme-b,#4776ff);color-scheme:light}
 html[data-kp-mode] body{background:var(--xp-bg)!important;color:var(--xp-text)!important;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
 html[data-kp-mode] .shell{background:radial-gradient(ellipse at 100% 0,color-mix(in srgb,var(--kp-theme-b) 10%,transparent),transparent 55%),var(--xp-bg)!important}
 html[data-kp-mode] .shell main{background:transparent!important}
