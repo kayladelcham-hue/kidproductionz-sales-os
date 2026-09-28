@@ -7,7 +7,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, select, update, func, text, delete, inspect
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import IntegrityError
-from .models import Base, Campaign, Prospect, Deal, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession
+from .models import Base, Campaign, Prospect, Deal, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession, IcpProfile, LeadFeedback
 def _url():
     u=os.getenv('DATABASE_URL','sqlite:///data/kidproductionz.db')
     if u.startswith('postgresql://'): u='postgresql+psycopg://'+u[len('postgresql://'):]
@@ -129,6 +129,10 @@ def init_db():
         "lifecycle_stage": "TEXT NOT NULL DEFAULT 'PROSPECT'",
         "lead_source": "TEXT",
         "customer_since": "TEXT",
+        "icp_score": "FLOAT",
+        "icp_priority": "TEXT",
+        "icp_version": "INTEGER",
+        "qualification_json": "TEXT",
     }
     with engine.begin() as conn:
         for column, definition in additions.items():
@@ -173,6 +177,35 @@ def init_db():
 def _dict(obj):
     if obj is None:return None
     return {c.name:getattr(obj,c.name) for c in obj.__table__.columns}
+
+def get_icp_profile(user_id):
+    with SessionLocal() as s:
+        row=s.execute(select(IcpProfile).where(IcpProfile.user_id==user_id)).scalar_one_or_none()
+        if not row:return None
+        data=_dict(row)
+        data['profile']=json.loads(data.pop('profile_json') or '{}')
+        data['weights']=json.loads(data.pop('weights_json') or '{}')
+        data['completed']=bool(data['completed'])
+        return data
+
+def save_icp_profile(user_id, profile, weights, completed):
+    now=datetime.now(timezone.utc).isoformat()
+    with session_scope() as s:
+        row=s.execute(select(IcpProfile).where(IcpProfile.user_id==user_id)).scalar_one_or_none()
+        if row:
+            row.profile_json=json.dumps(profile); row.weights_json=json.dumps(weights)
+            row.completed=int(bool(completed)); row.version=(row.version or 0)+1; row.updated_at=now
+        else:
+            row=IcpProfile(user_id=user_id,profile_json=json.dumps(profile),weights_json=json.dumps(weights),completed=int(bool(completed)),version=1,updated_at=now)
+            s.add(row)
+        s.flush(); return _dict(row)
+
+def save_lead_feedback(user_id, prospect_id, verdict=None, outcome=None, note=None, owner_id=None):
+    with session_scope() as s:
+        prospect=s.execute(_owned_prospect_query(prospect_id,owner_id)).scalar_one_or_none()
+        if not prospect:return None
+        row=LeadFeedback(user_id=user_id,prospect_id=prospect_id,verdict=verdict,outcome=outcome,note=note,score_at_feedback=prospect.icp_score or prospect.score)
+        s.add(row); s.flush(); return _dict(row)
 def seed_campaigns(config_dir=None): return 0
 def persist_upload(metadata):
     with session_scope() as s: s.merge(Upload(**{k:v for k,v in metadata.items() if k in Upload.__table__.columns.keys()}))
@@ -475,7 +508,7 @@ def clear_google_connection():
         x=s.get(GoogleConnection,1)
         if x:s.delete(x)
 
-def persist_generated_prospects(campaign, items):
+def persist_generated_prospects(campaign, items, owner_id=None):
     """Persist newly generated prospects safely with conservative deduplication."""
 
     def norm(value):
@@ -541,7 +574,7 @@ def persist_generated_prospects(campaign, items):
 
     with session_scope() as s:
         campaign_row = s.execute(
-            select(Campaign).where(Campaign.slug == campaign)
+            select(Campaign).where(Campaign.slug == campaign, *((Campaign.owner_id == owner_id,) if owner_id is not None else ()))
         ).scalar_one_or_none()
 
         # A source-controlled campaign may exist before its database row.
@@ -683,6 +716,10 @@ def persist_generated_prospects(campaign, items):
                 "ownership": item.get("ownership") or None,
                 "research": research or None,
                 "sales_status": "NOT_CONTACTED",
+                "icp_score": item.get("icp_score"),
+                "icp_priority": item.get("icp_priority"),
+                "icp_version": item.get("icp_version"),
+                "qualification_json": json.dumps(item.get("qualification")) if item.get("qualification") else None,
             }
 
             # Save Outscraper's stable Google identifier when schema supports it.

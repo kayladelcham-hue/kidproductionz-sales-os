@@ -48,6 +48,17 @@ class UserSession(Base):
         Text, nullable=False, server_default="CURRENT_TIMESTAMP"
     )
 
+class IcpProfile(Base):
+    __tablename__ = "icp_profile"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False, index=True)
+    profile_json: Mapped[str] = mapped_column(Text, nullable=False)
+    weights_json: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    completed: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP")
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP")
+
 class Prospect(Base):
     __tablename__='prospect'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -87,6 +98,21 @@ class Prospect(Base):
     lifecycle_stage: Mapped[str] = mapped_column(Text, nullable=False, server_default='PROSPECT')
     lead_source: Mapped[str|None] = mapped_column(Text)
     customer_since: Mapped[str|None] = mapped_column(Text)
+    icp_score: Mapped[float|None] = mapped_column(Float)
+    icp_priority: Mapped[str|None] = mapped_column(Text)
+    icp_version: Mapped[int|None] = mapped_column(Integer)
+    qualification_json: Mapped[str|None] = mapped_column(Text)
+
+class LeadFeedback(Base):
+    __tablename__ = "lead_feedback"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prospect_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    verdict: Mapped[str|None] = mapped_column(Text)
+    outcome: Mapped[str|None] = mapped_column(Text)
+    note: Mapped[str|None] = mapped_column(Text)
+    score_at_feedback: Mapped[float|None] = mapped_column(Float)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP")
 
 class Deal(Base):
     __tablename__='deal'
@@ -203,7 +229,7 @@ class AppSetting(Base):
     key: Mapped[str] = mapped_column(Text, primary_key=True)
     value: Mapped[str] = mapped_column(Text, nullable=False)
 
-__all__=['Base','Campaign','Prospect','Deal','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting']
+__all__=['Base','Campaign','Prospect','Deal','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting','User','UserSession','IcpProfile','LeadFeedback']
 
 "User",
 "UserSession",

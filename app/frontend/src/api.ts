@@ -1,5 +1,5 @@
 const BASE=import.meta.env.VITE_API_BASE_URL||(import.meta.env.DEV?'http://127.0.0.1:8000':'');
-export type QueueItem={id?:number;prospect_id?:number;queue_position?:number|string;fixture_id?:string;lead_id?:string;name?:string;business?:string;score?:number;grade?:string;route?:string;route_reason?:string;priority?:string;queue_status?:string;sales_status?:string;notes?:string;booked_value?:number;last_activity_at?:string;phone?:string;email?:string;social?:string;website?:string};
+export type QueueItem={id?:number;prospect_id?:number;queue_position?:number|string;fixture_id?:string;lead_id?:string;name?:string;business?:string;score?:number;grade?:string;route?:string;route_reason?:string;priority?:string;queue_status?:string;sales_status?:string;notes?:string;booked_value?:number;last_activity_at?:string;phone?:string;email?:string;social?:string;website?:string;icp_score?:number;icp_priority?:string;qualification_json?:string;qualification?:any};
 export type Queue={campaign_id:string;queue_limit:number;summary:Record<string,number>;daily_queue:QueueItem[];deferred:QueueItem[];research:QueueItem[];ineligible:QueueItem[];safety:Record<string,boolean>};
 let csrfToken: string | null = null;
 async function get<T>(path:string):Promise<T>{const r=await fetch(`${BASE}${path}`,{credentials:'include'});if(!r.ok)throw new Error(`API_${r.status}`);return r.json()}
@@ -67,6 +67,7 @@ export const authApi={me:()=>get<any>('/api/auth/me'),login:async(username:strin
 export const api={
 aiChat:(body:any)=>post<any>('/api/ai/chat',body),
 commandCenter:(campaign?:string)=>get<any>(`/api/home/command-center${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),
+icpProfile:()=>get<any>('/api/icp/profile'),saveIcpProfile:(body:any)=>mutate<any>('/api/icp/profile','PUT',body),icpDiscovery:()=>get<any>('/api/icp/discovery'),icpDashboard:(campaign?:string)=>get<any>(`/api/icp/dashboard${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),leadFeedback:(id:number,body:any)=>post<any>(`/api/prospects/${id}/feedback`,body),
 lifecycleContacts:(stage:string,campaign?:string)=>get<any[]>(`/api/lifecycle/contacts?stage=${encodeURIComponent(stage)}${campaign?`&campaign=${encodeURIComponent(campaign)}`:''}`),
 lifecycleContact:(id:number)=>get<any>(`/api/lifecycle/contacts/${id}`),
 convertToLead:(id:number,body:any)=>post<any>(`/api/lifecycle/contacts/${id}/convert-to-lead`,body),

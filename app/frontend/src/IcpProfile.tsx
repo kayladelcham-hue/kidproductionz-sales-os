@@ -1,0 +1,31 @@
+import React,{useEffect,useState} from 'react';
+import {api} from './api';
+import './IcpProfile.css';
+
+const fields:any={
+ offer:'What do you sell?',typical_buyer:'Who usually buys it?',target_industries:'Target industries',business_types:'Target business types',geography:'Cities, states, or regions you serve',buyer_roles:'Ideal decision-maker roles',problems_solved:'Problems your offer solves',need_signals:'Signals that suggest a current need',urgency_signals:'Situations that create urgency',positive_signals:'Positive buying signals',excluded_industries:'Industries you do not want',excluded_geographies:'Locations you do not serve',red_flags:'Other red flags'
+};
+const listFields=new Set(['target_industries','business_types','geography','buyer_roles','problems_solved','need_signals','urgency_signals','positive_signals','excluded_industries','excluded_geographies','red_flags']);
+const steps=[['offer','typical_buyer','market_type','offer_model','offer_value_min','offer_value_max'],['target_industries','business_types','geography','company_size','locations_min','locations_max'],['buyer_roles','problems_solved','need_signals','urgency_signals','positive_signals'],['minimum_budget','ideal_customer_value','accepts_trade','excluded_industries','excluded_geographies','red_flags']];
+const split=(value:string)=>value.split(',').map(x=>x.trim()).filter(Boolean);
+
+export function IcpProfile(){
+ const [data,setData]=useState<any>(null),[form,setForm]=useState<any>({}),[step,setStep]=useState(0),[message,setMessage]=useState(''),[saving,setSaving]=useState(false);
+ useEffect(()=>{api.icpProfile().then((x:any)=>{setData(x);setForm(x.profile||{})}).catch(()=>setMessage('Your ICP could not load.'))},[]);
+ const change=(key:string,value:any)=>setForm((x:any)=>({...x,[key]:listFields.has(key)?split(value):value}));
+ const save=async()=>{setSaving(true);setMessage('');try{const result=await api.saveIcpProfile({profile:form,weights:data?.weights,completed:true});setData(result);setMessage(result.completed?'ICP saved. Future leads will be qualified against this profile.':'Saved as a draft. Add your offer, target market, geography, buyer roles, and problem solved to activate ICP scoring.')}catch(e:any){setMessage(e.message||'Could not save your ICP.')}finally{setSaving(false)}};
+ if(!data)return <div className="card icp-loading">Loading your Ideal Customer Profile…</div>;
+ return <div className="icp-page"><section className="icp-hero"><div><p className="eyebrow">YOUR QUALIFICATION FOUNDATION</p><h2>Teach Sales OS what a good lead means to you.</h2><p>KP Sales OS learns who you are looking for, then helps you find and prioritize businesses that match.</p></div><span>{data.completed?'ACTIVE':'SETUP NEEDED'}</span></section><section className="card icp-builder"><header><div><small>STEP {step+1} OF {steps.length}</small><h3>{['Your offer','Your target market','Buyer need & timing','Budget & disqualifiers'][step]}</h3></div><div className="icp-progress">{steps.map((_,i)=><i key={i} className={i<=step?'active':''}/>)}</div></header><div className="icp-fields">{steps[step].map(key=>{
+   if(key==='market_type')return <label key={key}><span>B2B, B2C, or both?</span><select value={form[key]||'B2B'} onChange={e=>change(key,e.target.value)}><option>B2B</option><option>B2C</option><option>Both</option></select></label>;
+   if(key==='offer_model')return <label key={key}><span>How is the offer sold?</span><select value={form[key]||'project-based'} onChange={e=>change(key,e.target.value)}>{['one-time','project-based','retainer','recurring','subscription'].map(x=><option key={x}>{x}</option>)}</select></label>;
+   if(key==='accepts_trade')return <label className="icp-check" key={key}><input type="checkbox" checked={!!form[key]} onChange={e=>change(key,e.target.checked)}/><span>Trade, barter, or in-kind value may count</span></label>;
+   const numeric=['offer_value_min','offer_value_max','locations_min','locations_max','minimum_budget','ideal_customer_value'].includes(key);
+   return <label key={key}><span>{fields[key]||key.replace(/_/g,' ')}</span>{listFields.has(key)?<textarea rows={3} value={(form[key]||[]).join(', ')} placeholder="Separate answers with commas" onChange={e=>change(key,e.target.value)}/>:<input type={numeric?'number':'text'} min={numeric?0:undefined} value={form[key]??''} onChange={e=>change(key,numeric?Number(e.target.value):e.target.value)}/>}</label>})}</div><footer><button disabled={step===0} onClick={()=>setStep(x=>x-1)}>Back</button>{step<steps.length-1?<button className="icp-primary" onClick={()=>setStep(x=>x+1)}>Continue</button>:<button className="icp-primary" disabled={saving} onClick={save}>{saving?'Saving…':'Save & activate ICP'}</button>}</footer>{message&&<p className="notice" role="status">{message}</p>}</section><section className="icp-promise"><b>Better leads. Better conversations. Better conversions.</b><span>Generate. Qualify. Prioritize. Act.</span></section></div>
+}
+
+export function IcpSummary({campaign,onNavigate}:{campaign:string;onNavigate:(page:string)=>void}){
+ const [data,setData]=useState<any>(null);useEffect(()=>{api.icpDashboard(campaign).then(setData).catch(()=>setData({completed:false}))},[campaign]);if(!data)return null;
+ if(!data.completed)return <section className="card icp-summary icp-empty"><div><p className="eyebrow">IDEAL CUSTOMER PROFILE</p><h3>Define the right lead before generating more.</h3><p>Complete a short setup so qualification reflects your business.</p></div><button onClick={()=>onNavigate('ICP Profile')}>Set up my ICP</button></section>;
+ const p=data.profile||{},q=data.lead_quality||{};
+ return <section className="card icp-summary"><div><p className="eyebrow">YOUR ICP</p><h3>{(p.target_industries||p.business_types||[]).slice(0,2).join(' + ')||'Your target customer'}</h3><p>{[(p.geography||[]).slice(0,2).join(', '),p.company_size,(p.buyer_roles||[]).slice(0,2).join(' / ')].filter(Boolean).join(' · ')}</p><button onClick={()=>onNavigate('ICP Profile')}>Review ICP</button></div><div className="icp-quality"><span><b>{q.generated||0}</b> generated</span><span><b>{q.HIGH_PRIORITY||0}</b> high priority</span><span><b>{q.GOOD_FIT||0}</b> good fit</span><span><b>{q.REVIEW||0}</b> review</span></div></section>
+}

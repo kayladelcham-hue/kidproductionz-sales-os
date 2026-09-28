@@ -42,7 +42,8 @@ from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, save_user_session, get_user_session, delete_user_session, ensure_user, claim_unowned_campaigns, get_owned_prospect
+from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, save_user_session, get_user_session, delete_user_session, ensure_user, claim_unowned_campaigns, get_owned_prospect, get_icp_profile, save_icp_profile, save_lead_feedback
+from .icp import EMPTY_PROFILE, DEFAULT_WEIGHTS, normalize_profile, validate_weights, profile_complete, score_lead, discovery_defaults
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
@@ -285,6 +286,63 @@ def auth_csrf(request: Request):
 
 def _owner_id(request: Request):
     return getattr(request.state, 'user_id', None)
+
+def _icp_user_id(request: Request):
+    # Local desktop mode has no account row; keep one isolated local profile.
+    return _owner_id(request) or 0
+
+class IcpProfileRequest(BaseModel):
+    profile: dict
+    weights: dict | None = None
+    completed: bool = True
+
+class LeadFeedbackRequest(BaseModel):
+    verdict: str | None = None
+    outcome: str | None = None
+    note: str | None = None
+
+@app.get('/api/icp/profile')
+def icp_profile(request: Request):
+    row=get_icp_profile(_icp_user_id(request))
+    if row:return row
+    return {'profile':dict(EMPTY_PROFILE),'weights':dict(DEFAULT_WEIGHTS),'version':0,'completed':False}
+
+@app.put('/api/icp/profile')
+def icp_profile_save(req: IcpProfileRequest, request: Request):
+    profile=normalize_profile(req.profile)
+    weights=validate_weights(req.weights)
+    completed=bool(req.completed and profile_complete(profile))
+    row=save_icp_profile(_icp_user_id(request),profile,weights,completed)
+    return {'profile':profile,'weights':weights,'version':row['version'],'completed':completed}
+
+@app.get('/api/icp/discovery')
+def icp_discovery(request: Request):
+    row=get_icp_profile(_icp_user_id(request))
+    profile=(row or {}).get('profile') or EMPTY_PROFILE
+    return {**discovery_defaults(profile),'completed':bool((row or {}).get('completed')),'version':(row or {}).get('version',0)}
+
+@app.get('/api/icp/dashboard')
+def icp_dashboard(request: Request, campaign: str | None = None):
+    row=get_icp_profile(_icp_user_id(request))
+    prospects=list_prospects(campaign,_owner_id(request))
+    priorities={'HIGH_PRIORITY':0,'GOOD_FIT':0,'REVIEW':0,'LOW_PRIORITY':0}
+    signals={}
+    for prospect in prospects:
+        priority=prospect.get('icp_priority')
+        if priority in priorities:priorities[priority]+=1
+        try: explanation=json.loads(prospect.get('qualification_json') or '{}')
+        except (TypeError,ValueError): explanation={}
+        for signal in explanation.get('signals') or []:signals[signal]=signals.get(signal,0)+1
+    return {'completed':bool((row or {}).get('completed')),'profile':(row or {}).get('profile') or dict(EMPTY_PROFILE),'version':(row or {}).get('version',0),'lead_quality':{'generated':len(prospects),**priorities},'top_signals':[k for k,_ in sorted(signals.items(),key=lambda item:(-item[1],item[0]))[:3]]}
+
+@app.post('/api/prospects/{prospect_id}/feedback')
+def prospect_feedback(prospect_id: int, req: LeadFeedbackRequest, request: Request):
+    if req.verdict not in (None,'GOOD_LEAD','NOT_A_GOOD_LEAD'):raise HTTPException(422,'Invalid lead feedback')
+    allowed={None,'CONTACTED','REPLIED','CONSULTATION_BOOKED','QUALIFIED_OPPORTUNITY','PROPOSAL','WON','LOST','NOT_A_FIT'}
+    if req.outcome not in allowed:raise HTTPException(422,'Invalid lead outcome')
+    row=save_lead_feedback(_icp_user_id(request),prospect_id,req.verdict,req.outcome,req.note,_owner_id(request))
+    if not row:raise HTTPException(404,'Prospect not found')
+    return row
 logger = logging.getLogger(__name__)
 if getattr(sys, 'frozen', False):
     BUNDLE_ROOT = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent)).resolve()
@@ -1016,7 +1074,7 @@ class OutscraperQualifyRequest(BaseModel):
 
 
 @app.post('/api/leads/outscraper/qualify-preview')
-def outscraper_qualify_preview(req: OutscraperQualifyRequest):
+def outscraper_qualify_preview(req: OutscraperQualifyRequest, request: Request):
     """
     Fetch live Outscraper leads and run them through the
     existing KidProductionz qualification and routing engine.
@@ -1042,17 +1100,25 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
         from v5x_queue import build as build_queue
         from qualification_config import load as load_qualification_config
 
+        icp_row=get_icp_profile(_icp_user_id(request))
+        icp_ready=bool(icp_row and icp_row.get('completed'))
+        defaults=discovery_defaults((icp_row or {}).get('profile') or {})
+        category=req.category.strip() or defaults.get('suggested_business_type','')
+        city=req.city.strip() or defaults.get('suggested_city','')
+        state=req.state.strip() or defaults.get('suggested_state','')
+        query=req.query.strip() or (f"{category} in {city}, {state}" if category and city and state else '')
+        if not query:raise ValueError('Complete your ICP or enter a business type and location')
         result = search_google_maps(
-            query=req.query,
+            query=query,
             limit=req.limit,
-            category=req.category,
+            category=category,
         )
 
         cfg = load_qualification_config(
             ROOT,
             req.campaign,
-            req.city,
-            req.state,
+            city,
+            state,
         )
 
         rcfg = json.loads(
@@ -1083,6 +1149,20 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
             })
 
             scored = evaluate(rec, cfg)
+            if icp_ready:
+                qualification=score_lead(rec,icp_row['profile'],icp_row['weights'])
+                scored.update({
+                    'score':qualification['score'],
+                    'raw_score':qualification['score'],
+                    'grade':'A / Hot' if qualification['priority']=='HIGH_PRIORITY' else 'B / Qualified' if qualification['priority']=='GOOD_FIT' else 'C / Review' if qualification['priority']=='REVIEW' else 'Reject/Hold',
+                    'score_explanation':' | '.join(qualification['matches']+qualification['signals']+qualification['risks']),
+                    'rejection_reasons':qualification['disqualifiers'],
+                    'review_reasons':qualification['missing_information'],
+                    'icp_score':qualification['score'],
+                    'icp_priority':qualification['priority'],
+                    'icp_version':icp_row['version'],
+                    'qualification':qualification,
+                })
 
             routed = dict(rec)
             routed.update(scored)
@@ -1112,7 +1192,8 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest):
         return {
             'status': 'QUALIFIED_PREVIEW_READY',
             'campaign': req.campaign,
-            'query': req.query,
+            'query': query,
+            'icp': {'active':icp_ready,'version':(icp_row or {}).get('version',0)},
             'source_summary': {
                 'requested': result.get('requested_limit', 0),
                 'received': result.get('received_count', 0),
@@ -1154,7 +1235,7 @@ class OutscraperGenerateRequest(OutscraperQualifyRequest):
 
 
 @app.post('/api/leads/outscraper/generate')
-def outscraper_generate(req: OutscraperGenerateRequest):
+def outscraper_generate(req: OutscraperGenerateRequest, request: Request):
     """
     Generate live leads, qualify them, deduplicate against the
     selected campaign, and persist non-ineligible prospects.
@@ -1174,7 +1255,7 @@ def outscraper_generate(req: OutscraperGenerateRequest):
 
     try:
         # Reuse the already-tested qualification pipeline.
-        preview = outscraper_qualify_preview(req)
+        preview = outscraper_qualify_preview(req, request)
 
         print("\n=== LEAD SAVE TRACE ===")
         print("CAMPAIGN:", req.campaign)
@@ -1192,6 +1273,7 @@ def outscraper_generate(req: OutscraperGenerateRequest):
         persisted = persist_generated_prospects(
             req.campaign,
             candidates,
+            _owner_id(request),
         )
 
         print("CANDIDATES SENT TO DB:", len(candidates))
