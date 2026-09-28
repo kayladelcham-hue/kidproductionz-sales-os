@@ -42,8 +42,9 @@ from .hubspot_client import HubSpotClient
 from . import google_service
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, save_user_session, get_user_session, delete_user_session, ensure_user, claim_unowned_campaigns, get_owned_prospect, get_icp_profile, save_icp_profile, save_lead_feedback
+from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, get_user_by_id, save_user_session, get_user_session, delete_user_session, ensure_user, claim_unowned_campaigns, get_owned_prospect, get_icp_profile, save_icp_profile, save_lead_feedback
 from .icp import EMPTY_PROFILE, DEFAULT_WEIGHTS, normalize_profile, validate_weights, profile_complete, score_lead, discovery_defaults
+from .momentum import award as award_momentum, summary as momentum_summary
 logger=logging.getLogger(__name__)
 def _safe_error_message(message:str)->str:
     message=re.sub(r'(?i)(token|authorization|api[_ -]?key|password|secret)\s*[=:]\s*[^\s,;]+',r'\1=[REDACTED]',message)
@@ -272,7 +273,8 @@ def auth_me(request: Request):
     if not _auth_required(): return {'authenticated':True,'mode':'local'}
     token=request.cookies.get(_AUTH_COOKIE)
     session = get_user_session(_hash_value(token)) if token else None
-    return {'authenticated':bool(token and _session_active(session))}
+    active=bool(token and _session_active(session));user=get_user_by_id(session['user_id']) if active else None
+    return {'authenticated':active,'name':(user or {}).get('name'),'email':(user or {}).get('email')}
 
 @app.get('/api/auth/csrf')
 def auth_csrf(request: Request):
@@ -342,7 +344,17 @@ def prospect_feedback(prospect_id: int, req: LeadFeedbackRequest, request: Reque
     if req.outcome not in allowed:raise HTTPException(422,'Invalid lead outcome')
     row=save_lead_feedback(_icp_user_id(request),prospect_id,req.verdict,req.outcome,req.note,_owner_id(request))
     if not row:raise HTTPException(404,'Prospect not found')
+    momentum=None
+    if req.verdict=='GOOD_LEAD':momentum=award_momentum(_icp_user_id(request),'lead_reviewed',f'lead_reviewed:{prospect_id}',prospect_id)
+    if req.outcome:
+        event={'CONTACTED':'qualified_lead_contacted','REPLIED':'reply_received','CONSULTATION_BOOKED':'meeting_booked','PROPOSAL':'proposal_sent','WON':'deal_won'}.get(req.outcome)
+        if event:momentum=award_momentum(_icp_user_id(request),event,f'{event}:{prospect_id}',prospect_id)
+    row['momentum']=momentum
     return row
+
+@app.get('/api/momentum/summary')
+def get_momentum_summary(request: Request):
+    return momentum_summary(_icp_user_id(request))
 logger = logging.getLogger(__name__)
 if getattr(sys, 'frozen', False):
     BUNDLE_ROOT = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent)).resolve()
@@ -686,8 +698,14 @@ def prospect_defer(prospect_id:int, request:Request):
 @app.patch('/api/prospects/{prospect_id}/activity')
 def prospect_activity(prospect_id:int, activity:SalesActivity, request:Request):
     try:
+        before=get_owned_prospect(prospect_id,_owner_id(request))
         row=update_sales_activity(prospect_id, activity.status, activity.notes, activity.booked_value, _owner_id(request))
         if not row: raise HTTPException(404,'Prospect not found')
+        momentum=None
+        if activity.status and activity.status!=(before or {}).get('sales_status'):
+            event={'CONTACTED':'qualified_lead_contacted','REPLIED':'reply_received','CONSULTATION_SET':'meeting_booked','BOOKED':'deal_won'}.get(activity.status)
+            if event:momentum=award_momentum(_icp_user_id(request),event,f'{event}:{prospect_id}',prospect_id,quality_score=row.get('icp_score') or row.get('score'))
+        row['momentum']=momentum
         return row
     except ValueError as exc: raise HTTPException(400,str(exc))
     except KeyError: raise HTTPException(404,'Prospect not found')
@@ -766,18 +784,20 @@ def calendar_create(req:CalendarRequest, request:Request):
                 None,
                 _owner_id(request)
             )
+            momentum=award_momentum(_icp_user_id(request),'meeting_booked',f'meeting_booked:{req.prospect_id}',req.prospect_id)
         except Exception as status_exc:
             logger.exception(
                 'Calendar event created but consultation status update failed'
             )
-            status_warning = _safe_error_message(str(status_exc))
+            status_warning = _safe_error_message(str(status_exc));momentum=None
 
         return {
             'status':'CREATED',
             'calendar_event_id':event.get('id'),
             'event_url':event.get('htmlLink'),
             'sales_status':'CONSULTATION_SET' if not status_warning else None,
-            'status_warning':status_warning
+            'status_warning':status_warning,
+            'momentum':momentum,
         }
     except Exception as exc: raise HTTPException(503,detail={'provider':'GOOGLE_CALENDAR','stage':'event_create','message':_safe_error_message(str(exc))})
 class GmailRequest(BaseModel):

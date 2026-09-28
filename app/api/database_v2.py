@@ -7,7 +7,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, select, update, func, text, delete, inspect
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import IntegrityError
-from .models import Base, Campaign, Prospect, Deal, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession, IcpProfile, LeadFeedback
+from .models import Base, Campaign, Prospect, Deal, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession, IcpProfile, LeadFeedback, MomentumEvent
 def _url():
     u=os.getenv('DATABASE_URL','sqlite:///data/kidproductionz.db')
     if u.startswith('postgresql://'): u='postgresql+psycopg://'+u[len('postgresql://'):]
@@ -71,6 +71,9 @@ def get_user_by_email(email):
             select(User).where(User.email == email.strip().lower())
         ).scalar_one_or_none()
         return _dict(user)
+
+def get_user_by_id(user_id):
+    with SessionLocal() as s:return _dict(s.get(User,user_id))
 
 
 def save_user_session(

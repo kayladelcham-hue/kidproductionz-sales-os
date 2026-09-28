@@ -3,6 +3,7 @@ import {Appearance,AppNavigation,CalendarGrid,GuidedTour,Icon,navigationGroups,p
 import {HomeWorkspace,ProspectWorkspace,LeadsWorkspace,CustomersWorkspace,RevenueWorkspace} from './Lifecycle';
 import {AddProspect,FollowUpHub} from './SalesHub';
 import {IcpProfile} from './IcpProfile';
+import {MomentumPage,MomentumToast,MoreHub} from './Momentum';
 import React,{useEffect,useState} from 'react'; import {createRoot} from 'react-dom/client'; import './styles.css'; import {api,campaignApi,uploadCampaign,authApi,Queue,QueueItem} from './api';
 import './AppPolish.css';
 import logo from './assets/kidproductionz-logo.png'; import {ScoreBadge,GradeBadge,RouteBadge,PriorityBadge,StatusBadge} from './badges';
@@ -50,192 +51,65 @@ function ScheduleWhen({value}:{value:any}){
 function UpNext({campaign}:{campaign:string}){
   const {data,error}=useQueue(campaign);
   const [idx,setIdx]=useState(0);
-  const [selected,setSelected]=useState<any>(null);
-  const [openEmail,setOpenEmail]=useState(false);
-  const [lastAction,setLastAction]=useState<any>(null);
-  const [undoing,setUndoing]=useState(false);
-  const [deferredIds,setDeferredIds]=useState<number[]>([]);
+  const [contacting,setContacting]=useState(false);
+  const [busy,setBusy]=useState(false);
+  const [toast,setToast]=useState<any>(null);
+  const [removed,setRemoved]=useState<number[]>([]);
+  const [message,setMessage]=useState('');
 
-  useEffect(()=>{
-    setIdx(0);
-    setSelected(null);
-    setOpenEmail(false);
-    setLastAction(null);
-  },[campaign]);
+  useEffect(()=>{setIdx(0);setContacting(false);setToast(null);setRemoved([])},[campaign]);
 
   const items=((data?.daily_queue||[]) as any[])
-    .map((x:any,i:number)=>({...x,__i:i}))
-    .filter((x:any)=>!['BOOKED','NOT_INTERESTED','FOLLOW_UP'].includes(x.sales_status)&&!deferredIds.includes(x.prospect_id))
-    .sort((a:any,b:any)=>{
-      const r=(p:any)=>({P1:1,P2:2,P3:3} as Record<string,number>)[String(p)]||9;
-      return r(a.priority)-r(b.priority)||a.__i-b.__i
-    });
-
-  const current=items[idx];
-
-  const moveNext=()=>{
-    setIdx(i=>Math.min(i+1,Math.max(0,items.length-1)))
-  };
-
-  const skip=()=>{
-    if(!current)return;
-    setLastAction({
-      type:'SKIP',
-      idx,
-      prospect:current,
-      message:`Skipped ${current.business_name||current.name||current.business||'prospect'}`
-    });
-    moveNext();
-  };
-
-  const moveLater=async()=>{
-    if(!current?.prospect_id)return;
+    .filter((x:any)=>!removed.includes(Number(x.prospect_id)))
+    .filter((x:any)=>!['BOOKED','NOT_INTERESTED'].includes(String(x.sales_status||'')))
+    .sort((a:any,b:any)=>Number(b.icp_score??b.score??0)-Number(a.icp_score??a.score??0));
+  const current=items[Math.min(idx,Math.max(0,items.length-1))];
+  const next=()=>{setContacting(false);setIdx(i=>Math.min(i+1,Math.max(0,items.length-1)))};
+  const removeAndNext=(id:number)=>{setRemoved(list=>[...list,id]);setContacting(false);setIdx(i=>Math.min(i,Math.max(0,items.length-2)))};
+  const act=async(kind:'CONTACT'|'LATER'|'NOT_FIT')=>{
+    if(!current?.prospect_id||busy)return;
+    setBusy(true);setMessage('');
     try{
-      await api.defer(current.prospect_id);
-      setDeferredIds(x=>[...x,current.prospect_id]);
-    }catch{}
-  };
-
-  const markAttempted=async()=>{
-    if(!current)return;
-
-    const previousStatus=current.sales_status||'NOT_CONTACTED';
-
-    if(current.prospect_id){
-      try{
-        await api.activity(current.prospect_id,{status:'ATTEMPTED'});
-      }catch{
-        return;
+      if(kind==='CONTACT'){
+        const result=await api.activity(current.prospect_id,{status:'CONTACTED'});
+        if(result?.momentum?.points)setToast(result.momentum);
+        removeAndNext(Number(current.prospect_id));
+      }else if(kind==='LATER'){
+        await api.defer(current.prospect_id);
+        removeAndNext(Number(current.prospect_id));
+      }else{
+        await api.activity(current.prospect_id,{status:'NOT_INTERESTED'});
+        await api.leadFeedback(current.prospect_id,{verdict:'NOT_A_GOOD_LEAD',outcome:'NOT_A_FIT'});
+        removeAndNext(Number(current.prospect_id));
       }
-    }
-
-    setLastAction({
-      type:'ATTEMPTED',
-      idx,
-      prospect:current,
-      previousStatus,
-      message:`Marked ${current.business_name||current.name||current.business||'prospect'} attempted`
-    });
-
-    moveNext();
+    }catch{setMessage('That move did not save. Please try again.')}finally{setBusy(false)}
   };
 
-  const savedAndNext=()=>{
-    if(!current)return;
+  if(error)return <div className="card empty"><h2>We couldn’t load your selling list.</h2><p>Try again in a moment.</p></div>;
+  if(!data)return <div className="card empty">Finding your best opportunities…</div>;
+  if(!current)return <div className="sell-focus sell-done"><p className="eyebrow">TODAY'S LIST</p><h2>You’re caught up.</h2><p>Your follow-ups are handled for today. Find more leads whenever you’re ready.</p><button className="primary" onClick={()=>location.reload()}>Check again</button></div>;
 
-    setLastAction({
-      type:'SAVED',
-      idx,
-      prospect:current,
-      message:`Saved ${current.business_name||current.name||current.business||'prospect'}`
-    });
+  const q=readQualification(current);
+  const name=current.business_name||current.company||current.name||current.business||'Lead';
+  const score=current.icp_score??current.score;
+  const priority=prettyLabel(current.icp_priority||current.priority||'Ready');
+  const decisionMaker=current.contact_name||current.owner_name||current.decision_maker||'Decision-maker not confirmed';
 
-    setSelected(null);
-    setOpenEmail(false);
-    moveNext();
-  };
-
-  const undo=async()=>{
-    if(!lastAction||undoing)return;
-
-    setUndoing(true);
-
-    try{
-      if(
-        lastAction.type==='ATTEMPTED' &&
-        lastAction.prospect?.prospect_id
-      ){
-        await api.activity(
-          lastAction.prospect.prospect_id,
-          {status:lastAction.previousStatus||'NOT_CONTACTED'}
-        );
-      }
-
-      setIdx(lastAction.idx);
-      setLastAction(null);
-    }finally{
-      setUndoing(false);
-    }
-  };
-
-  if(error)return <div className="card empty">API unavailable</div>;
-  if(!data)return <div className="card empty">Loading queue...</div>;
-  if(!current)return <div className="card empty"><h2>You're caught up.</h2></div>;
-
-  const name=current.business_name||current.name||current.business||'-';
-
-  return <div className="up-next">
-
-    {lastAction&&
-      <div className="notice">
-        {lastAction.message}
-        {' '}
-        <button onClick={undo} disabled={undoing}>
-          {undoing?'Undoing...':'Undo'}
-        </button>
-      </div>
-    }
-
-    <div className="card up-next-card">
-      <p className="eyebrow">UP NEXT - #{current.queue_position??idx+1}</p>
-      <h2>{name}</h2>
-
-      <div className="badges">
-        <ScoreBadge value={current.score}/>
-        <GradeBadge value={current.grade}/>
-        <PriorityBadge value={current.priority}/>
-        <RouteBadge value={current.route}/>
-      </div>
-
-      <p className="muted">{current.route_reason||''}</p>
-
-      <div className="actions">
-        {current.phone&&<a href={`tel:${current.phone}`}>Call</a>}
-
-        <button onClick={()=>{
-          setSelected(current);
-          setOpenEmail(true);
-        }}>Email</button>
-
-        <>{current.website&&<a href={current.website} target="_blank" rel="noreferrer">Website</a>}</>
-
-        <button onClick={()=>{
-          setSelected(current);
-          setOpenEmail(false);
-        }}>Open Prospect</button>
-
-        <button onClick={skip}>Skip</button>
-        <button onClick={markAttempted}>Mark Attempted</button>
-        <button onClick={()=>{
-          setSelected(current);
-          setOpenEmail(false);
-        }}>Save & Next</button>
-      </div>
-    </div>
-
-    <h3>Coming Up</h3>
-
-    {items.slice(idx+1,idx+5).map((x:any,i:number)=>
-      <div className="card coming-up" key={x.prospect_id||i}>
-        <b>{x.business_name||x.name||x.business||'-'}</b>
-        <span>#{x.queue_position??idx+i+2} - {x.priority||''}</span>
-      </div>
-    )}
-
-    {selected&&
-      <ProspectDrawer
-        item={selected}
-        initialEmailOpen={openEmail}
-        onClose={()=>{
-          setSelected(null);
-          setOpenEmail(false);
-        }}
-        onNext={savedAndNext}
-      />
-    }
+  return <div className="sell-focus">
+    <header className="sell-session-head"><div><p className="eyebrow">START SELLING</p><h2>One good move at a time.</h2></div><span>{items.length} move{items.length===1?'':'s'} ready</span></header>
+    <article className="sell-lead-card">
+      <div className="sell-lead-top"><div><span>{score!=null?`${score} MATCH · `:''}{priority}</span><h1>{name}</h1><p>{[current.category,current.city,current.state].filter(Boolean).join(' · ')||'Business lead'}</p></div>{score!=null&&<strong>{score}<small>ICP</small></strong>}</div>
+      <section className="sell-reason"><small>WHY THIS ONE</small><h3>{q.matches?.[0]||current.route_reason||'This lead fits the profile you asked us to find.'}</h3>{q.signals?.[0]&&<p><b>Why now:</b> {q.signals[0]}</p>}</section>
+      <div className="sell-quick-context"><span><small>Talk to</small><b>{decisionMaker}</b></span><span><small>Recommended angle</small><b>{q.recommended_action||'Lead with the clearest business result you can create.'}</b></span></div>
+      <details className="sell-game-plan"><summary>View game plan</summary><div>{q.matches?.length>0&&<p><b>Matches:</b> {q.matches.join(' · ')}</p>}{q.risks?.length>0&&<p><b>Watch for:</b> {q.risks.join(' · ')}</p>}{q.missing_information?.length>0&&<p><b>Still need:</b> {q.missing_information.join(' · ')}</p>}<p><b>Previous activity:</b> {prettyLabel(current.sales_status||'Not contacted')}</p></div></details>
+      {contacting&&<section className="sell-contact-panel"><h3>Choose how you want to reach out</h3><div>{current.phone&&<a href={`tel:${current.phone}`}>Call {current.phone}</a>}{current.email&&<a href={`mailto:${current.email}`}>Email {current.email}</a>}{current.website&&<a href={current.website} target="_blank" rel="noreferrer">Open website</a>}</div>{!current.phone&&!current.email&&!current.website&&<p>Contact details still need research. You can save this lead for later.</p>}<button className="primary" disabled={busy} onClick={()=>act('CONTACT')}>{busy?'Saving…':'I contacted them'}</button></section>}
+      <footer className="sell-actions"><button className="primary" onClick={()=>setContacting(value=>!value)}>Contact</button><button onClick={next}>Skip</button><button disabled={busy} onClick={()=>act('NOT_FIT')}>Not a fit</button><button disabled={busy} onClick={()=>act('LATER')}>Save for later</button></footer>
+    </article>
+    {message&&<p className="notice" role="alert">{message}</p>}
+    <p className="sell-quality-note">Momentum rewards qualified outreach, replies, meetings, proposals, and wins.</p>
+    {toast&&<MomentumToast event={toast} onDone={()=>setToast(null)}/>}
   </div>
 }
-
 
 function LeadGenerator({campaign,onNavigate}:{campaign:string;onNavigate?:(page:string)=>void}){
   const [businessType,setBusinessType]=useState('Hair salons');
@@ -615,9 +489,10 @@ function App(){
     page==='Add Prospect'?<AddProspect key={campaign} campaign={campaign}/>:
     page==='ICP Profile'?<IcpProfile/>:
     page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:
-    page==='Runs'?<Runs/>:<Settings campaign={campaign}/>;
-  const leadFlow=['Lead Generator','Prospects','Daily Queue','Leads'];
-  return <div className="shell"><aside inert={mobileMenuOpen||tourOpen}><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{navigationGroups.map(g=><section className="xp-desktop-group" key={g.name}><h3>{g.name}</h3>{g.pages.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{pageName(n)}</button>)}</section>)}</nav><div className="safe"><span/>System Ready</div></aside><main inert={mobileMenuOpen||tourOpen}><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}><Icon name="menu"/></button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{pageName(page)}</h1></div><select aria-label="Current campaign" value={campaign} onChange={e=>{setCampaign(e.target.value);setHubProspect(null)}}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{(page==='Home'||leadFlow.includes(page))&&<nav className="lc-flow-nav" aria-label="Sales lifecycle"><button className={page==='Home'?'active':''} onClick={()=>setPage('Home')}>Today</button>{leadFlow.map(step=><React.Fragment key={step}><span aria-hidden="true">→</span><button className={page===step?'active':''} aria-current={page===step?'page':undefined} onClick={()=>setPage(step)}>{step==='Lead Generator'?'Find Leads':step==='Prospects'?'Lead Inbox':step==='Daily Queue'?'Work Queue':'Pipeline'}</button></React.Fragment>)}</nav>}{content}{hubProspect&&<ProspectDrawer item={hubProspect} onClose={()=>setHubProspect(null)}/>}</main>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>}<div className="bottom-nav" inert={mobileMenuOpen||tourOpen}>{[["Home","Home","home"],["Find","Lead Generator","search"],["Inbox","Prospects","people"],["Queue","Daily Queue","queue"],["Pipeline","Leads","sell"]].map(([l,v,icon])=><button key={l} aria-current={page===v?'page':undefined} onClick={()=>setPage(v)}><Icon name={icon}/><span>{l}</span></button>)}</div>{tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<SalesAgent campaign={campaign}/></div>
+    page==='Runs'?<Runs/>:
+    page==='Momentum'?<MomentumPage/>:
+    page==='More'?<MoreHub onNavigate={setPage}/>:<Settings campaign={campaign}/>;
+  return <div className="shell"><aside inert={mobileMenuOpen||tourOpen}><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{navigationGroups.map(g=><section className="xp-desktop-group" key={g.name}>{g.pages.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{pageName(n)}</button>)}</section>)}</nav><div className="safe"><span/>Ready when you are</div></aside><main inert={mobileMenuOpen||tourOpen}><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}><Icon name="menu"/></button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{pageName(page)}</h1></div><select aria-label="Current campaign" value={campaign} onChange={e=>{setCampaign(e.target.value);setHubProspect(null)}}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{content}{hubProspect&&<ProspectDrawer item={hubProspect} onClose={()=>setHubProspect(null)}/>}</main>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>}<div className="bottom-nav" inert={mobileMenuOpen||tourOpen}>{[["Home","Home","home"],["Sell","Up Next","sell"],["Leads","Prospects","people"],["Pipeline","Leads","queue"],["More","More","menu"]].map(([l,v,icon])=><button key={l} aria-current={page===v?'page':undefined} onClick={()=>setPage(v)}><Icon name={icon}/><span>{l}</span></button>)}</div>{tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<SalesAgent campaign={campaign}/></div>
 }
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
 function QueueTable({items,onSelect}:{items:QueueItem[];onSelect?:(item:QueueItem)=>void}){return <div className="table-wrap"><table><thead><tr><th>Position</th><th>Business</th><th>Score</th><th>Grade</th><th>Route</th><th>Priority</th><th>Reason</th></tr></thead><tbody>{(items||[]).map((x:any,i:number)=><tr key={x.prospect_id||x.lead_id||x.fixture_id||i} onClick={()=>onSelect?.(x)}><td>{x.queue_position??i+1}</td><td><b>{x.business_name||x.name||x.business||'-'}</b></td><td><ScoreBadge value={x.score}/></td><td><GradeBadge value={x.grade}/></td><td><RouteBadge value={x.route}/></td><td><PriorityBadge value={x.priority}/></td><td>{x.route_reason||'-'}</td></tr>)}</tbody></table></div>}
@@ -969,10 +844,3 @@ function AuthGateBeta(){
 const root=document.getElementById('root');
 if(!root)throw new Error('App root was not found');
 createRoot(root).render(<AuthGateBeta/>);
-
-
-
-
-
-
-

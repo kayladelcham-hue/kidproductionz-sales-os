@@ -9,6 +9,7 @@ from sqlalchemy import select, func
 
 from . import database_v2 as db
 from .models import Campaign, Prospect, Deal, ExternalAction, CalendarEvent, EmailActivity
+from .momentum import award as award_momentum
 
 router = APIRouter(prefix='/api')
 
@@ -219,7 +220,13 @@ def update_deal(deal_id: int, payload: DealUpdate, request: Request):
                              metadata_json=json.dumps({'deal_id': deal.id, 'from_stage': before,
                                                        'to_stage': deal.stage, 'next_action': deal.next_action,
                                                        'next_action_at': deal.next_action_at})))
-        return db._dict(deal)
+        result=db._dict(deal);prospect_id=contact.id
+    momentum=None
+    if values.get('stage') and values['stage']!=before:
+        event={'PROPOSAL':'proposal_sent','WON':'deal_won'}.get(values['stage'])
+        if event:momentum=award_momentum(owner_id(request) or 0,event,f'{event}:deal:{deal_id}',prospect_id,{'deal_id':deal_id})
+    result['momentum']=momentum
+    return result
 
 
 class NewOpportunity(BaseModel):

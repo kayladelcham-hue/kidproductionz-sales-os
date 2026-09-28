@@ -114,6 +114,17 @@ class LeadFeedback(Base):
     score_at_feedback: Mapped[float|None] = mapped_column(Float)
     created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP")
 
+class MomentumEvent(Base):
+    __tablename__ = "momentum_event"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    prospect_id: Mapped[int|None] = mapped_column(Integer, nullable=True, index=True)
+    event_type: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    points: Mapped[int] = mapped_column(Integer, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    metadata_json: Mapped[str|None] = mapped_column('metadata', Text)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP", index=True)
+
 class Deal(Base):
     __tablename__='deal'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -229,7 +240,7 @@ class AppSetting(Base):
     key: Mapped[str] = mapped_column(Text, primary_key=True)
     value: Mapped[str] = mapped_column(Text, nullable=False)
 
-__all__=['Base','Campaign','Prospect','Deal','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting','User','UserSession','IcpProfile','LeadFeedback']
+__all__=['Base','Campaign','Prospect','Deal','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting','User','UserSession','IcpProfile','LeadFeedback','MomentumEvent']
 
 "User",
 "UserSession",
