@@ -34,6 +34,14 @@ def test_intake_dedupe_queue_and_campaign(client):
     assert client.post('/api/prospects/manual', json={'campaign':'missing','name':'Other','phone':'4075550100'}).status_code == 404
     assert client.post('/api/prospects/manual', json={'campaign':'one','name':'  '}).status_code == 400
 
+def test_manual_lead_can_start_with_public_website_and_social(client):
+    response=client.post('/api/prospects/manual',json={'campaign':'one','name':'Harbor House','website':'https://harbor.example','social':'https://instagram.com/harborhouse','city':'Tampa','state':'FL'})
+    assert response.status_code==200
+    row=db.list_prospects('one')[0]
+    assert row['website']=='https://harbor.example'
+    assert row['social']=='https://instagram.com/harborhouse'
+    assert row['city']=='Tampa' and row['state']=='FL'
+
 def test_next_action_scoping_and_hub(client):
     pid = add(client).json()['id']
     payload = {'campaign':'two','status':'FOLLOW_UP','notes':'Call tomorrow','action':'Call','due_at':'2026-09-19T10:00:00-04:00'}

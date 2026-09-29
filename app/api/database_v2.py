@@ -7,7 +7,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, select, update, func, text, delete, inspect
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import IntegrityError
-from .models import Base, Campaign, Prospect, Deal, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession, IcpProfile, LeadFeedback, MomentumEvent
+from .models import Base, Campaign, Prospect, Deal, Run, QueueItem, CrmState, Upload, ExternalAction, CalendarEvent, EmailActivity, GoogleConnection, AppSetting, User, UserSession, IcpProfile, LeadFeedback, MomentumEvent, LeadSignal, LeadScoreHistory
 def _url():
     u=os.getenv('DATABASE_URL','sqlite:///data/kidproductionz.db')
     if u.startswith('postgresql://'): u='postgresql+psycopg://'+u[len('postgresql://'):]
@@ -136,6 +136,8 @@ def init_db():
         "icp_priority": "TEXT",
         "icp_version": "INTEGER",
         "qualification_json": "TEXT",
+        "last_scored_at": "TEXT",
+        "last_enriched_at": "TEXT",
     }
     with engine.begin() as conn:
         for column, definition in additions.items():

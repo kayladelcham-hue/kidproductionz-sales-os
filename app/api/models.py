@@ -102,6 +102,37 @@ class Prospect(Base):
     icp_priority: Mapped[str|None] = mapped_column(Text)
     icp_version: Mapped[int|None] = mapped_column(Integer)
     qualification_json: Mapped[str|None] = mapped_column(Text)
+    last_scored_at: Mapped[str|None] = mapped_column(Text)
+    last_enriched_at: Mapped[str|None] = mapped_column(Text)
+
+class LeadSignal(Base):
+    __tablename__ = "lead_signal"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prospect_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    signal_type: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    signal_value: Mapped[str] = mapped_column(Text, nullable=False)
+    polarity: Mapped[str] = mapped_column(Text, nullable=False, server_default="POSITIVE")
+    source_type: Mapped[str] = mapped_column(Text, nullable=False)
+    source_url: Mapped[str|None] = mapped_column(Text)
+    evidence_text: Mapped[str] = mapped_column(Text, nullable=False)
+    confidence: Mapped[str] = mapped_column(Text, nullable=False)
+    detected_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP")
+    last_verified_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP")
+
+class LeadScoreHistory(Base):
+    __tablename__ = "lead_score_history"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prospect_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    previous_score: Mapped[float|None] = mapped_column(Float)
+    new_score: Mapped[float] = mapped_column(Float, nullable=False)
+    score_delta: Mapped[float] = mapped_column(Float, nullable=False)
+    icp_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    trigger_type: Mapped[str] = mapped_column(Text, nullable=False)
+    enrichment_used: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    sources_json: Mapped[str] = mapped_column(Text, nullable=False, server_default="[]")
+    explanation_json: Mapped[str] = mapped_column(Text, nullable=False, server_default="{}")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default="CURRENT_TIMESTAMP", index=True)
 
 class LeadFeedback(Base):
     __tablename__ = "lead_feedback"
@@ -240,7 +271,7 @@ class AppSetting(Base):
     key: Mapped[str] = mapped_column(Text, primary_key=True)
     value: Mapped[str] = mapped_column(Text, nullable=False)
 
-__all__=['Base','Campaign','Prospect','Deal','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting','User','UserSession','IcpProfile','LeadFeedback','MomentumEvent']
+__all__=['Base','Campaign','Prospect','Deal','Run','QueueItem','CrmState','Upload','ExternalAction','CalendarEvent','EmailActivity','GoogleConnection','AppSetting','User','UserSession','IcpProfile','LeadFeedback','MomentumEvent','LeadSignal','LeadScoreHistory']
 
 "User",
 "UserSession",

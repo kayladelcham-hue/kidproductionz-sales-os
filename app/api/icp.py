@@ -84,7 +84,8 @@ def score_lead(lead: dict[str, Any], profile: dict[str, Any], weights: dict[str,
     dimensions = {
         "fit": (0.45 if industry_matches else 0.1) + (0.35 if geography_matches else 0) + (0.2 if profile["ownership_preferences"] and _matches(evidence_text, profile["ownership_preferences"]) else 0),
         "need": min(1.0, 0.45 + 0.3 * len(positive_matches)) if profile["problems_solved"] else 0.25,
-        "authority": 1.0 if named else 0.65 if contact else 0.15,
+        # Missing contact or decision-maker data is unknown, not proof that access is poor.
+        "authority": 1.0 if named else 0.65 if contact else 0.5,
         "value": 0.8 if (profile.get("ideal_customer_value") or profile.get("offer_value_max")) else 0.55,
         "friction": 0.8 if contact and not disqualifiers else 0.25 if disqualifiers else 0.5,
         "timing": min(1.0, 0.3 + 0.35 * len(positive_matches)),
@@ -102,8 +103,8 @@ def score_lead(lead: dict[str, Any], profile: dict[str, Any], weights: dict[str,
     if not location_text.strip(): missing.append("Location is missing")
     if not named: missing.append("Decision-maker is not identified")
     if not positive_matches: missing.append("No current buying or urgency signal is confirmed")
+    if not contact: missing.append("A contact path has not been identified yet")
     risks = list(disqualifiers)
-    if not contact: risks.append("No usable contact path")
     action = "Skip or verify the disqualifier before spending time on outreach." if disqualifiers else ("Contact the likely decision-maker and lead with " + (profile["problems_solved"][0] if profile["problems_solved"] else "the clearest problem your offer solves") + ".")
     return {"score": score, "priority": _priority(score, bool(disqualifiers)), "dimensions": {k: round(v * weights[k]) for k, v in dimensions.items()}, "matches": matches, "signals": signals, "missing_information": missing, "risks": risks, "disqualifiers": disqualifiers, "recommended_action": action}
 

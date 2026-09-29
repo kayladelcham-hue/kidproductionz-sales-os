@@ -7,17 +7,18 @@ const label=(s:string)=>s.toLowerCase().replace(/_/g,' ').replace(/\b\w/g,c=>c.t
 const localDate=(v:string)=>{if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return '';return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)};
 
 export function AddProspect({campaign}:{campaign:string}){
-  const [form,setForm]=useState({name:'',phone:'',email:'',notes:''});
+  const empty={name:'',phone:'',email:'',website:'',social:'',city:'',state:'',notes:''};
+  const [form,setForm]=useState(empty);
   const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
-  const save=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);setMessage('');try{await api.manualProspect({campaign,...form});setForm({name:'',phone:'',email:'',notes:''});setMessage('Prospect saved. Find them in Prospects and the Follow-Up / Schedule Hub.')}catch(e:any){setMessage(e.message)}finally{setBusy(false)}};
+  const save=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);setMessage('');try{await api.manualProspect({campaign,...form});setForm(empty);setMessage('Prospect saved. Open the lead and choose Refresh & Rescore when you want KP Sales OS to check their public website and social profile.')}catch(e:any){setMessage(e.message)}finally{setBusy(false)}};
   return <div className="kp-sales"><form className="card sales-hub-form intake-card" onSubmit={save}>
     <div className="sales-intro"><span className="sales-symbol" aria-hidden="true">+</span><div><p className="sales-eyebrow">NEW CONNECTION</p><h2>Keep the conversation going.</h2><p>A name. A way to reach them. You're set.</p></div></div>
     <label>Name or business<input required maxLength={200} placeholder="Who did you meet?" autoComplete="name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
     <div className="sales-field-pair"><label>Phone<input type="tel" placeholder="(407) 555-0100" autoComplete="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label>
     <label>Email<input type="email" placeholder="name@example.com" autoComplete="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label></div>
-    <p className="sales-hint">Add a phone number or email—either works.</p>
-    <details className="sales-notes"><summary>Add a note <span>Optional</span></summary><label><span className="sr-only">Notes</span><textarea maxLength={4000} placeholder="Where you met, what to discuss next…" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label></details>
-    <button className="sales-primary" disabled={busy||!form.name.trim()||!(form.phone.trim()||form.email.trim())}>{busy?'Saving…':'Save prospect'}<span aria-hidden="true">→</span></button>
+    <p className="sales-hint">A phone, email, website, or public social profile is enough to start.</p>
+    <details className="sales-notes"><summary>Add website, social, location, or a note <span>Optional</span></summary><label>Website<input type="url" placeholder="https://company.com" value={form.website} onChange={e=>setForm({...form,website:e.target.value})}/></label><label>Public social profile<input type="url" placeholder="https://instagram.com/company" value={form.social} onChange={e=>setForm({...form,social:e.target.value})}/></label><div className="sales-field-pair"><label>City<input value={form.city} onChange={e=>setForm({...form,city:e.target.value})}/></label><label>State<input value={form.state} onChange={e=>setForm({...form,state:e.target.value})}/></label></div><label>Notes<textarea maxLength={4000} placeholder="Where you met, what to discuss next…" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label></details>
+    <button className="sales-primary" disabled={busy||!form.name.trim()||!(form.phone.trim()||form.email.trim()||form.website.trim()||form.social.trim())}>{busy?'Saving…':'Save prospect'}<span aria-hidden="true">→</span></button>
     {message&&<p className="sales-feedback" role="status">{message}</p>}</form></div>;
 }
 

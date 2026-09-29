@@ -31,13 +31,17 @@ class ManualProspect(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(default='', max_length=60)
     email: str = Field(default='', max_length=254)
+    website: str = Field(default='', max_length=500)
+    social: str = Field(default='', max_length=500)
+    city: str = Field(default='', max_length=120)
+    state: str = Field(default='', max_length=80)
     notes: str = Field(default='', max_length=4000)
 
 @router.post('/api/prospects/manual')
 def add_prospect(req: ManualProspect, request: Request):
     name, phone, email = req.name.strip(), req.phone.strip(), req.email.strip().lower()
-    if not name or not (phone or email):
-        raise HTTPException(400, 'Enter a name and phone or email')
+    if not name or not (phone or email or req.website.strip() or req.social.strip()):
+        raise HTTPException(400, 'Enter a name and at least one contact, website, or social profile')
     if phone and len(''.join(c for c in phone if c.isdigit())) < 7:
         raise HTTPException(400, 'Enter a valid phone number')
     if email and ('@' not in email or '.' not in email.rsplit('@', 1)[-1]):
@@ -45,7 +49,9 @@ def add_prospect(req: ManualProspect, request: Request):
     if not db.get_campaign(req.campaign, owner_id(request)):
         raise HTTPException(404, 'Campaign not found')
     result = db.persist_generated_prospects(req.campaign, [{
-        'name': name, 'phone': phone, 'email': email, 'queue_status': 'RESEARCH',
+        'name': name, 'phone': phone, 'email': email, 'website': req.website.strip(),
+        'social': req.social.strip(), 'city': req.city.strip(), 'state': req.state.strip(),
+        'queue_status': 'RESEARCH',
         'review_reasons': ['Met in person; review qualification before queueing'],
     }])
     if result['duplicate_count']:

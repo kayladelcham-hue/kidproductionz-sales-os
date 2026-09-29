@@ -68,6 +68,7 @@ export const api={
 aiChat:(body:any)=>post<any>('/api/ai/chat',body),
 commandCenter:(campaign?:string)=>get<any>(`/api/home/command-center${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),
 icpProfile:()=>get<any>('/api/icp/profile'),saveIcpProfile:(body:any)=>mutate<any>('/api/icp/profile','PUT',body),icpDiscovery:()=>get<any>('/api/icp/discovery'),icpDashboard:(campaign?:string)=>get<any>(`/api/icp/dashboard${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),leadFeedback:(id:number,body:any)=>post<any>(`/api/prospects/${id}/feedback`,body),
+rescoreLead:(id:number,refresh=false)=>post<any>(`/api/prospects/${id}/rescore`,{refresh}),scoreHistory:(id:number)=>get<any[]>(`/api/prospects/${id}/score-history`),rescoreBatch:(body:any)=>post<any>('/api/prospects/rescore-batch',body),
 momentum:()=>get<any>('/api/momentum/summary'),
 lifecycleContacts:(stage:string,campaign?:string)=>get<any[]>(`/api/lifecycle/contacts?stage=${encodeURIComponent(stage)}${campaign?`&campaign=${encodeURIComponent(campaign)}`:''}`),
 lifecycleContact:(id:number)=>get<any>(`/api/lifecycle/contacts/${id}`),
