@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {api} from './api';
+import {MomentumToast} from './Momentum';
 import './SalesHub.css';
 
 const statuses=['NOT_CONTACTED','ATTEMPTED','CONTACTED','REPLIED','FOLLOW_UP','CONSULTATION_SET','BOOKED','NOT_INTERESTED'];
@@ -27,11 +28,12 @@ function HubItem({p,campaign,refresh,onOpen}:{p:any;campaign:string;refresh:()=>
   const [action,setAction]=useState(p.next_action.action||''),[due,setDue]=useState(localDate(p.next_action.due_at||''));
   const [event,setEvent]=useState<any>(null),[start,setStart]=useState(''),[end,setEnd]=useState('');
   const [preview,setPreview]=useState<any>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+  const [toast,setToast]=useState<any>(null);
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [editing,setEditing]=useState(false);
   const nextTime=p.next_action.due_at;
   const overdue=nextTime&&Date.parse(nextTime)<Date.now()&&!['BOOKED','NOT_INTERESTED'].includes(p.sales_status);
-  const save=async()=>{setBusy(true);setError('');try{await api.nextAction(p.id,{campaign,status,notes,action,due_at:due?new Date(due).toISOString():null});refresh()}catch(e:any){setError(e.message)}finally{setBusy(false)}};
+  const save=async()=>{setBusy(true);setError('');try{const result=await api.nextAction(p.id,{campaign,status,notes,action,due_at:due?new Date(due).toISOString():null});if(result?.momentum?.awarded)setToast(result.momentum);refresh()}catch(e:any){setError(e.message)}finally{setBusy(false)}};
   const move=async(confirmed:boolean)=>{setBusy(true);setError('');try{const x=await api.reschedule(event.id,{campaign,start,end,timezone:tz,confirmed});if(confirmed){setEvent(null);setPreview(null);refresh()}else setPreview(x)}catch(e:any){setError(e.message)}finally{setBusy(false)}};
   return <article className="card sales-hub-form followup-card"><div className="sales-card-heading"><span className="sales-avatar" aria-hidden="true">{p.name.trim().slice(0,1).toUpperCase()}</span><div><span className="sales-status">{label(p.sales_status)}</span><h2>{p.name}</h2></div></div>
     <div className={`sales-next ${overdue?'sales-overdue':''}`}><span>{overdue?'OVERDUE':'NEXT UP'}</span><p>{p.next_action.action||'Plan your next conversation'}</p><small>{nextTime?new Date(nextTime).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'No follow-up time set'}</small></div>
@@ -42,7 +44,7 @@ function HubItem({p,campaign,refresh,onOpen}:{p:any;campaign:string;refresh:()=>
     <label>Notes<textarea maxLength={4000} value={notes} onChange={e=>setNotes(e.target.value)}/></label><button className="sales-primary" disabled={busy} onClick={save}>{busy?'Saving…':'Save changes'}</button></div>}
     {p.events.map((ev:any)=><div className="sales-consultation" key={ev.id}><div><span className="sales-eyebrow">CONSULTATION</span><p>{ev.consultation_start?new Date(ev.consultation_start).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Time unavailable'}</p>{ev.event_url&&<a target="_blank" rel="noreferrer" href={ev.event_url}>Open calendar ↗</a>}</div><button disabled={busy} onClick={()=>{setEvent(ev);setStart(localDate(ev.consultation_start));setEnd(localDate(ev.consultation_end));setPreview(null)}}>Reschedule</button></div>)}
     {event&&<div className="preview"><label>Start ({tz})<input type="datetime-local" value={start} onChange={e=>{setStart(e.target.value);setPreview(null)}}/></label><label>End<input type="datetime-local" value={end} onChange={e=>{setEnd(e.target.value);setPreview(null)}}/></label><button disabled={busy||!start||!end} onClick={()=>move(false)}>Preview reschedule</button>{preview&&<><p>{new Date(preview.start).toLocaleString()} – {new Date(preview.end).toLocaleString()}</p><button disabled={busy} onClick={()=>move(true)}>Confirm Google Calendar reschedule</button></>}<button disabled={busy} onClick={()=>{setEvent(null);setPreview(null)}}>Cancel</button></div>}
-    {error&&<p className="sales-feedback" role="alert">{error}</p>}</article>;
+    {error&&<p className="sales-feedback" role="alert">{error}</p>}{toast&&<MomentumToast event={toast} onDone={()=>setToast(null)}/>}</article>;
 }
 
 export function FollowUpHub({campaign,onOpen}:{campaign:string;onOpen:(p:any)=>void}){

@@ -224,7 +224,7 @@ def update_deal(deal_id: int, payload: DealUpdate, request: Request):
     momentum=None
     if values.get('stage') and values['stage']!=before:
         event={'PROPOSAL':'proposal_sent','WON':'deal_won'}.get(values['stage'])
-        if event:momentum=award_momentum(owner_id(request) or 0,event,f'{event}:deal:{deal_id}',prospect_id,{'deal_id':deal_id})
+        if event:momentum=award_momentum(owner_id(request) or 0,event,f'{event}:deal:{deal_id}',prospect_id,{'deal_id':deal_id,'deal_value':result.get('deal_value') or 0})
     result['momentum']=momentum
     return result
 

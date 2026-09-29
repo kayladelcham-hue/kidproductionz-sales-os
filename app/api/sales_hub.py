@@ -7,6 +7,7 @@ from sqlalchemy import select
 from . import database_v2 as db
 from .models import Prospect, Campaign, CalendarEvent, ExternalAction
 from . import google_service
+from .momentum import award as award_momentum
 import os
 from zoneinfo import ZoneInfo
 
@@ -103,13 +104,16 @@ def next_action(prospect_id: int, req: NextAction, request: Request):
             due = dt.astimezone(timezone.utc).isoformat()
         except ValueError:
             raise HTTPException(400, 'Next action needs a valid datetime with timezone')
+    completed_followup = False
     with db.session_scope() as s:
         p = scoped(s, req.campaign, prospect_id, owner_id(request))
+        completed_followup = p.sales_status == 'FOLLOW_UP' and req.status in {'CONTACTED', 'REPLIED', 'CONSULTATION_SET', 'BOOKED'}
         p.sales_status, p.notes = req.status, req.notes
         p.last_activity_at = datetime.now(timezone.utc).isoformat()
         s.add(ExternalAction(prospect_id=p.id, action_type='NEXT_ACTION_UPDATED',
               metadata_json=json.dumps({'due_at': due, 'action': req.action})))
-    return {'status': 'SAVED'}
+    momentum = award_momentum(owner_id(request) or 0, 'followup_completed', f'followup_completed:{prospect_id}:{datetime.now(timezone.utc).date().isoformat()}', prospect_id) if completed_followup else None
+    return {'status': 'SAVED', 'momentum': momentum}
 
 class Reschedule(BaseModel):
     campaign: str

@@ -53,6 +53,11 @@ def test_next_action_scoping_and_hub(client):
     assert row['notes'] == 'Call tomorrow'
     assert client.get('/api/follow-ups?campaign=two').json() == []
     assert db.list_prospects('one')[0]['queue'] == 'RESEARCH'
+    payload.update(status='CONTACTED', action='Follow-up complete', due_at=None)
+    completed = client.post(f'/api/prospects/{pid}/next-action', json=payload).json()
+    assert completed['momentum']['event_type'] == 'followup_completed'
+    repeated = client.post(f'/api/prospects/{pid}/next-action', json=payload).json()
+    assert repeated['momentum'] is None
     payload['due_at'] = '2026-09-19T10:00'
     assert client.post(f'/api/prospects/{pid}/next-action', json=payload).status_code == 400
 
