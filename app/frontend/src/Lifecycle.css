@@ -45,3 +45,19 @@ html[data-kp-mode="light"] .lc-page .lc-hero .lc-eyebrow{color:#bcecff!important
 html[data-kp-mode="light"] .lc-home-hero :is(h2,p,b,span){color:#fff}.lc-home-hero .lc-primary{color:#101a2c!important}
 
 @media(max-width:700px){.lc-home-hero{grid-template-columns:1fr;gap:24px;padding:24px 18px}.lc-home-hero h2{font-size:34px}.lc-start-selling{width:100%}.lc-best-moves,.lc-week-snapshot{padding:17px}.lc-best-moves article{align-items:stretch;flex-direction:column}.lc-best-moves article>button{width:100%;min-height:46px}.lc-week-snapshot>div{grid-template-columns:1fr 1fr}.lc-week-snapshot span:last-child{grid-column:1/-1}}
+
+/* Final sales-flow polish */
+.lc-leads-toolbar{align-items:flex-end}.lc-leads-toolbar>div:last-child{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.lc-leads-toolbar>div:last-child button{min-height:46px}.lc-contact{padding:18px!important}.lc-contact-main{align-items:center}.lc-contact-summary{padding:2px 0 4px}.lc-contact-summary p{font-size:12px;line-height:1.55}.lc-contact .lc-actions{grid-template-columns:minmax(120px,.75fr) minmax(170px,1.25fr);margin-top:8px}.lc-contact .lc-actions button{min-height:44px}.lc-value-note{margin:-6px 0 22px;padding:11px 14px;border-left:3px solid var(--xp-accent);border-radius:0 11px 11px 0;background:var(--xp-soft);color:var(--xp-muted);font-size:10px;line-height:1.5}.lc-batch-result>div{grid-template-columns:repeat(5,minmax(0,1fr))}.lc-batch-result>div span{min-width:0}.lc-modal{padding:12px}.lc-panel{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto}.lc-status{max-width:100%;overflow-wrap:anywhere}
+
+html[data-kp-mode="light"] .lc-page{color:var(--xp-text)}
+html[data-kp-mode="light"] :is(.lc-best-moves,.lc-week-snapshot,.lc-contact,.lc-leads-header,.lc-pipeline-desktop>section,.lc-pipeline-mobile>section,.lc-deal-card,.lc-panel,.lc-batch-result){background:#fff;color:#182338;border-color:#d7dfec}
+html[data-kp-mode="light"] :is(.lc-contact p,.lc-contact small,.lc-leads-header p,.lc-pipeline-heading p,.lc-deal-card p,.lc-deal-next span,.lc-value-note){color:#536278}
+html[data-kp-mode="light"] :is(.lc-lead-stats span,.lc-deal-next,.lc-batch-result>div span){background:#edf2f8;color:#182338}
+html[data-kp-mode="light"] .lc-status{background:#e8eef9;color:#284f86;border-color:#cbd8eb}
+html[data-kp-mode="light"] .lc-rescore-needed{color:#8a5400}
+html[data-kp-mode="light"] .lc-modal-backdrop{background:rgba(20,31,49,.54)}
+html[data-kp-mode="light"] .lc-primary{background:var(--xp-solid)!important;color:#fff!important;border-color:transparent!important}
+
+@media(max-width:700px){
+ .lc-leads-toolbar{align-items:stretch}.lc-leads-toolbar>div:last-child{display:grid;grid-template-columns:1fr 1fr}.lc-leads-toolbar>div:last-child .lc-primary{grid-column:1/-1}.lc-prospect-tools{grid-template-columns:1fr!important}.lc-prospect-tools>small{justify-self:start}.lc-contact{padding:15px!important}.lc-contact-main{align-items:start}.lc-contact .lc-actions{grid-template-columns:1fr 1.25fr}.lc-contact .lc-actions button{padding-inline:10px}.lc-batch-result>div{grid-template-columns:1fr 1fr}.lc-batch-result>div span:last-child{grid-column:1/-1}.lc-value-note{margin-top:-10px}.lc-panel{border-radius:18px!important}.lc-rescore-confirm .lc-opportunity-actions{position:sticky;bottom:-1px;padding-top:10px;background:var(--xp-panel)}
+}

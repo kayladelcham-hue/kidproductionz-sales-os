@@ -15,8 +15,8 @@ export function MomentumPage(){
 }
 
 export function MoreHub({onNavigate}:{onNavigate:(page:string)=>void}){
- const items=[['ICP Profile','Define who is worth pursuing'],['Campaigns','Choose markets and lead searches'],['Sales & Revenue','See pipeline and money clearly'],['Momentum','View levels and selling rhythm'],['Calendar','Manage follow-ups and meetings'],['Customers','See relationships and repeat opportunities'],['Runs','Review lead generation history'],['Settings','Appearance and connections']];
- return <div className="more-hub"><div><p className="eyebrow">MORE</p><h2>Tools when you need them.</h2><p>Daily selling stays simple. Everything else lives here.</p></div><div className="more-grid">{items.map(([page,hint])=><button key={page} onClick={()=>onNavigate(page)}><b>{page}</b><span>{hint}</span><strong>→</strong></button>)}</div></div>
+ const items=[['ICP Profile','ICP Profile','Define who is worth pursuing'],['Campaigns','Campaigns','Choose markets and lead searches'],['Calendar','Calendar','Manage follow-ups and meetings'],['Customers','Customers','See relationships and repeat opportunities'],['Sales & Revenue','Sales & Revenue','See booked, closed, and collected value'],['Analytics','Sales & Revenue','Review sales performance'],['Momentum','Momentum','View levels and selling rhythm'],['Runs','Runs','Review lead generation history'],['Settings','Settings','Appearance and connections']];
+ return <div className="more-hub"><div><p className="eyebrow">MORE</p><h2>Tools when you need them.</h2><p>Daily selling stays simple. Everything else lives here.</p></div><div className="more-grid">{items.map(([label,page,hint])=><button key={label} onClick={()=>onNavigate(page)}><b>{label}</b><span>{hint}</span><strong>→</strong></button>)}</div></div>
 }
 
 export function MomentumToast({event,onDone}:{event:any;onDone:()=>void}){
