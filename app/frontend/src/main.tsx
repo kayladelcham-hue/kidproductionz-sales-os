@@ -1,12 +1,12 @@
 import SalesAgent from './SalesAgent';
 import {Appearance,AppNavigation,CalendarGrid,GuidedTour,Icon,navigationGroups,pageName} from './AppExperience';
-import {HomeWorkspace,ProspectWorkspace,LeadsWorkspace,CustomersWorkspace,RevenueWorkspace} from './Lifecycle';
+import {CustomersWorkspace,RevenueWorkspace} from './Lifecycle';
+import {CoreHome,CoreLeads,CorePipeline,CoreMomentum,CoreMore} from './CoreExperience';
 import {AddProspect,FollowUpHub} from './SalesHub';
 import {IcpProfile} from './IcpProfile';
-import {MomentumPage,MomentumToast,MoreHub} from './Momentum';
+import {MomentumToast} from './Momentum';
 import {RescorePanel} from './RescorePanel';
 import React,{useEffect,useState} from 'react'; import {createRoot} from 'react-dom/client'; import './styles.css'; import './Lifecycle.css'; import './Momentum.css'; import './SalesHub.css'; import './IcpProfile.css'; import './RescorePanel.css'; import {api,campaignApi,uploadCampaign,authApi,Queue,QueueItem} from './api';
-import './AppPolish.css';
 import './ProductRedesign.css';
 import logo from './assets/kidproductionz-logo.png'; import {ScoreBadge,GradeBadge,RouteBadge,PriorityBadge,StatusBadge} from './badges';
 
@@ -487,9 +487,9 @@ function App(){
   const loadCampaigns=()=>api.campaigns().then((x:any)=>{const rows=Array.isArray(x)?x:(x.campaigns||[]);setCampaigns(rows);if(rows.length&&!rows.some((c:any)=>c.campaign_id===campaign))setCampaign(rows[0].campaign_id)}).catch(()=>setCampaigns([]));
   useEffect(()=>{loadCampaigns()},[]);
   useEffect(()=>{document.querySelector('.shell > main')?.scrollTo({top:0});setHubProspect(null)},[page,campaign]);
-  const content=page==='Home'?<HomeWorkspace key={campaign} campaign={campaign} onNavigate={setPage} onTour={()=>setTourOpen(true)}/>:
-    page==='Prospects'?<ProspectWorkspace key={campaign} campaign={campaign} onNavigate={setPage} onOpenContact={setHubProspect}/>:
-    page==='Leads'?<LeadsWorkspace key={campaign} campaign={campaign} onNavigate={setPage} onOpenContact={setHubProspect}/>:
+  const content=page==='Home'?<CoreHome key={campaign} campaign={campaign} onNavigate={setPage}/>:
+    page==='Prospects'?<CoreLeads key={campaign} campaign={campaign} onNavigate={setPage} onOpenContact={setHubProspect}/>:
+    page==='Leads'?<CorePipeline key={campaign} campaign={campaign} onOpenContact={setHubProspect}/>:
     page==='Customers'?<CustomersWorkspace key={campaign} campaign={campaign}/>:
     page==='Calendar'?<div className="lc-page"><CalendarGrid onNavigate={setPage}/><FollowUpHub key={campaign} campaign={campaign} onOpen={setHubProspect}/></div>:
     page==='Sales & Revenue'?<RevenueWorkspace key={campaign} campaign={campaign}/>:
@@ -500,8 +500,8 @@ function App(){
     page==='ICP Profile'?<IcpProfile/>:
     page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:
     page==='Runs'?<Runs/>:
-    page==='Momentum'?<MomentumPage/>:
-    page==='More'?<MoreHub onNavigate={setPage}/>:<Settings campaign={campaign}/>;
+    page==='Momentum'?<CoreMomentum/>:
+    page==='More'?<CoreMore onNavigate={setPage}/>:<Settings campaign={campaign}/>;
   return <div className="shell"><aside inert={mobileMenuOpen||tourOpen}><div className="brand"><img src={logo}/><div><b>KidProductionz</b><small>Sales OS</small></div></div><nav>{navigationGroups.map(g=><section className="xp-desktop-group" key={g.name}>{g.pages.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}>{pageName(n)}</button>)}</section>)}</nav><div className="safe"><span/>Ready when you are</div></aside><main inert={mobileMenuOpen||tourOpen}><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}><Icon name="menu"/></button><div><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{pageName(page)}</h1></div><select aria-label="Current campaign" value={campaign} onChange={e=>{setCampaign(e.target.value);setHubProspect(null)}}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header>{content}{hubProspect&&<ProspectDrawer item={hubProspect} onClose={()=>setHubProspect(null)}/>}</main>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>}<div className="bottom-nav" inert={mobileMenuOpen||tourOpen}>{[["Home","Home","home"],["Sell","Up Next","sell"],["Leads","Prospects","people"],["Pipeline","Leads","queue"],["More","More","menu"]].map(([l,v,icon])=><button key={l} aria-current={page===v?'page':undefined} onClick={()=>setPage(v)}><Icon name={icon}/><span>{l}</span></button>)}</div>{tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<SalesAgent campaign={campaign}/></div>
 }
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
