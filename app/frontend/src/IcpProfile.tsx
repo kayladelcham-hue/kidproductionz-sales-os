@@ -1,6 +1,5 @@
 import React,{useEffect,useState} from 'react';
 import {api} from './api';
-import './IcpProfile.css';
 
 const fields:any={
  offer:'What do you sell?',typical_buyer:'Who usually buys it?',target_industries:'Target industries',business_types:'Target business types',geography:'Cities, states, or regions you serve',buyer_roles:'Ideal decision-maker roles',problems_solved:'Problems your offer solves',need_signals:'Signals that suggest a current need',urgency_signals:'Situations that create urgency',positive_signals:'Positive buying signals',excluded_industries:'Industries you do not want',excluded_geographies:'Locations you do not serve',red_flags:'Other red flags'

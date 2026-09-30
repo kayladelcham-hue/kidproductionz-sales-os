@@ -1,6 +1,5 @@
 import React,{useEffect,useState} from 'react';
 import {api} from './api';
-import './RescorePanel.css';
 
 const label=(value:any)=>String(value||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 const date=(value:any)=>value?new Date(value).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'Not evaluated yet';

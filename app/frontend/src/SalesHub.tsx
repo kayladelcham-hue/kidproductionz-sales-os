@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {api} from './api';
 import {MomentumToast} from './Momentum';
-import './SalesHub.css';
 
 const statuses=['NOT_CONTACTED','ATTEMPTED','CONTACTED','REPLIED','FOLLOW_UP','CONSULTATION_SET','BOOKED','NOT_INTERESTED'];
 const label=(s:string)=>s.toLowerCase().replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
