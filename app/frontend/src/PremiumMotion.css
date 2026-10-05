@@ -114,3 +114,20 @@ html[data-kp-mode="dark"]{--xp-bg:#0c0d10;--xp-surface:#15171c;--xp-soft:#1e2128
 #kp-sales-app .kp-dashboard-original .kp-featured-top>span:last-child{color:var(--xp-accent);background:var(--kp-theme-soft);padding:5px 8px;border-radius:6px;letter-spacing:.1em}
 @media(max-width:768px){#kp-sales-app .kp-dashboard-original .neo-heading{margin:16px 0!important}#kp-sales-app .kp-dashboard-original .neo-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#kp-sales-app .kp-dashboard-original .neo-stat{min-height:142px!important;padding:14px!important}#kp-sales-app .kp-dashboard-original .neo-stat h3{font-size:18px!important}#kp-sales-app .kp-dashboard-original .neo-stat strong{font-size:44px!important}#kp-sales-app .kp-dashboard-original .kp-mission-hero{gap:24px}#kp-sales-app .kp-dashboard-original .kp-mission-copy h2{font-size:34px!important}}
 @media(prefers-reduced-motion:reduce){#kp-sales-app .kp-dashboard-original .neo-heading,#kp-sales-app .kp-dashboard-original .kp-mission-copy,#kp-sales-app .kp-dashboard-original .kp-featured-lead{animation:none!important}}
+
+/* More is a vertical introduction, never a flex row of three text columns. */
+#kp-sales-app .kx-more>header{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:start!important;justify-content:start!important;gap:10px!important;width:100%!important;padding:20px 0 24px!important;margin:0 0 8px!important;border:0!important;text-align:left!important}
+#kp-sales-app .kx-more>header>*{min-width:0!important;width:100%!important;max-width:100%!important;margin:0!important}
+#kp-sales-app .kx-more>header h1{font-size:44px!important;line-height:1.08!important;letter-spacing:.015em!important}
+#kp-sales-app .kx-more>header p:last-child{font-size:14px!important;line-height:1.6!important;max-width:540px!important}
+#kp-sales-app .kx-more>section{margin-top:24px!important}
+#kp-sales-app .kx-more>section>span{padding:0 0 10px!important;font-size:10px!important;letter-spacing:.16em!important}
+#kp-sales-app .kx-more>section>button{min-height:76px!important;padding:16px!important;border:0!important;border-bottom:1px solid var(--xp-border)!important;border-radius:0!important;background:var(--xp-surface)!important;gap:20px!important;box-shadow:none!important}
+#kp-sales-app .kx-more>section>button:nth-child(2){border-radius:14px 14px 0 0!important}
+#kp-sales-app .kx-more>section>button:last-child{border-radius:0 0 14px 14px!important;border-bottom:0!important}
+#kp-sales-app .kx-more>section>button div{min-width:0!important;gap:5px!important}
+#kp-sales-app .kx-more>section>button b{font-family:var(--display-font)!important;font-weight:400!important;font-size:27px!important;line-height:1.1!important;letter-spacing:.025em!important}
+#kp-sales-app .kx-more>section>button small{font-size:12px!important;line-height:1.5!important;margin:0!important;font-weight:400!important}
+#kp-sales-app .kx-more>section>button strong{flex-shrink:0!important;font-size:20px!important;color:var(--xp-muted)!important;font-weight:400!important}
+@media(hover:hover){#kp-sales-app .kx-more>section>button:hover{background:var(--xp-soft)!important}}
+@media(max-width:768px){#kp-sales-app .kx-more>header{padding:16px 0 18px!important}#kp-sales-app .kx-more>header h1{font-size:36px!important}#kp-sales-app .kx-more>header p:last-child{font-size:13px!important}#kp-sales-app .kx-more>section>button{min-height:72px!important;padding:14px!important}}
