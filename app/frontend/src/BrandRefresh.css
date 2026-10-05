@@ -143,3 +143,11 @@ html[data-kp-mode] .shell .ai-agent-panel .ai-agent-header>div:first-child{displ
 html[data-kp-mode] .shell .ai-agent-panel .ai-agent-header>button{position:static!important;flex:0 0 40px!important;margin:0!important}
 html[data-kp-mode] .shell>main>header .mobile-menu-btn{background:var(--xp-soft)!important;color:var(--xp-text)!important;border:1px solid var(--xp-border)!important}
 html[data-kp-mode] .shell>main>header .mobile-menu-btn :is(svg,path){color:var(--xp-text)!important;stroke:var(--xp-text)!important}
+
+/* Keep lead profiles above page stacking contexts on mobile Safari. */
+body:has(.kp-profile-layer)::after{content:none!important;display:none!important}
+html[data-kp-mode] .shell.kp-profile-layer{position:fixed!important;inset:0!important;z-index:2000!important;display:block!important;min-height:0!important;pointer-events:none!important;background:transparent!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;isolation:isolate}
+html[data-kp-mode] .kp-profile-layer>.kp-profile-backdrop{position:absolute!important;inset:0!important;z-index:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:#0006!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;pointer-events:auto!important;cursor:default!important}
+html[data-kp-mode] .shell.kp-profile-layer>.neo-lead-detail{z-index:1!important;background:var(--xp-surface)!important;pointer-events:auto!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;opacity:1!important;animation:none!important}
+html[data-kp-mode] .kp-profile-layer .neo-lead-detail *{filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@media(max-width:768px){html[data-kp-mode] .shell.kp-profile-layer>.neo-lead-detail{inset:0!important;width:100%!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important}}
