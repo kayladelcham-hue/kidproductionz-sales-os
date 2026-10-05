@@ -2,14 +2,15 @@ import os
 import pytest
 from app.api.main import sync_hubspot,ProspectInput
 from fastapi import HTTPException
+from starlette.requests import Request
 from app.api.hubspot_sync_service import execute
 
 def test_sync_requires_confirmation(monkeypatch):
-    with pytest.raises(HTTPException) as e: sync_hubspot(ProspectInput(name='T'),False)
+    with pytest.raises(HTTPException) as e: sync_hubspot(ProspectInput(name='T'),Request({'type':'http'}),False)
     assert e.value.status_code==400
 def test_sync_disabled_by_default(monkeypatch):
     monkeypatch.delenv('HUBSPOT_WRITE_ENABLED',raising=False)
-    with pytest.raises(HTTPException) as e: sync_hubspot(ProspectInput(name='T'),True)
+    with pytest.raises(HTTPException) as e: sync_hubspot(ProspectInput(name='T'),Request({'type':'http'}),True)
     assert e.value.status_code==403
 
 class Client:

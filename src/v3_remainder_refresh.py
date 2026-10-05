@@ -110,7 +110,7 @@ def refresh(summary_path, cfg, match_cfg, reader, root):
     write('batch_config.json', cfg)
     saved = save_plan(plan, staging)
     # Report final paths; directory is finalized only after every artifact is saved.
-    paths = {k:str(final/Path(v).relative_to(staging)) for k,v in saved.items() if k in ('plan','approval_template')}
+    paths = {k:str(final/Path(v).resolve().relative_to(staging.resolve())) for k,v in saved.items() if k in ('plan','approval_template')}
     report = {**paths,'batch_config':str(final/'batch_config.json'),'snapshot':str(final/'snapshot.json'),'schema':str(final/'schema.json'),
         'report':str(final/'report.json'),'checked':len(selected),'proposed':len(kept),'skipped':len(selected)-len(kept), 'excluded_prior_lead_ids':excluded, 'original_v2_new_count':len(candidates), 'total_previously_attempted_lead_ids':len(excluded), 'journal_attempted_source_count':len(blocked),
         'snapshot_company_count':len(snapshot['records']),'checks':checks,'metadata_coverage':coverage,

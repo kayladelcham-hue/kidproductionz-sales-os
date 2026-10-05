@@ -110,7 +110,7 @@ export default function SalesAgent({campaign}:{campaign:string}){
 
           {loading&&
             <div className="ai-message assistant">
-              <small>AI</small>
+              <small>SKYE</small>
               <div>Thinking...</div>
             </div>
           }

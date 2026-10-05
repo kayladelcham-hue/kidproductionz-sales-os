@@ -149,7 +149,8 @@ def search_google_maps(
     category: str = "",
 ) -> dict:
 
-    api_key = os.getenv("OUTSCRAPER_API_KEY", "").strip()
+    from .request_context import setting
+    api_key = setting("OUTSCRAPER_API_KEY", "").strip()
 
     if not api_key:
         raise RuntimeError("OUTSCRAPER_API_KEY_NOT_CONFIGURED")

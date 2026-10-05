@@ -107,6 +107,9 @@ def connect(): return engine.connect()
 def init_db():
     Base.metadata.create_all(bind=engine)
 
+    with engine.begin() as conn:
+        if 'owner_id' not in {c['name'] for c in inspect(engine).get_columns('upload')}:
+            conn.execute(text('ALTER TABLE upload ADD COLUMN owner_id INTEGER'))
     inspector = inspect(engine)
     campaign_columns = {
         column["name"]
@@ -213,7 +216,14 @@ def save_lead_feedback(user_id, prospect_id, verdict=None, outcome=None, note=No
         s.add(row); s.flush(); return _dict(row)
 def seed_campaigns(config_dir=None): return 0
 def persist_upload(metadata):
-    with session_scope() as s: s.merge(Upload(**{k:v for k,v in metadata.items() if k in Upload.__table__.columns.keys()}))
+    from .request_context import user_id
+    values = dict(metadata)
+    values['original_filename'] = values.pop('filename', values.get('original_filename'))
+    values['stored_reference'] = values.pop('reference', values.get('stored_reference'))
+    values['sheets'] = json.dumps(values.get('sheets') or [])
+    values['owner_id'] = user_id.get() or None
+    with session_scope() as s:
+        s.merge(Upload(**{k:v for k,v in values.items() if k in Upload.__table__.columns.keys()}))
 def _owned_prospect_query(prospect_id, owner_id=None):
     q = select(Prospect).where(Prospect.id == prospect_id)
     if owner_id is not None:
@@ -491,7 +501,7 @@ def delete_campaign(slug, owner_id=None):
 def get_settings(prefix=None):
     with SessionLocal() as s:
         q=select(AppSetting)
-        if prefix:q=q.where(AppSetting.key.like(prefix+'%'))
+        if prefix:q=q.where(AppSetting.key.startswith(prefix, autoescape=True))
         return {x.key:x.value for x in s.execute(q).scalars()}
 def save_settings(values):
     with session_scope() as s:
@@ -500,18 +510,47 @@ def save_settings(values):
             if x:x.value=str(v)
             else:s.add(AppSetting(key=k,value=str(v)))
 def save_google_connection(data):
+    from .request_context import user_id
+    owner = user_id.get()
+    if owner:
+        save_settings({f'user:{owner}:google_connection': json.dumps(data)})
+        return
     with session_scope() as s:
         x=s.get(GoogleConnection,1)
         vals={k:v for k,v in data.items() if k in GoogleConnection.__table__.columns.keys() and k!='id'}
         if x:
             for k,v in vals.items():setattr(x,k,v)
         else:s.add(GoogleConnection(id=1,**vals))
+
 def load_google_connection():
+    from .request_context import user_id, is_admin
+    owner = user_id.get()
+    if owner:
+        value=get_settings().get(f'user:{owner}:google_connection')
+        if value is not None:
+            return json.loads(value)
+        if not is_admin.get():
+            return None
+        # Preserve the original admin's connection during the beta migration.
+        with SessionLocal() as s:
+            legacy=_dict(s.get(GoogleConnection,1))
+        if legacy:
+            save_google_connection(legacy)
+            return legacy
+        return None
     with SessionLocal() as s:return _dict(s.get(GoogleConnection,1))
+
 def clear_google_connection():
+    from .request_context import user_id
+    owner=user_id.get()
+    if owner:
+        # Tombstone prevents an admin disconnect from re-importing legacy tokens.
+        save_settings({f'user:{owner}:google_connection': '{}'})
+        return
     with session_scope() as s:
         x=s.get(GoogleConnection,1)
         if x:s.delete(x)
+
 
 def persist_generated_prospects(campaign, items, owner_id=None):
     """Persist newly generated prospects safely with conservative deduplication."""
@@ -780,3 +819,17 @@ def persist_generated_prospects(campaign, items, owner_id=None):
 __all__=['engine','SessionLocal','session_scope','Base','init_db','seed_campaigns','persist_upload','update_sales_activity','activity_metrics','ensure_queue_item','persist_crm_state','get_crm_state','log_external_action','connect','list_campaigns','list_prospects','get_campaign','create_campaign','update_campaign','delete_campaign','get_settings','save_settings','save_google_connection','load_google_connection','clear_google_connection']
 
 
+
+def persist_run_bundle(run_doc, records, queue):
+    """Persist dry-run results through the maintained, account-scoped database."""
+    from .request_context import user_id
+    owner=user_id.get() or None
+    campaign=run_doc['campaign_id']
+    result=persist_generated_prospects(campaign,queue.get('candidates') or records,owner)
+    campaign_row=get_campaign(campaign,owner)
+    summary=queue.get('summary') or {}
+    with session_scope() as s:
+        row=s.execute(select(Run).where(Run.run_id==run_doc['run_id'])).scalar_one_or_none()
+        if row is None:
+            s.add(Run(campaign_id=campaign_row['id'],run_id=run_doc['run_id'],run_status=run_doc.get('overall_status'),dry_run=1,qualified_count=run_doc.get('qualification_scoring_summary',{}).get('qualified_count'),**{k:summary.get(k,0) for k in ('daily_queue_count','deferred_count','research_count','ineligible_count')}))
+    return result

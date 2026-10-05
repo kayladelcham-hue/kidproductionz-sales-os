@@ -1,11 +1,12 @@
 """Minimal HubSpot REST adapter for the guarded TEST sync path."""
 import json, os, socket, urllib.error, urllib.request
+from .request_context import setting
 class HubSpotAPIError(RuntimeError):
     def __init__(self,status,operation,details): self.status=status; self.operation=operation; self.details=details; super().__init__(f'HUBSPOT_HTTP_{status}')
 
 class HubSpotClient:
     def __init__(self, token=None, base_url='https://api.hubapi.com', timeout=7):
-        self.token=token or os.getenv('HUBSPOT_ACCESS_TOKEN'); self.base_url=base_url.rstrip('/'); self.timeout=max(1,min(float(timeout),10))
+        self.token=token or setting('HUBSPOT_ACCESS_TOKEN'); self.base_url=base_url.rstrip('/'); self.timeout=max(1,min(float(timeout),10))
         if not self.token: raise ValueError('HUBSPOT_ACCESS_TOKEN is required')
     def _request(self, method, path, payload=None, operation='request'):
         body=json.dumps(payload).encode() if payload is not None else None
@@ -31,7 +32,7 @@ class HubSpotClient:
         except TypeError: return self._request('POST','/crm/v3/objects/contacts',{'properties':props})
     def create_deal(self, prospect):
         name=str(prospect.get('name') or prospect.get('business') or 'KidProductionz Prospect')
-        pipeline=os.getenv('HUBSPOT_PIPELINE_ID'); stage=os.getenv('HUBSPOT_STAGE_ID')
+        pipeline=setting('HUBSPOT_PIPELINE_ID'); stage=setting('HUBSPOT_STAGE_ID')
         if not pipeline: raise ValueError('HUBSPOT_PIPELINE_ID is required for configured pipeline KidProductionz Sales Cycle')
         if not stage: raise ValueError('HUBSPOT_STAGE_ID is required for configured stage New Prospect')
         try: return self._request('POST','/crm/v3/objects/deals',{'properties':{'dealname':name,'pipeline':pipeline,'dealstage':stage}},'deal_create')

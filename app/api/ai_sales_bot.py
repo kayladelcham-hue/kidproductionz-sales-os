@@ -19,7 +19,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(dotenv_path=PROJECT_ROOT / '.env')
 
 SYSTEM_PROMPT = """
-You are the KidProductionz Sales OS AI Sales Agent.
+You are Skye, the KidProductionz Sales OS AI Sales Agent.
 
 You help the user sell more effectively using REAL information supplied
 by KidProductionz Sales OS.
@@ -267,6 +267,14 @@ def chat(
 ) -> dict[str, Any]:
 
     intent = classify_intent(message)
+
+    if intent == "QUEUE_ANALYSIS":
+        daily = [p for p in (context.get("queue") or {}).get("daily_queue", []) if p.get("sales_status") not in ("BOOKED","NOT_INTERESTED","FOLLOW_UP")]
+        if not daily:
+            return safe_response(reply="There are no leads in this campaign’s daily queue. Review Research or your follow-ups for the next move.", intent=intent)
+        lead = daily[0]
+        name = lead.get("name") or lead.get("business") or "the first queued lead"
+        return safe_response(reply=f"Start with {name}. This is the first lead in your current daily queue ({len(daily)} leads ready). Review their contact details and game plan before reaching out.", intent=intent, prospects_used=[lead.get("id") or lead.get("prospect_id")])
 
     api_key = os.getenv("GEMINI_API_KEY")
     model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")

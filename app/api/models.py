@@ -217,6 +217,7 @@ class CrmState(Base):
 
 class Upload(Base):
     __tablename__='upload'
+    owner_id: Mapped[int|None] = mapped_column(Integer, nullable=True, index=True)
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     original_filename: Mapped[str] = mapped_column(Text, nullable=False)
     stored_reference: Mapped[str] = mapped_column(Text, nullable=False)

@@ -226,53 +226,16 @@ def ai_sales_chat(req: SalesBotRequest, request: Request):
                 'Prospect not found in this campaign'
             )
 
-    # Use the persisted queue information already attached
-    # to prospects rather than re-scoring anything.
-    daily_queue = [
-        p for p in clean_prospects
-        if p.get('queue_status') == 'DAILY_QUEUE'
-    ]
-
-    deferred = [
-        p for p in clean_prospects
-        if p.get('queue_status') == 'DEFERRED'
-    ]
-
-    research = [
-        p for p in clean_prospects
-        if p.get('queue_status') == 'RESEARCH'
-    ]
-
-    ineligible = [
-        p for p in clean_prospects
-        if p.get('queue_status') == 'INELIGIBLE'
-    ]
-
-    daily_queue.sort(
-        key=lambda p: (
-            p.get('queue_position') is None,
-            p.get('queue_position') or 999999
-        )
-    )
-
-    queue = {
-        'daily_queue': daily_queue,
-        'deferred': deferred,
-        'research': research,
-        'ineligible': ineligible,
-        'summary': {
-            'daily_queue_count': len(daily_queue),
-            'deferred_count': len(deferred),
-            'research_count': len(research),
-            'ineligible_count': len(ineligible),
-        },
-    }
+    from .main import queue as campaign_queue, metrics as campaign_metrics
+    queue = campaign_queue(request, req.campaign)
 
     context = ai_sales_bot.build_sales_context(
         campaign=req.campaign,
         prospects=clean_prospects,
         queue=queue,
         selected_prospect=selected,
+        follow_ups=follow_ups(req.campaign, request),
+        metrics=campaign_metrics(request, req.campaign),
     )
 
     return ai_sales_bot.chat(
