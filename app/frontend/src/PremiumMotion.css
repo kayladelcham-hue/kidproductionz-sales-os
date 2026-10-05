@@ -151,3 +151,11 @@ html[data-kp-mode] .shell.kp-profile-layer{position:fixed!important;inset:0!impo
 html[data-kp-mode] .kp-profile-layer>.kp-profile-backdrop{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border:0!important;border-radius:0!important;padding:0!important;margin:0!important;background:#0006!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;pointer-events:auto!important;z-index:0!important;cursor:default!important}
 html[data-kp-mode] .kp-profile-layer>.neo-lead-detail{z-index:1!important;pointer-events:auto!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;opacity:1!important}
 @media(max-width:768px){html[data-kp-mode] .kp-profile-layer>.neo-lead-detail{inset:0!important;width:100%!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important}}
+
+/* Keep mobile profile text on an unscaled, opaque surface. */
+body:has(.kp-profile-layer)::after{content:none!important;display:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html[data-kp-mode] .shell.kp-profile-layer{filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;perspective:none!important}
+:is(#kp-sales-app,.kp-profile-layer) .neo-lead-detail{filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;will-change:auto!important;animation:kp-profile-reveal 180ms ease-out both!important;transition-property:color,background-color,border-color,opacity!important}
+.kp-profile-layer .neo-lead-detail *{filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@keyframes kp-profile-reveal{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){:is(#kp-sales-app,.kp-profile-layer) .neo-lead-detail{animation:none!important}}
