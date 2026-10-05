@@ -1,6 +1,12 @@
 /* Purposeful motion: immediate controls; one entrance per surface; no ambient loops.
    The easing settles with a small spring overshoot without animating layout. */
 :root{--kp-tap:150ms;--kp-surface:340ms;--kp-stagger:60ms;--kp-spring:cubic-bezier(.22,1.08,.36,1);--kp-settle:cubic-bezier(.2,.8,.2,1)}
+#kp-sales-app .kx-search{display:flex!important;align-items:center!important;gap:12px!important;padding:8px 10px 8px 16px!important;border:1px solid var(--xp-border)!important;border-radius:16px!important;background:var(--xp-surface)!important;min-height:56px!important}
+#kp-sales-app .kx-search>span{flex:0 0 auto;color:var(--xp-muted)!important;line-height:1!important}
+#kp-sales-app .kx-search>input{flex:1 1 0!important;min-width:0!important;width:auto!important;height:40px!important;min-height:40px!important;padding:8px 0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;font-size:15px!important;color:var(--xp-text)!important}
+#kp-sales-app .kx-search:focus-within{border-color:var(--xp-accent)!important}
+#kp-sales-app .kx-search>input:focus-visible{outline:2px solid var(--xp-accent)!important;outline-offset:2px!important;border-radius:6px!important}
+#kp-sales-app .kx-search>button{flex:0 0 auto!important;width:auto!important;min-height:40px!important;margin:0!important;padding:8px 16px!important;border:1px solid var(--xp-border)!important;border-radius:10px!important;background:var(--xp-soft)!important;font-size:13px!important}
 /* Legacy entrances start hidden; cancelling them must restore their final state. */
 #kp-sales-app .hero>div:first-child>*,#kp-sales-app .hero .date{opacity:1!important;transform:none!important}
 #kp-sales-app .kp-lead-generator>.hero{min-height:0!important;height:auto!important;display:block!important;padding:24px!important}
