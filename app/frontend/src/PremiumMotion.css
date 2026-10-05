@@ -93,3 +93,24 @@ html[data-kp-mode="dark"]{--xp-bg:#0c0d10;--xp-surface:#15171c;--xp-soft:#1e2128
 :is(#kp-sales-app,.kp-motion-layer) .sell-mission-strip i{transform-origin:left;transition:transform 350ms var(--kp-settle)!important}
 :is(#kp-sales-app,.kp-motion-layer) .sell-lead-card::before,:is(#kp-sales-app,.kp-motion-layer) .sell-lead-card::after{display:none!important}
 @media(prefers-reduced-motion:reduce){:is(#kp-sales-app,.kp-motion-layer) .sell-mission-strip i{transition:none!important}}
+
+/* Keep the original colorful home dashboard; retain the new mission and motion flow. */
+#kp-sales-app .kp-dashboard-original .neo-heading{margin:22px 0!important;animation:kp-enter 360ms var(--kp-spring) both!important}
+#kp-sales-app .kp-dashboard-original .neo-banner{border-radius:12px!important;background:radial-gradient(ellipse at 95% 20%,#3e75f5,transparent 42%),radial-gradient(ellipse at 65% 100%,#7914b8,transparent 42%),#080e25!important;box-shadow:none!important}
+#kp-sales-app .kp-dashboard-original .neo-banner .xp-primary{background:var(--xp-accent)!important;color:#171e0b!important}
+#kp-sales-app .kp-dashboard-original .neo-metrics{gap:12px!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}
+#kp-sales-app .kp-dashboard-original .neo-stat{min-height:158px!important;padding:20px!important;border:1px solid color-mix(in srgb,var(--neo-color) 35%,var(--xp-border))!important;border-radius:12px!important;box-shadow:none!important}
+#kp-sales-app .kp-dashboard-original .neo-stat h3{font-family:var(--display-font)!important;font-size:19px!important;font-weight:400!important;letter-spacing:.025em!important;line-height:1!important}
+#kp-sales-app .kp-dashboard-original .neo-stat strong{font-size:50px!important}
+#kp-sales-app .kp-dashboard-original .neo-stat-icon{width:30px!important;height:30px!important;background:color-mix(in srgb,var(--neo-color) 12%,transparent)!important;color:var(--neo-color)!important}
+#kp-sales-app .kp-dashboard-original .neo-stat-line{display:block!important;height:3px!important;background:linear-gradient(90deg,var(--neo-color),transparent)!important;margin-top:14px!important;border-radius:4px!important}
+#kp-sales-app .kp-dashboard-original .kp-mission-hero{padding:8px 0 24px;gap:32px}
+#kp-sales-app .kp-dashboard-original .kp-mission-copy{animation-delay:360ms!important}
+#kp-sales-app .kp-dashboard-original .kp-mission-copy h2{font-size:38px!important;max-width:360px}
+#kp-sales-app .kp-dashboard-original .kp-featured-lead{animation-delay:420ms!important}
+#kp-sales-app .kp-dashboard-original .kp-mission-progress{margin-top:20px}
+#kp-sales-app .kp-dashboard-original .neo-stat{background:linear-gradient(145deg,color-mix(in srgb,var(--neo-color) 8%,var(--xp-surface)),var(--xp-surface))!important}
+#kp-sales-app .kp-dashboard-original .neo-stat-icon{border:1px solid color-mix(in srgb,var(--neo-color) 30%,transparent)!important}
+#kp-sales-app .kp-dashboard-original .kp-featured-top>span:last-child{color:var(--xp-accent);background:var(--kp-theme-soft);padding:5px 8px;border-radius:6px;letter-spacing:.1em}
+@media(max-width:768px){#kp-sales-app .kp-dashboard-original .neo-heading{margin:16px 0!important}#kp-sales-app .kp-dashboard-original .neo-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#kp-sales-app .kp-dashboard-original .neo-stat{min-height:142px!important;padding:14px!important}#kp-sales-app .kp-dashboard-original .neo-stat h3{font-size:18px!important}#kp-sales-app .kp-dashboard-original .neo-stat strong{font-size:44px!important}#kp-sales-app .kp-dashboard-original .kp-mission-hero{gap:24px}#kp-sales-app .kp-dashboard-original .kp-mission-copy h2{font-size:34px!important}}
+@media(prefers-reduced-motion:reduce){#kp-sales-app .kp-dashboard-original .neo-heading,#kp-sales-app .kp-dashboard-original .kp-mission-copy,#kp-sales-app .kp-dashboard-original .kp-featured-lead{animation:none!important}}

@@ -1,12 +1,12 @@
 # Premium sales experience
 
-The dashboard prioritizes today’s saved sales mission, the highest-ranked eligible lead in the existing selling queue, and one dominant selling action. Campaign metrics follow; pipeline breakdown, planning tools, and calendar are disclosed on request. The KP logo, Bebas Neue display type, Skye, account data, integrations, and existing workflows remain in place.
+The homepage retains its original Sales overview header, blue/purple banner and colorful metric cards at the top. The banner’s dominant Start selling action leads into the improved selling flow. Today’s saved mission and the highest-ranked eligible lead follow the metric cards; pipeline breakdown, planning tools, and calendar are disclosed on request. The KP logo, Bebas Neue display type, Skye, account data, integrations, and existing workflows remain in place.
 
 ## Motion contract
 
 - Controls: 150 ms; tactile press, visible focus, honest disabled and saving states.
 - Page entrance: 300 ms. Cards and panels: 280–360 ms. Mission progress: 350 ms.
-- Grouped dashboard cards: 60 ms stagger. Headline and selling action enter first.
+- Grouped dashboard cards: 60 ms stagger. The original heading and selling action enter first; the mission and recommended lead follow the colorful metrics.
 - Surface spring: sampled damped oscillator, mass 1, stiffness 320, damping 27; modest overshoot. A cubic-bezier fallback supports older engines.
 - Transform and opacity carry entrances and confirmations; color communicates selection. No ambient animation loops or confetti. No animation delays a request, enables a control, or schedules a data mutation.
 - A successful contact moves an inert, transient visual copy forward while the next real lead appears immediately. The visual contains no IDs and never intercepts input. Failed requests retain the original lead.
