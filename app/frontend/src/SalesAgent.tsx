@@ -53,6 +53,7 @@ export default function SalesAgent({campaign}:{campaign:string}){
     {!open&&
       <button
         className="ai-agent-launcher"
+        aria-label="Open Skye sales assistant"
         onClick={()=>setOpen(true)}
       >
         ✦ Skye
