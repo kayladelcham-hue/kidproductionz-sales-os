@@ -41,7 +41,7 @@ html[data-kp-mode] .shell button:focus-visible{outline:3px solid var(--xp-accent
 /* Approved sales dashboard: real campaign data, responsive desktop and mobile. */
 html[data-kp-mode] .shell{display:grid!important;grid-template-columns:232px minmax(0,1fr)!important}
 html[data-kp-mode] .shell>aside{display:flex!important;min-width:232px!important;position:sticky!important;top:0;height:100vh;overflow:auto}
-html[data-kp-mode] .shell>main{padding:26px 32px 60px!important;overflow:visible!important;max-width:none!important}
+html[data-kp-mode] .shell>main{padding:26px 32px 60px!important;overflow-y:auto!important;overflow-x:hidden!important;height:100dvh!important;min-height:0!important;max-width:none!important}
 html[data-kp-mode] .shell>main>header{display:flex!important;min-height:64px;align-items:center!important}
 html[data-kp-mode] .shell>main>header h1{font-size:32px!important}
 .neo-dashboard{width:100%;max-width:1500px;margin:auto;min-width:0}
