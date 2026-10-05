@@ -35,5 +35,5 @@ class DiscoveryBoundaryTests(unittest.TestCase):
         imports=[a.name for n in ast.walk(tree) if isinstance(n,ast.Import) for a in n.names]
         self.assertFalse(set(imports)&{'requests','socket','http','smtplib','urllib'})
     def test_production_unchanged(self):
-        for path,digest in json.loads((ROOT/'tests/v4c_regression_manifest.json').read_text()).items():self.assertEqual(hashlib.sha256((ROOT/path).read_bytes()).hexdigest(),digest,path)
+        for path,digest in json.loads((ROOT/'tests/v4c_regression_manifest.json').read_text()).items():self.assertEqual(hashlib.sha256((ROOT/path.replace('\\','/')).read_bytes()).hexdigest(),digest,path)
 if __name__=='__main__':unittest.main()

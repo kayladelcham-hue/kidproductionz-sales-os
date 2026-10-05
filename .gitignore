@@ -1,4 +1,4 @@
-﻿.env
+.env
 .env.*
 !.env.example
 *.db
@@ -36,3 +36,6 @@ build-desktop-error.log
 pyinstaller_last.log
 
 .tools/
+
+app/frontend/node_modules
+isolated-test-results/

@@ -61,7 +61,7 @@ class EnrichmentTests(unittest.TestCase):
         with self.assertRaises(ValueError):enrich(self.enrich(),FixtureProvider({}),self.cfg,'r','t')
     def test_named_email_review(self):self.assertEqual(self.enrich(self.html.replace('info@','jane@'))['enrichment_status'],'REVIEW')
     def test_regression(self):
-        for path,digest in json.loads((ROOT/'tests/v4b_regression_manifest.json').read_text()).items():self.assertEqual(hashlib.sha256((ROOT/path).read_bytes()).hexdigest(),digest,path)
+        for path,digest in json.loads((ROOT/'tests/v4b_regression_manifest.json').read_text()).items():self.assertEqual(hashlib.sha256((ROOT/path.replace('\\','/')).read_bytes()).hexdigest(),digest,path)
     def test_pilot_outputs_and_v4a(self):
         from v4_outreach import generate
         with tempfile.TemporaryDirectory() as tmp:

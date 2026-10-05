@@ -10,5 +10,9 @@ def test_refresh_failure_marks_auth_error(monkeypatch):
  except RuntimeError: pass
  assert state["status"]=="AUTH_ERROR"
 def test_action_logging_persists():
- log_external_action(999,"EMAIL_DRAFTED",{"x":"y"})
- with connect() as c: assert c.execute("select action_type from external_action where prospect_id=999").fetchone()[0]=="EMAIL_DRAFTED"
+ from app.api.database_v2 import init_db, create_campaign, persist_generated_prospects, list_prospects
+ init_db();create_campaign({'slug':'external_test','name':'External Test'})
+ persist_generated_prospects('external_test',[{'name':'Synthetic Lead','city':'Orlando','state':'FL'}])
+ pid=list_prospects('external_test')[0]['id']
+ log_external_action(pid,"EMAIL_DRAFTED",{"x":"y"})
+ with connect() as c: assert c.exec_driver_sql("select action_type from external_action where prospect_id=?",(pid,)).fetchone()[0]=="EMAIL_DRAFTED"

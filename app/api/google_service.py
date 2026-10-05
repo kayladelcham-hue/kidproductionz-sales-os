@@ -1,5 +1,6 @@
 import base64,email.message,json,os,time,urllib.parse,urllib.request,urllib.error,logging
 from .database_v2 import save_google_connection,load_google_connection,clear_google_connection
+from .request_context import setting
 SCOPES=(
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/calendar.events',
@@ -7,12 +8,12 @@ SCOPES=(
 )
 logger=logging.getLogger(__name__)
 def status():
- if os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower()!='true' and os.getenv('GMAIL_ENABLED','false').lower()!='true': return 'DISABLED'
+ if setting('GOOGLE_CALENDAR_ENABLED','false').lower()!='true' and setting('GMAIL_ENABLED','false').lower()!='true': return 'DISABLED'
  return (load_google_connection() or {}).get('status','NOT_CONNECTED')
-def authorization_url():
+def authorization_url(state=None):
  cid=os.getenv('GOOGLE_CLIENT_ID');
  if not cid: raise ValueError('Google OAuth is not configured')
- return 'https://accounts.google.com/o/oauth2/v2/auth?'+urllib.parse.urlencode({'client_id':cid,'redirect_uri':os.getenv('GOOGLE_REDIRECT_URI','http://127.0.0.1:8000/api/google/oauth/callback'),'response_type':'code','scope':' '.join(SCOPES),'access_type':'offline','prompt':'consent','state':'kidproductionz'})
+ return 'https://accounts.google.com/o/oauth2/v2/auth?'+urllib.parse.urlencode({'client_id':cid,'redirect_uri':os.getenv('GOOGLE_REDIRECT_URI','http://127.0.0.1:8000/api/google/oauth/callback'),'response_type':'code','scope':' '.join(SCOPES),'access_type':'offline','prompt':'consent','state':state or ''})
 def callback(code):
  if not code: raise ValueError('OAuth code is required')
  body=urllib.parse.urlencode({'code':code,'client_id':os.getenv('GOOGLE_CLIENT_ID',''),'client_secret':os.getenv('GOOGLE_CLIENT_SECRET',''),'redirect_uri':os.getenv('GOOGLE_REDIRECT_URI','http://127.0.0.1:8000/api/google/oauth/callback'),'grant_type':'authorization_code'}).encode(); req=urllib.request.Request('https://oauth2.googleapis.com/token',data=body,method='POST',headers={'Content-Type':'application/x-www-form-urlencoded'})

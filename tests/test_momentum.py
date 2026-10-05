@@ -72,9 +72,9 @@ def test_weekly_progress_rhythm_records_and_unlocks_use_stored_events(momentum_d
             MomentumEvent(user_id=4,event_type="deal_won",points=100,idempotency_key="e",metadata_json='{"deal_value":2500}',created_at=now.isoformat()),
         ])
     progress=summary(4)
-    assert progress["weekly_goal"]["meaningful_moves"]==5
+    assert progress["weekly_goal"]["meaningful_moves"]==(4 if now.weekday()==0 else 5)
     assert progress["weekly_goal"]["replies"]==1 and progress["weekly_goal"]["proposals"]==1
-    assert progress["selling_rhythm"]["active_days"]==2
+    assert progress["selling_rhythm"]["active_days"]==(1 if now.weekday()==0 else 2)
     assert any(record["name"]=="Highest-value win" and record["value"]==2500 for record in progress["personal_records"])
     assert progress["next_unlock"]["name"]=="Pitch-angle prompts"
 

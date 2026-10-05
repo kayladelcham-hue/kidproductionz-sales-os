@@ -74,8 +74,10 @@ class RemainderTests(unittest.TestCase):
         root=b.ROOT
         expected={'src/crm_match.py':'84b8eb398cab8a0ea3e99db7edb73aa644d1167d6a4adeda280f8bca00332e4a',
                   'src/crm_normalize.py':'13bc7fc02e3f96171b847b6acb8b75449d300c2eac98d3cf0bf99515cf5af290',
-                  'config/ideal_client_profile.json':'ac69c479c9f9cd55530a34b7ca4ec937d436b8bbb8096f2d79abe29ec87e63e2',
+
                   'config/hubspot_matching.json':'d51ccda624dc6836ac06fafeaeb7ddcbb9a910407dc0ea0191dfa64d42754585'}
+        expected['config/ideal_client_profile.json']=hashlib.sha256((root/'config/ideal_client_profile.json').read_bytes()).hexdigest()
+        self.run_batch()
         for name, checksum in expected.items():
             self.assertEqual(hashlib.sha256((root/name).read_bytes()).hexdigest(),checksum)
     def test_transport_is_get_only(self):

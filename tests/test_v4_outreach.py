@@ -94,6 +94,6 @@ class OutreachTests(unittest.TestCase):
                 if isinstance(n,ast.ImportFrom): self.assertIn(n.module,allowed)
     def test_proven_modules_unchanged(self):
         manifest=json.loads((ROOT/'tests/v4_regression_manifest.json').read_text())
-        for path,digest in manifest.items():self.assertEqual(hashlib.sha256((ROOT/path).read_bytes()).hexdigest(),digest,path)
+        for path,digest in manifest.items():self.assertEqual(hashlib.sha256((ROOT/path.replace('\\','/')).read_bytes()).hexdigest(),digest,path)
 
 if __name__=='__main__':unittest.main()

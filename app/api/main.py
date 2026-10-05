@@ -40,8 +40,11 @@ from .hubspot_service import preview
 from . import hubspot_sync_service
 from .hubspot_client import HubSpotClient
 from . import google_service
+from . import request_context
+from .request_context import setting, save_integration_settings
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from .database_v2 import init_db, seed_campaigns, persist_upload, update_sales_activity, activity_metrics, ensure_queue_item, persist_crm_state, get_crm_state, log_external_action, connect, list_campaigns, list_prospects, get_campaign, create_campaign, update_campaign, delete_campaign, get_settings, save_settings, persist_generated_prospects, get_user_by_email, get_user_by_id, save_user_session, get_user_session, delete_user_session, ensure_user, claim_unowned_campaigns, get_owned_prospect, get_icp_profile, save_icp_profile, save_lead_feedback
 from .icp import EMPTY_PROFILE, DEFAULT_WEIGHTS, normalize_profile, validate_weights, profile_complete, score_lead, discovery_defaults
 from .momentum import award as award_momentum, summary as momentum_summary
@@ -121,21 +124,79 @@ def _password_matches(password: str, stored: str) -> bool:
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        if _auth_required() and request.url.path.startswith('/api/') and request.url.path not in ('/api/health','/api/auth/login','/api/auth/me','/api/auth/logout','/api/google/oauth/callback','/api/auth/signup'):
-            token = request.cookies.get(_AUTH_COOKIE)
+        user = None
+        token = request.cookies.get(_AUTH_COOKIE)
+        if _auth_required() and request.url.path!='/api/health':
             session = get_user_session(_hash_value(token)) if token else None
-            if not token or not _session_active(session):
-                return JSONResponse(
-                    {'detail': 'Authentication required'},
-                    status_code=401,
-                )
-
-            request.state.user_id = session['user_id']
-            if request.method in ('POST','PUT','PATCH','DELETE') and request.url.path not in ('/api/auth/login','/api/auth/logout'):
-                if not token or not _csrf_tokens.get(token) or request.headers.get('X-CSRF-Token') != _csrf_tokens.get(token):
-                    return JSONResponse({'detail':'CSRF validation failed'}, status_code=403)
-        return await call_next(request)
+            if _session_active(session):
+                user = get_user_by_id(session['user_id'])
+                if not user or user.get('status') != 'ACTIVE':
+                    user = None
+            public = {'/api/health','/api/auth/login','/api/auth/me','/api/auth/logout','/api/google/oauth/callback','/api/auth/signup','/api/auth/recover'}
+            if request.url.path.startswith('/api/') and request.url.path not in public:
+                if not user:
+                    return JSONResponse({'detail':'Authentication required'},status_code=401)
+                if request.method in ('POST','PUT','PATCH','DELETE'):
+                    if not token or not _csrf_tokens.get(token) or request.headers.get('X-CSRF-Token') != _csrf_tokens.get(token):
+                        return JSONResponse({'detail':'CSRF validation failed'},status_code=403)
+        if user:
+            request.state.user_id=user['id']
+            request.state.is_admin=bool(user.get('is_admin'))
+        active=request_context.active.set(True)
+        uid=request_context.user_id.set((user or {}).get('id',0))
+        admin=request_context.is_admin.set(bool((user or {}).get('is_admin')))
+        try:
+            return await call_next(request)
+        finally:
+            request_context.active.reset(active)
+            request_context.user_id.reset(uid)
+            request_context.is_admin.reset(admin)
 app.add_middleware(AuthMiddleware)
+
+# Bound credential attempts per client and account, without logging passwords.
+from threading import Lock
+from time import monotonic
+_auth_attempts = {}
+_auth_lock = Lock()
+def _limit_auth(request, username):
+    key=(_hash_value((request.client.host if request.client else 'unknown')+'|'+username.strip().lower()))
+    now=monotonic()
+    with _auth_lock:
+        for stale in [k for k,v in _auth_attempts.items() if v[0]<now-900]: _auth_attempts.pop(stale,None)
+        started,count=_auth_attempts.get(key,(now,0))
+        if count>=15: raise HTTPException(429,'Too many attempts. Try again in 15 minutes.')
+        _auth_attempts[key]=(started,count+1)
+
+class RecoveryRequest(BaseModel):
+    username:str
+    recovery_code:str
+    password:str
+@app.post('/api/auth/recover')
+def recover_account(req:RecoveryRequest,request:Request):
+    _limit_auth(request,req.username)
+    if len(req.password)<10: raise HTTPException(422,'Use a password with at least 10 characters')
+    from .database_v2 import session_scope
+    from .models import User, UserSession, AppSetting
+    with session_scope() as session:
+        user=session.query(User).filter(User.email==req.username.strip().lower(),User.status=='ACTIVE').first()
+        row=session.get(AppSetting,f'recovery:{user.id}') if user else None
+        if not row or not secrets.compare_digest(row.value,_hash_value(req.recovery_code.strip())):
+            raise HTTPException(400,'Email or recovery code is invalid')
+        consumed=session.query(AppSetting).filter(AppSetting.key==row.key,AppSetting.value==row.value).delete(synchronize_session=False)
+        if consumed!=1: raise HTTPException(400,'Recovery code has already been used')
+        user.password_hash=_password_hash(req.password)
+        session.query(UserSession).filter(UserSession.user_id==user.id).delete()
+    return {'reset':True}
+class RecoveryCodeRequest(BaseModel):
+    password:str
+@app.post('/api/auth/recovery-code')
+def generate_recovery_code(req:RecoveryCodeRequest,request:Request):
+    user=get_user_by_id(_owner_id(request))
+    if not user or not _password_matches(req.password,user['password_hash']):
+        raise HTTPException(401,'Enter your current password')
+    code=secrets.token_urlsafe(32)
+    save_settings({f"recovery:{user['id']}":_hash_value(code)})
+    return {'recovery_code':code}
 
 class LoginRequest(BaseModel):
     username: str = ''
@@ -207,7 +268,8 @@ def beta_signup(req: BetaSignupRequest):
     }
 
 @app.post('/api/auth/login')
-def auth_login(req: LoginRequest):
+def auth_login(req: LoginRequest, request:Request):
+    _limit_auth(request, req.username)
     # Multi-user beta authentication.
     # Existing users authenticate against their persisted User record.
     expected_user = (req.username or '').strip().lower()
@@ -235,7 +297,7 @@ def auth_login(req: LoginRequest):
         )
         claim_unowned_campaigns(user['id'])
 
-    if not user or not _password_matches(req.password, user['password_hash']):
+    if not user or user.get('status') != 'ACTIVE' or not _password_matches(req.password, user['password_hash']):
         raise HTTPException(401, 'Invalid credentials')
 
     token = secrets.token_urlsafe(32)
@@ -276,7 +338,8 @@ def auth_me(request: Request):
     token=request.cookies.get(_AUTH_COOKIE)
     session = get_user_session(_hash_value(token)) if token else None
     active=bool(token and _session_active(session));user=get_user_by_id(session['user_id']) if active else None
-    return {'authenticated':active,'name':(user or {}).get('name'),'email':(user or {}).get('email')}
+    active=active and bool(user and user.get('status')=='ACTIVE')
+    return {'authenticated':active,'name':(user or {}).get('name') if active else None,'email':(user or {}).get('email') if active else None}
 
 @app.get('/api/auth/csrf')
 def auth_csrf(request: Request):
@@ -395,7 +458,13 @@ def latest_versioned(directory:Path, prefix:str):
         if m: candidates.append((int(m.group(1)),p))
     return max(candidates,key=lambda x:x[0])[1] if candidates else None
 @app.get('/api/health')
-def health(): return {'app':'ok','database':'ok','frontend':'ok' if (FRONTEND_DIST/'index.html').exists() else 'missing','hubspot_configured':bool(os.getenv('HUBSPOT_ACCESS_TOKEN')),'google_configured':bool(os.getenv('GOOGLE_CLIENT_ID') and os.getenv('GOOGLE_CLIENT_SECRET'))}
+def health():
+    try:
+        with connect() as c: c.execute(text('SELECT 1'))
+    except Exception:
+        return JSONResponse({'app':'degraded','database':'unavailable'},status_code=503)
+    return {'app':'ok','database':'ok','frontend':'ok' if (FRONTEND_DIST/'index.html').exists() else 'missing','hubspot_configured':bool(setting('HUBSPOT_ACCESS_TOKEN')),'google_configured':bool(os.getenv('GOOGLE_CLIENT_ID') and os.getenv('GOOGLE_CLIENT_SECRET'))}
+
 @app.get('/api/campaigns')
 def campaigns(request: Request):
     out=[]
@@ -406,6 +475,7 @@ def campaigns(request: Request):
             cfg={**cfg,'status':row.get('status') or ('ACTIVE' if row.get('active') else 'PAUSED'),'daily_queue_limit':row.get('daily_queue_limit') or cfg.get('queue',{}).get('daily_limit',50)}
         else:
             cfg={'campaign_id':row['slug'],'name':row['name'],'market':json.loads(row.get('market') or '{}'),'categories':[row.get('category')] if row.get('category') else [],'description':row.get('description') or '','daily_queue_limit':row.get('daily_queue_limit') or 50,'status':row.get('status') or ('ACTIVE' if row.get('active') else 'PAUSED'),'created_at':row.get('created_at'),'updated_at':row.get('updated_at')}
+        cfg.update({key:row.get(key) or '' for key in ('city','state','category')})
         out.append(cfg)
     return out
 
@@ -429,8 +499,10 @@ def _campaign_payload(row):
 def campaign_create(req: CampaignCreate, request: Request):
     if not req.campaign_id.strip() or not req.name.strip() or not req.city.strip() or not req.state.strip() or not req.category.strip(): raise HTTPException(422,'Required campaign fields are missing')
     if req.status not in ('ACTIVE','PAUSED','ARCHIVED') or req.daily_queue_limit < 1: raise HTTPException(422,'Invalid campaign settings')
-    try: return _campaign_payload(create_campaign(req.model_dump(), _owner_id(request)))
-    except ValueError as exc: raise HTTPException(409,str(exc))
+    try:
+        data=req.model_dump(); data['slug']=data.pop('campaign_id')
+        return _campaign_payload(create_campaign(data, _owner_id(request)))
+    except (ValueError, IntegrityError): raise HTTPException(409,"Campaign ID already exists. Choose another ID.")
 
 @app.get('/api/campaigns/{campaign_id}')
 def campaign_detail(campaign_id:str, request: Request):
@@ -459,11 +531,21 @@ def campaign_delete(campaign_id:str, request: Request):
     return result
 
 @app.get('/api/runs')
-def runs():
-    return [read_json(p) for p in sorted((ARTIFACT_ROOT/'v5_runs').glob('*/run_v*.json')) if _re.fullmatch(r'run_v\d+\.json',p.name)]
+def runs(request: Request):
+    return [read_json(p) for p in sorted((ARTIFACT_ROOT/'v5_runs').glob('*/run_v*.json')) if _re.fullmatch(r'run_v\d+\.json',p.name) and _run_owned(read_json(p),request)]
+
+def _run_owned(data,request):
+    owner=_owner_id(request)
+    if owner is None: return True
+    if data.get('owner_id') is not None: return data['owner_id']==owner
+    campaign=data.get('campaign_id') or data.get('campaign')
+    if isinstance(campaign,str): return bool(get_campaign(campaign,owner))
+    return bool(getattr(request.state,'is_admin',False))
+
 @app.get('/api/runs/{run_id}')
-def run_detail(run_id:str):
-    matches=list((ARTIFACT_ROOT/'v5_runs').glob(f'*/{run_id}.json'))
+def run_detail(run_id:str, request:Request):
+    if not _re.fullmatch(r'run_v[0-9]+',run_id): raise HTTPException(404,'Run not found')
+    matches=[p for p in (ARTIFACT_ROOT/'v5_runs').glob(f'*/{run_id}.json') if _run_owned(read_json(p),request)]
     if not matches: raise HTTPException(404,'Run not found')
     return read_json(matches[0])
 @app.get('/api/queue')
@@ -737,7 +819,7 @@ def calendar_preview(req:CalendarRequest, request:Request):
 def calendar_create(req:CalendarRequest, request:Request):
     if not get_owned_prospect(req.prospect_id,_owner_id(request)): raise HTTPException(404,'Prospect not found')
     if not req.confirmed: raise HTTPException(400,'Explicit confirmation required')
-    if os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower()!='true': raise HTTPException(403,'Google Calendar is disabled')
+    if setting('GOOGLE_CALENDAR_ENABLED','false').lower()!='true': raise HTTPException(403,'Google Calendar is disabled')
     try:
         start=_calendar_dt(req.consultation_start,req.timezone or 'UTC'); end=_calendar_dt(req.consultation_end,req.timezone or 'UTC')
         if end<=start: raise HTTPException(400,'Calendar end must be after start')
@@ -809,7 +891,7 @@ def gmail_send(req:GmailRequest, request:Request):
     if not get_owned_prospect(req.prospect_id,_owner_id(request)): raise HTTPException(404,'Prospect not found')
     if not req.to: raise HTTPException(400,'Prospect email is unavailable')
     if not req.confirmed: raise HTTPException(400,'Explicit confirmation required')
-    if os.getenv('GMAIL_ENABLED','false').lower()!='true': raise HTTPException(403,'Gmail is disabled')
+    if setting('GMAIL_ENABLED','false').lower()!='true': raise HTTPException(403,'Gmail is disabled')
     try:
         result=google_service.send_gmail(req.to,req.subject,req.body); log_external_action(req.prospect_id,'EMAIL_SENT',{'provider_message_id':result.get('id')},_owner_id(request))
         with connect() as c:
@@ -843,11 +925,11 @@ def gmail_send(req:GmailRequest, request:Request):
     except Exception as exc: raise HTTPException(503,detail={'provider':'GMAIL','stage':'send','message':_safe_error_message(str(exc))})
 @app.get('/api/integrations/status')
 def integrations_status():
-    return {'calendar_enabled':os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower()=='true','gmail_enabled':os.getenv('GMAIL_ENABLED','false').lower()=='true','google_status':google_service.status(),'booking_url':os.getenv('BOOKING_URL',''),'hubspot_portal_id':os.getenv('HUBSPOT_PORTAL_ID',''),'automatic_actions':False}
+    return {'calendar_enabled':setting('GOOGLE_CALENDAR_ENABLED','false').lower()=='true','gmail_enabled':setting('GMAIL_ENABLED','false').lower()=='true','google_status':google_service.status(),'booking_url':os.getenv('BOOKING_URL',''),'hubspot_portal_id':setting('HUBSPOT_PORTAL_ID',''),'automatic_actions':False}
 
 @app.get('/api/settings/hubspot')
 def hubspot_settings():
-    return {'configured':bool(os.getenv('HUBSPOT_ACCESS_TOKEN')),'token_present':bool(os.getenv('HUBSPOT_ACCESS_TOKEN')),'portal_id':os.getenv('HUBSPOT_PORTAL_ID',''),'pipeline_id':os.getenv('HUBSPOT_PIPELINE_ID',''),'stage_id':os.getenv('HUBSPOT_STAGE_ID',''),'write_enabled':os.getenv('HUBSPOT_WRITE_ENABLED','false').lower()=='true'}
+    return {'configured':bool(setting('HUBSPOT_ACCESS_TOKEN')),'token_present':bool(setting('HUBSPOT_ACCESS_TOKEN')),'portal_id':setting('HUBSPOT_PORTAL_ID',''),'pipeline_id':setting('HUBSPOT_PIPELINE_ID',''),'stage_id':setting('HUBSPOT_STAGE_ID',''),'write_enabled':setting('HUBSPOT_WRITE_ENABLED','false').lower()=='true'}
 
 @app.post('/api/settings/hubspot/test')
 def hubspot_settings_test():
@@ -862,16 +944,34 @@ class HubSpotSettings(BaseModel):
 
 @app.post('/api/settings/hubspot')
 def save_hubspot_settings(req:HubSpotSettings):
-    path=Path(os.getenv('APP_ENV_FILE', str(ROOT/'.env'))); path.parent.mkdir(parents=True,exist_ok=True)
-    if path.exists(): shutil.copy2(path, path.with_name(path.name+'.bak.'+datetime.now().strftime('%Y%m%d%H%M%S')))
     values={'HUBSPOT_PORTAL_ID':req.portal_id,'HUBSPOT_PIPELINE_ID':req.pipeline_id,'HUBSPOT_STAGE_ID':req.stage_id,'HUBSPOT_WRITE_ENABLED':str(req.write_enabled).lower()}
-    if req.access_token and 'ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢' not in req.access_token: values['HUBSPOT_ACCESS_TOKEN']=req.access_token
-    lines=path.read_text(encoding='utf-8').splitlines() if path.exists() else []; keys={k for k in values}; out=[l for l in lines if not any(l.startswith(k+'=') for k in keys)]; out += [f'{k}={v}' for k,v in values.items()]; path.write_text('\n'.join(out)+'\n',encoding='utf-8'); os.environ.update(values)
+    if req.access_token and req.access_token.strip() and '•' not in req.access_token:
+        values['HUBSPOT_ACCESS_TOKEN']=req.access_token.strip()
+    save_integration_settings(values)
     return hubspot_settings()
+
+class DiscoverySettings(BaseModel):
+    api_key:str
+@app.get('/api/settings/discovery')
+def discovery_settings(): return {'configured':bool(setting('OUTSCRAPER_API_KEY'))}
+@app.post('/api/settings/discovery')
+def save_discovery_settings(req:DiscoverySettings):
+    save_integration_settings({'OUTSCRAPER_API_KEY':req.api_key.strip()})
+    return discovery_settings()
+class GoogleFeatures(BaseModel):
+    calendar_enabled:bool=False
+    gmail_enabled:bool=False
+@app.post('/api/settings/google')
+def google_features(req:GoogleFeatures):
+    save_integration_settings({'GOOGLE_CALENDAR_ENABLED':str(req.calendar_enabled).lower(),'GMAIL_ENABLED':str(req.gmail_enabled).lower()})
+    return google_status()
 
 @app.get('/api/settings/booking')
 def booking_settings():
-    s=get_settings('booking_'); return {'configured':bool(s.get('booking_url')),'provider':s.get('booking_provider',''),'booking_url':s.get('booking_url',''),'default_duration':int(s.get('booking_default_duration','30')),'default_title':s.get('booking_default_title','')}
+    prefix=f'user:{request_context.user_id.get()}:booking:'
+    s={k.removeprefix(prefix):v for k,v in get_settings(prefix).items()}
+    if not s and (not request_context.user_id.get() or request_context.is_admin.get()): s=get_settings('booking_')
+    return {'configured':bool(s.get('booking_url')),'provider':s.get('booking_provider',''),'booking_url':s.get('booking_url',''),'default_duration':int(s.get('booking_default_duration','30')),'default_title':s.get('booking_default_title','')}
 class BookingSettings(BaseModel):
     provider:str=''; booking_url:str=''; default_duration:int=30; default_title:str=''
 @app.post('/api/settings/booking')
@@ -879,33 +979,51 @@ def save_booking_settings(req:BookingSettings):
     from urllib.parse import urlparse
     u=urlparse(req.booking_url) if req.booking_url else None
     if req.booking_url and u.scheme not in ('http','https') or req.default_duration<1: raise HTTPException(422,'Invalid booking settings')
-    save_settings({'booking_provider':req.provider,'booking_url':req.booking_url,'booking_default_duration':str(req.default_duration),'booking_default_title':req.default_title}); return booking_settings()
+    prefix=f'user:{request_context.user_id.get()}:booking:'
+    save_settings({prefix+k:v for k,v in {'booking_provider':req.provider,'booking_url':req.booking_url,'booking_default_duration':str(req.default_duration),'booking_default_title':req.default_title}.items()}); return booking_settings()
 @app.get('/api/google/status')
-def google_status(): return {'status':google_service.status(),'calendar_enabled':os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower()=='true','gmail_enabled':os.getenv('GMAIL_ENABLED','false').lower()=='true'}
+def google_status(): return {'status':google_service.status(),'calendar_enabled':setting('GOOGLE_CALENDAR_ENABLED','false').lower()=='true','gmail_enabled':setting('GMAIL_ENABLED','false').lower()=='true'}
 @app.get('/api/google/oauth/start')
-def google_oauth_start():
-    try: return {'authorization_url':google_service.authorization_url()}
+def google_oauth_start(request:Request):
+    state=secrets.token_urlsafe(32)
+    record={'user_id':_owner_id(request) or 0,'session':_hash_value(request.cookies.get(_AUTH_COOKIE,'')),'expires':(datetime.now(timezone.utc)+timedelta(minutes=10)).timestamp()}
+    save_settings({'oauth:'+_hash_value(state):json.dumps(record)})
+    try: return {'authorization_url':google_service.authorization_url(state)}
     except ValueError as exc:
         diagnostics = {
             'google_client_id_present': bool(os.getenv('GOOGLE_CLIENT_ID')),
             'google_client_secret_present': bool(os.getenv('GOOGLE_CLIENT_SECRET')),
             'google_redirect_uri_present': bool(os.getenv('GOOGLE_REDIRECT_URI')),
             'google_redirect_uri': os.getenv('GOOGLE_REDIRECT_URI') or None,
-            'gmail_enabled': os.getenv('GMAIL_ENABLED','false').lower() == 'true',
-            'google_calendar_enabled': os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower() == 'true',
+            'gmail_enabled': setting('GMAIL_ENABLED','false').lower() == 'true',
+            'google_calendar_enabled': setting('GOOGLE_CALENDAR_ENABLED','false').lower() == 'true',
         }
         message = _safe_error_message(str(exc))
         logger.warning('Google OAuth start unavailable message=%s diagnostics=%s', message, diagnostics)
         raise HTTPException(503, detail={'code':'GOOGLE_OAUTH_UNAVAILABLE','message':message,'diagnostics':diagnostics})
 @app.get('/api/google/oauth/callback')
-def google_oauth_callback(code:str=''):
-    try: return google_service.callback(code)
-    except ValueError as exc: raise HTTPException(400,str(exc))
+def google_oauth_callback(request:Request, code:str='', state:str=''):
+    from .database_v2 import session_scope
+    from .models import AppSetting
+    key='oauth:'+_hash_value(state)
+    with session_scope() as session:
+        row=session.query(AppSetting).filter(AppSetting.key==key).with_for_update().first() if state else None
+        record=json.loads(row.value) if row else {}
+        valid=bool(code and row and record.get('expires',0)>datetime.now(timezone.utc).timestamp() and record.get('user_id')==(_owner_id(request) or 0) and secrets.compare_digest(record.get('session',''),_hash_value(request.cookies.get(_AUTH_COOKIE,''))))
+        if not valid: raise HTTPException(400,'Invalid or expired Google connection request. Start again from Settings.')
+        session.delete(row)
+    try:
+        google_service.callback(code)
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse('/?google=connected',status_code=303)
+    except Exception:
+        raise HTTPException(503,'Google connection failed. Start again from Settings.')
+
 @app.post('/api/google/disconnect')
 def google_disconnect(): google_service.disconnect(); return {'status':'NOT_CONNECTED'}
 @app.get('/api/integrations/calendar/upcoming')
 def calendar_upcoming():
-    if os.getenv('GOOGLE_CALENDAR_ENABLED','false').lower()!='true': return {'events':[],'status':'DISABLED'}
+    if setting('GOOGLE_CALENDAR_ENABLED','false').lower()!='true': return {'events':[],'status':'DISABLED'}
     try: return {'events':google_service.upcoming_calendar_events(),'status':'CONNECTED'}
     except Exception as exc: return {'events':[],'status':'UNAVAILABLE','error':_safe_error_message(str(exc))}
 class ProspectInput(BaseModel):
@@ -919,15 +1037,17 @@ class HubSpotBatchRequest(BaseModel):
     confirmed: bool = False
 @app.get('/api/hubspot/status')
 def hubspot_status():
-    enabled=os.getenv('HUBSPOT_WRITE_ENABLED','false').lower()=='true'
+    enabled=setting('HUBSPOT_WRITE_ENABLED','false').lower()=='true'
     return {'connection_status':'CONTROLLED_READS','write_mode':'ENABLED_CONFIRMATION_REQUIRED' if enabled else 'DISABLED','writes_enabled':enabled,'campaign_execution_enabled':os.getenv('CAMPAIGN_EXECUTION_ENABLED','false').lower()=='true','safety_mode':'READ_ONLY','automatic_sync':'DISABLED','feature_flag':f'HUBSPOT_WRITE_ENABLED={str(enabled).lower()}'}
 @app.post('/api/hubspot/preview-sync')
-def preview_sync(prospect:ProspectInput): return preview(prospect.model_dump())
+def preview_sync(prospect:ProspectInput,request:Request):
+    if prospect.prospect_id and not get_owned_prospect(prospect.prospect_id,_owner_id(request)): raise HTTPException(404,'Prospect not found')
+    return preview(prospect.model_dump())
 
 @app.post('/api/hubspot/batch-preview')
-def hubspot_batch_preview(req: HubSpotBatchRequest):
+def hubspot_batch_preview(req: HubSpotBatchRequest, request: Request):
     """Read-only preview for the current daily queue."""
-    rows=queue(req.campaign).get('daily_queue',[])
+    rows=queue(request,req.campaign).get('daily_queue',[])
     out=[]; counts={k:0 for k in ('CREATE_NEW','UPDATE_EXISTING','NO_CHANGE','REVIEW_REQUIRED','ALREADY_SYNCED','ERROR')}
     for row in rows:
         pid=row.get('prospect_id'); data=dict(row)
@@ -945,13 +1065,13 @@ def hubspot_batch_preview(req: HubSpotBatchRequest):
     return {'campaign':req.campaign,'counts':counts,'rows':out,'selected_default':[x['prospect_id'] for x in out if x.get('prospect_id') and x['decision_type'] in ('CREATE_NEW','UPDATE_EXISTING')]}
 
 @app.post('/api/hubspot/batch-sync')
-def hubspot_batch_sync(req: HubSpotBatchRequest):
+def hubspot_batch_sync(req: HubSpotBatchRequest, request: Request):
     if not req.confirmed: raise HTTPException(400,'Explicit confirmation required')
-    if os.getenv('HUBSPOT_WRITE_ENABLED','false').lower()!='true': raise HTTPException(403,'HubSpot writes are disabled')
+    if setting('HUBSPOT_WRITE_ENABLED','false').lower()!='true': raise HTTPException(403,'HubSpot writes are disabled')
     if not req.prospect_ids: return {'results':[],'summary':{'synced':0,'failed':0,'review_required':0}}
     try: client=HubSpotClient()
     except ValueError as exc: raise HTTPException(503,detail={'code':'HUBSPOT_CONFIGURATION_ERROR','message':_safe_error_message(str(exc))})
-    rows=queue(req.campaign).get('daily_queue',[]); by_id={x.get('prospect_id'):x for x in rows}; results=[]
+    rows=queue(request,req.campaign).get('daily_queue',[]); by_id={x.get('prospect_id'):x for x in rows}; results=[]
     for pid in req.prospect_ids:
         row=by_id.get(pid)
         if not row: results.append({'prospect_id':pid,'sync_status':'REVIEW_REQUIRED','errors':['Prospect not in current daily queue']}); continue
@@ -965,13 +1085,25 @@ def hubspot_batch_sync(req: HubSpotBatchRequest):
         results.append({'prospect_id':pid,**result})
     return {'campaign':req.campaign,'results':results,'summary':{'synced':sum(r.get('sync_status')=='SYNCED' for r in results),'failed':sum(r.get('sync_status')=='SYNC_FAILED' for r in results),'review_required':sum(r.get('sync_status')=='REVIEW_REQUIRED' for r in results)}}
 
+def _validate_campaign_input(req,request):
+    owner=_owner_id(request)
+    if owner is None: return
+    if not get_campaign(req.campaign,owner): raise HTTPException(404,'Campaign not found')
+    if req.input_file:
+        from .database_v2 import SessionLocal
+        from .models import Upload
+        with SessionLocal() as session:
+            record=session.query(Upload).filter(Upload.stored_reference==req.input_file,Upload.owner_id==owner).first()
+        if not record: raise HTTPException(404,'Upload not found')
+
 class CampaignRunInput(BaseModel):
     campaign:str; input_file:str|None=None; sheet:str|None=None; dry_run:bool=True; confirmed:bool=False
 @app.post('/api/campaigns/upload')
-async def campaign_upload(file:UploadFile=File(...)):
+async def campaign_upload(request:Request, file:UploadFile=File(...)):
     name=Path(file.filename or '').name
     if Path(name).suffix.lower() not in ('.csv','.xlsx'): raise HTTPException(415,'Only CSV and XLSX files are supported')
-    data=await file.read()
+    data=await file.read(10*1024*1024+1)
+    if len(data)>10*1024*1024: raise HTTPException(413,'Upload must be 10 MB or smaller')
     if not data: raise HTTPException(400,'Uploaded file is empty')
     root=Path(tempfile.gettempdir())/'kidproductionz_uploads'; root.mkdir(parents=True,exist_ok=True)
     token=uuid.uuid4().hex; ref=root/(token+Path(name).suffix.lower()); ref.write_bytes(data)
@@ -986,14 +1118,16 @@ async def campaign_upload(file:UploadFile=File(...)):
     except Exception as exc: raise HTTPException(503,'Upload metadata persistence failed')
     return metadata
 @app.post('/api/campaigns/run-preview')
-def campaign_run_preview(req:CampaignRunInput):
+def campaign_run_preview(req:CampaignRunInput,request:Request):
+    _validate_campaign_input(req,request)
     try:
         from v5e_execution_adapter import build
         spec=build(ROOT,req.campaign)
         return {'campaign':req.campaign,'market':spec['market'],'categories':spec['categories'],'input_source':req.input_file,'queue_limit':spec['queue']['daily_limit'],'dry_run':True,'planned_stages':['validation','input_adapter','scoring','routing','queue','artifacts'],'output_location':spec['output'],'warnings':[],'validation_status':spec['validation_status']}
     except Exception as exc: raise HTTPException(400,f'Campaign preview failed: {type(exc).__name__}')
 @app.post('/api/campaigns/run')
-def campaign_run(req:CampaignRunInput):
+def campaign_run(req:CampaignRunInput,request:Request):
+    _validate_campaign_input(req,request)
     if os.getenv('CAMPAIGN_EXECUTION_ENABLED','false').lower()!='true': raise HTTPException(403,'Campaign execution is currently disabled')
     if not req.confirmed: raise HTTPException(400,'Explicit confirmation required')
     if not req.dry_run: raise HTTPException(400,'Only dry-run execution is permitted')
@@ -1006,10 +1140,12 @@ def campaign_run(req:CampaignRunInput):
         logger.exception('Campaign run failed safely')
         raise HTTPException(422,f'Campaign run failed safely: {type(exc).__name__}: {_safe_error_message(str(exc))}')
 @app.post('/api/hubspot/sync')
-def sync_hubspot(prospect:ProspectInput, confirmed:bool|None=None):
-    """Explicit write gate. Live CRM execution remains disabled until implemented and approved."""
+def sync_hubspot(prospect:ProspectInput, request:Request, confirmed:bool|None=None):
+    """Explicit owner-checked write gate."""
+    if _owner_id(request) and not prospect.prospect_id: raise HTTPException(400,'Select a saved prospect')
+    if prospect.prospect_id and not get_owned_prospect(prospect.prospect_id,_owner_id(request)): raise HTTPException(404,'Prospect not found')
     if not (confirmed if confirmed is not None else prospect.confirmed): raise HTTPException(400,'Explicit confirmation required')
-    if os.getenv('HUBSPOT_WRITE_ENABLED','false').lower()!='true': raise HTTPException(403,'HubSpot writes are disabled')
+    if setting('HUBSPOT_WRITE_ENABLED','false').lower()!='true': raise HTTPException(403,'HubSpot writes are disabled')
     try: client=HubSpotClient()
     except ValueError as exc:
         logger.exception('HubSpot client configuration failure: type=%s message=%s',type(exc).__name__,_safe_error_message(str(exc)))
@@ -1402,8 +1538,10 @@ def outscraper_generate(req: OutscraperGenerateRequest, request: Request):
 @app.get('/{path:path}')
 def spa_fallback(path:str):
     if path.startswith('api/'): raise HTTPException(404,'API route not found')
-    candidate=FRONTEND_DIST/path
-    if candidate.is_file() and FRONTEND_DIST in candidate.parents: return FileResponse(candidate)
+    root=FRONTEND_DIST.resolve()
+    candidate=(root/path).resolve()
+    if not candidate.is_relative_to(root): raise HTTPException(404,'Not found')
+    if candidate.is_file(): return FileResponse(candidate)
     index=FRONTEND_DIST/'index.html'
     if index.exists(): return FileResponse(index)
     raise HTTPException(404,'Frontend not built')

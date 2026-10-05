@@ -78,7 +78,7 @@ def refresh(original, cfg, match_cfg, reader, root):
     write('schema.json', response)
     saved = save_plan(plan, staging)
     # Report final paths; directory is finalized only after every artifact is saved.
-    paths = {k:str(final/Path(v).relative_to(staging)) for k,v in saved.items() if k in ('plan','approval_template')}
+    paths = {k:str(final/Path(v).resolve().relative_to(staging.resolve())) for k,v in saved.items() if k in ('plan','approval_template')}
     report = {**paths,'snapshot':str(final/'snapshot.json'),'schema':str(final/'schema.json'),
         'report':str(final/'report.json'),'checked':10,'proposed':len(kept),'skipped':10-len(kept),
         'snapshot_company_count':len(snapshot['records']),'checks':checks,'metadata_coverage':coverage,
