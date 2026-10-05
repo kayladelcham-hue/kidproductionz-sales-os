@@ -1,6 +1,6 @@
 # Premium sales experience
 
-The homepage retains its original Sales overview header, blue/purple banner and colorful metric cards at the top. The banner’s dominant Start selling action leads into the improved selling flow. Today’s saved mission and the highest-ranked eligible lead follow the metric cards; pipeline breakdown, planning tools, and calendar are disclosed on request. The KP logo, Bebas Neue display type, Skye, account data, integrations, and existing workflows remain in place.
+The homepage retains its colorful blue/purple banner and colorful metric cards at the top. The hero’s dominant Find & qualify leads action opens the existing discovery and qualification workflow, with a secondary ideal-client-profile action. Working existing qualified leads follows as a supporting action. Today’s saved mission and the highest-ranked eligible lead follow the metric cards; pipeline breakdown, planning tools, and calendar are disclosed on request. The KP logo, Bebas Neue display type, Skye, account data, integrations, and existing workflows remain in place.
 
 ## Motion contract
 
