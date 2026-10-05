@@ -81,6 +81,7 @@ def test_google_calendar_is_account_scoped(accounts,monkeypatch):
     monkeypatch.setattr(api.google_service,'upcoming_calendar_events',lambda:[{'title':'Alice private synthetic meeting'}] if db.load_google_connection() else [])
     assert a.get('/api/integrations/calendar/upcoming').json()['events']
     assert b.get('/api/integrations/calendar/upcoming').json()['events']==[]
+    assert b.get('/api/integrations/calendar/upcoming').json()['status']=='NOT_CONNECTED'
 
 def test_booking_settings_are_account_scoped(accounts):
     a,_=accounts[0];b,_=accounts[1]

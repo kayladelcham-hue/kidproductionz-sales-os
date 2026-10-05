@@ -925,7 +925,7 @@ def gmail_send(req:GmailRequest, request:Request):
     except Exception as exc: raise HTTPException(503,detail={'provider':'GMAIL','stage':'send','message':_safe_error_message(str(exc))})
 @app.get('/api/integrations/status')
 def integrations_status():
-    return {'calendar_enabled':setting('GOOGLE_CALENDAR_ENABLED','false').lower()=='true','gmail_enabled':setting('GMAIL_ENABLED','false').lower()=='true','google_status':google_service.status(),'booking_url':os.getenv('BOOKING_URL',''),'hubspot_portal_id':setting('HUBSPOT_PORTAL_ID',''),'automatic_actions':False}
+    return {'calendar_enabled':setting('GOOGLE_CALENDAR_ENABLED','false').lower()=='true','gmail_enabled':setting('GMAIL_ENABLED','false').lower()=='true','google_status':google_service.status(),'booking_url':booking_settings()['booking_url'],'hubspot_portal_id':setting('HUBSPOT_PORTAL_ID',''),'automatic_actions':False}
 
 @app.get('/api/settings/hubspot')
 def hubspot_settings():
@@ -1024,6 +1024,8 @@ def google_disconnect(): google_service.disconnect(); return {'status':'NOT_CONN
 @app.get('/api/integrations/calendar/upcoming')
 def calendar_upcoming():
     if setting('GOOGLE_CALENDAR_ENABLED','false').lower()!='true': return {'events':[],'status':'DISABLED'}
+    connection=google_service.status()
+    if connection!='CONNECTED': return {'events':[],'status':connection}
     try: return {'events':google_service.upcoming_calendar_events(),'status':'CONNECTED'}
     except Exception as exc: return {'events':[],'status':'UNAVAILABLE','error':_safe_error_message(str(exc))}
 class ProspectInput(BaseModel):
