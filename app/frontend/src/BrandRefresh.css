@@ -80,3 +80,66 @@ html[data-kp-mode] .shell>main{background:transparent!important}html[data-kp-mod
 html[data-kp-mode] .shell>main>header h1{color:var(--xp-text)!important}
 html[data-kp-mode] .shell .neo-banner .xp-primary{background:var(--xp-accent)!important;color:#171e0b!important}
 @media(max-width:768px){html[data-kp-mode] .shell .bottom-nav button{transform:none!important;height:auto!important;border-radius:20px!important;background:transparent!important;color:var(--xp-text)!important;box-shadow:none!important}html[data-kp-mode] .shell .bottom-nav button[aria-current=page]{color:var(--xp-accent)!important;background:var(--kp-theme-soft)!important}}
+
+/* Brand asset and compact layouts from the October 5 visual review. */
+html[data-kp-mode] .shell .neo-brand-logo{width:60px;height:60px;flex:0 0 60px;object-fit:contain;border-radius:14px}
+.auth-screen .neo-auth-logo{width:88px;height:88px;object-fit:contain;margin-bottom:16px;border-radius:20px}
+html[data-kp-mode] .shell .sell-session-head{align-items:center!important;gap:24px!important;padding:8px 0!important}
+html[data-kp-mode] .shell .sell-session-head>div:first-child{min-width:0;flex:1}
+html[data-kp-mode] .shell .sell-session-head h2{font-size:clamp(34px,3.6vw,52px)!important;line-height:1.08!important;margin:8px 0!important;max-width:620px}
+html[data-kp-mode] .shell .sell-session-score{flex:0 0 104px;min-width:104px;padding:14px!important;border:1px solid var(--xp-border)!important;border-radius:12px!important;box-shadow:none!important}
+html[data-kp-mode] .shell .sell-lead-card{min-height:0!important;padding:24px!important;border:1px solid var(--xp-border)!important;border-radius:16px!important;background:var(--xp-surface)!important;box-shadow:none!important}
+html[data-kp-mode] .shell .sell-lead-top{padding:0 0 20px!important;gap:20px!important}
+html[data-kp-mode] .shell .sell-lead-top h1{font-size:clamp(32px,3vw,44px)!important;line-height:1.1!important;margin:8px 0!important}
+html[data-kp-mode] .shell .sell-lead-top>strong{background:var(--xp-soft)!important;color:var(--xp-accent)!important}
+html[data-kp-mode] .shell .sell-quick-context{margin-top:16px!important;gap:10px!important;background:transparent!important}
+html[data-kp-mode] .shell .sell-quick-context>span{padding:16px!important;border:1px solid var(--xp-border)!important;border-radius:10px!important;background:var(--xp-soft)!important}
+html[data-kp-mode] .shell .sell-actions{margin:18px 0 0!important;padding:12px 0 0!important;border-top:1px solid var(--xp-border)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+html[data-kp-mode] .shell .sell-mission-strip,html[data-kp-mode] .shell .power-hour{border:1px solid var(--xp-border)!important;border-radius:12px!important;box-shadow:none!important}
+html[data-kp-mode] .shell .kx-pipeline-total{background:var(--xp-accent)!important;border:1px solid var(--xp-border)!important;border-radius:14px!important;box-shadow:none!important}
+html[data-kp-mode] .shell .kx-pipeline-total,html[data-kp-mode] .shell .kx-pipeline-total :is(span,strong,small){color:#171e0b!important}
+html[data-kp-mode="light"] .shell .kx-pipeline-total{background:#d5ff59!important}
+html[data-kp-mode] .shell .kx-stage{min-height:0!important;padding:24px!important;border:1px solid var(--xp-border)!important;border-radius:14px!important;background:var(--xp-surface)!important}
+html[data-kp-mode] .shell .kx-stage .kx-empty{min-height:0!important;padding:28px 16px!important}
+html[data-kp-mode] .shell .kx-stage-nav b{flex:0 0 24px;min-width:24px!important;width:24px!important;height:24px!important;line-height:1!important}
+html[data-kp-mode] .shell .ai-agent-panel{background:var(--xp-surface)!important;color:var(--xp-text)!important;border:1px solid var(--xp-border)!important}
+html[data-kp-mode] .shell .ai-agent-panel .ai-agent-header{display:flex!important;min-height:76px!important;padding:18px 20px!important;margin:0!important;border-bottom:1px solid var(--xp-border)!important;background:var(--xp-surface)!important}
+html[data-kp-mode] .shell .ai-agent-header strong{color:var(--xp-text)!important}
+html[data-kp-mode] .shell .ai-agent-header small{color:var(--xp-muted)!important}
+html[data-kp-mode] .shell .ai-agent-header>button{background:var(--xp-soft)!important;color:var(--xp-text)!important}
+html[data-kp-mode] .shell .ai-agent-messages{background:var(--xp-surface)!important;padding:20px!important}
+html[data-kp-mode] .shell .ai-agent-welcome{margin:auto!important;padding:20px 0!important}
+html[data-kp-mode] .shell .ai-agent-welcome h2{font-size:32px!important;line-height:1.12!important;color:var(--xp-text)!important;margin:16px 0!important}
+html[data-kp-mode] .shell .ai-agent-welcome p{color:var(--xp-muted)!important;font-size:14px!important;line-height:1.6!important}
+html[data-kp-mode] .shell .ai-agent-icon{color:var(--xp-accent)!important}
+html[data-kp-mode] .shell .ai-agent-welcome button{background:var(--xp-soft)!important;color:var(--xp-text)!important;border:1px solid var(--xp-border)!important;border-radius:10px!important;margin:10px 0 0!important;text-align:left!important}
+html[data-kp-mode] .shell .ai-agent-input{background:var(--xp-surface)!important;border-top:1px solid var(--xp-border)!important}
+html[data-kp-mode] .shell .ai-agent-input textarea{background:var(--xp-soft)!important;color:var(--xp-text)!important;border:1px solid var(--xp-border)!important}
+html[data-kp-mode] .shell .ai-agent-input textarea::placeholder{color:var(--xp-muted)!important}
+html[data-kp-mode] .shell .ai-agent-input button{background:var(--xp-accent)!important;color:#171e0b!important}
+html[data-kp-mode] .shell .ai-message.assistant>div{background:var(--xp-soft)!important;color:var(--xp-text)!important}
+html[data-kp-mode] .shell .ai-message.user>div{background:var(--xp-accent)!important;color:#171e0b!important}
+html[data-kp-mode] .shell .ai-message-content :is(h1,h2,h3,h4,p,li){color:inherit!important}
+@media(max-width:768px){
+ html[data-kp-mode] .shell .sell-session-head{gap:12px!important;grid-template-columns:minmax(0,1fr) 84px!important}
+ html[data-kp-mode] .shell .sell-session-head h2{font-size:36px!important}
+ html[data-kp-mode] .shell .sell-session-score{min-width:84px!important;width:84px!important;padding:10px!important}
+ html[data-kp-mode] .shell .sell-lead-card{padding:20px!important}
+ html[data-kp-mode] .shell .sell-lead-top h1{font-size:34px!important}
+ html[data-kp-mode] .shell .sell-actions{position:static!important}
+ html[data-kp-mode] .shell .sell-focus,html[data-kp-mode] .shell .sell-quality-note{padding-bottom:0!important}
+ html[data-kp-mode] .shell .kx-stage{padding:18px!important}
+ html[data-kp-mode] .shell .ai-agent-panel{z-index:1600!important}
+}
+
+.neo-mobile-logo{display:none}
+@media(max-width:1100px){.neo-header-brand{position:relative;padding-left:46px}.neo-mobile-logo{display:block;position:absolute;left:0;top:50%;transform:translateY(-50%);width:36px;height:36px;object-fit:contain;border-radius:8px}}
+html[data-kp-mode="light"] .shell :is(.eyebrow,.xp-eyebrow,.kx-kicker){color:#526b18!important}
+html[data-kp-mode="light"] .shell .brand small{color:#526b18!important}
+
+@media(max-width:1100px){html[data-kp-mode] .shell>main>header>.neo-header-brand{padding:0 0 0 46px!important;display:block!important}.neo-header-brand>h1,.neo-header-brand>.eyebrow{margin-left:0!important}}
+html[data-kp-mode] .shell .ai-agent-panel .ai-agent-header{flex-direction:row!important;gap:16px!important;text-align:left!important}
+html[data-kp-mode] .shell .ai-agent-panel .ai-agent-header>div:first-child{display:block!important;flex:1 1 auto!important;width:auto!important;padding:0!important;text-align:left!important}
+html[data-kp-mode] .shell .ai-agent-panel .ai-agent-header>button{position:static!important;flex:0 0 40px!important;margin:0!important}
+html[data-kp-mode] .shell>main>header .mobile-menu-btn{background:var(--xp-soft)!important;color:var(--xp-text)!important;border:1px solid var(--xp-border)!important}
+html[data-kp-mode] .shell>main>header .mobile-menu-btn :is(svg,path){color:var(--xp-text)!important;stroke:var(--xp-text)!important}

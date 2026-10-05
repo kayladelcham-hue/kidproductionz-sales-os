@@ -55,20 +55,20 @@ export default function SalesAgent({campaign}:{campaign:string}){
         className="ai-agent-launcher"
         onClick={()=>setOpen(true)}
       >
-        ✦ AI Agent
+        ✦ Skye
       </button>
     }
 
     {open&&
-      <section className="ai-agent-panel">
+      <section className="ai-agent-panel" role="dialog" aria-label="Skye">
 
         <header className="ai-agent-header">
           <div>
-            <strong>✦ AI Sales Agent</strong>
-            <small>Powered by your Sales OS</small>
+            <strong>✦ Skye</strong>
+            <small>Your sales assistant</small>
           </div>
 
-          <button onClick={()=>setOpen(false)}>×</button>
+          <button aria-label="Close Skye" onClick={()=>setOpen(false)}>×</button>
         </header>
 
         <div className="ai-agent-messages">
@@ -103,7 +103,7 @@ export default function SalesAgent({campaign}:{campaign:string}){
               key={i}
               className={`ai-message ${m.role}`}
             >
-              <small>{m.role==='assistant'?'AI':'YOU'}</small>
+              <small>{m.role==='assistant'?'SKYE':'YOU'}</small>
               <div className="ai-message-content">{m.role==='assistant'?<ReactMarkdown>{m.content}</ReactMarkdown>:m.content}</div>
             </div>
           )}
@@ -132,7 +132,7 @@ export default function SalesAgent({campaign}:{campaign:string}){
                 send();
               }
             }}
-            placeholder="Ask your Sales OS..."
+            placeholder="Ask Skye..."
             rows={1}
           />
 
