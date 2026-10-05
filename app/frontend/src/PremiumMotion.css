@@ -1,6 +1,15 @@
 /* Purposeful motion: immediate controls; one entrance per surface; no ambient loops.
    The easing settles with a small spring overshoot without animating layout. */
 :root{--kp-tap:150ms;--kp-surface:340ms;--kp-stagger:60ms;--kp-spring:cubic-bezier(.22,1.08,.36,1);--kp-settle:cubic-bezier(.2,.8,.2,1)}
+/* Legacy entrances start hidden; cancelling them must restore their final state. */
+#kp-sales-app .hero>div:first-child>*,#kp-sales-app .hero .date{opacity:1!important;transform:none!important}
+#kp-sales-app .kp-lead-generator>.hero{min-height:0!important;height:auto!important;display:block!important;padding:24px!important}
+#kp-sales-app .kp-lead-generator>.hero>div{width:100%!important;max-width:720px!important}
+#kp-sales-app .kp-lead-generator>.hero h2{color:var(--xp-text)!important;font-size:clamp(30px,4vw,46px)!important;line-height:1.1!important;margin:10px 0!important}
+#kp-sales-app .kp-lead-generator>.hero .muted{color:var(--xp-muted)!important;line-height:1.6!important;margin:0!important}
+#kp-sales-app .kp-generator-fields :is(input,select){appearance:none!important;min-height:48px!important;height:48px!important;padding:12px 14px!important;border-radius:12px!important;background-color:var(--xp-soft)!important;color:var(--xp-text)!important;border:1px solid var(--xp-border)!important;font-size:14px!important}
+#kp-sales-app .kp-generator-fields select{padding-right:38px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;background-position:right 14px center!important;background-repeat:no-repeat!important}
+#kp-sales-app .brand img{display:block!important;visibility:visible!important;opacity:1!important;filter:none!important;transform:none!important}
 html[data-kp-mode="dark"]{--xp-bg:#0c0d10;--xp-surface:#15171c;--xp-soft:#1e2128;--xp-text:#f3f4f7;--xp-muted:#a2a7b4;--xp-border:#2a2e37}
 :is(#kp-sales-app,.kp-motion-layer,.kp-profile-layer) *, :is(#kp-sales-app,.kp-motion-layer,.kp-profile-layer) *::before,:is(#kp-sales-app,.kp-motion-layer,.kp-profile-layer) *::after{animation:none!important;scroll-behavior:auto;transition-property:color,background-color,border-color,opacity,transform!important;transition-duration:var(--kp-tap)!important;transition-timing-function:var(--kp-settle)!important}
 :is(#kp-sales-app,.kp-motion-layer,.kp-profile-layer) button,:is(#kp-sales-app,.kp-motion-layer,.kp-profile-layer) a,:is(#kp-sales-app,.kp-motion-layer,.kp-profile-layer) summary{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
