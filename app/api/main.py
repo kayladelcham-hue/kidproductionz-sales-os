@@ -1540,6 +1540,7 @@ def outscraper_generate(req: OutscraperGenerateRequest, request: Request):
 @app.get('/{path:path}')
 def spa_fallback(path:str):
     if path.startswith('api/'): raise HTTPException(404,'API route not found')
+    if path.rstrip('/')=='install': path='install.html'
     root=FRONTEND_DIST.resolve()
     candidate=(root/path).resolve()
     if not candidate.is_relative_to(root): raise HTTPException(404,'Not found')
