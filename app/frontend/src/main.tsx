@@ -2,6 +2,7 @@ import './LegacyLayouts.css';
 import './DesignSystem.css';
 import {WorkspaceShell} from './WorkspaceShell';
 import {BusinessHero} from './BusinessHero';
+import {ContactMission} from './ContactMission';
 import {DiscoveryWorkspace} from './DiscoveryWorkspace';
 import {createPortal} from 'react-dom';
 import SalesDashboard from './SalesDashboard';
@@ -74,7 +75,7 @@ function UpNext({campaign}:{campaign:string}){
   const [confirmation,setConfirmation]=useState('');
   const [progress,setProgress]=useState<any>(null);
   const [session,setSession]=useState({contacts:0,points:0});
-  const [powerMinutes,setPowerMinutes]=useState(0);
+  const [powerMinutes,setPowerMinutes]=useState(20);
   const [secondsLeft,setSecondsLeft]=useState(0);
 
   useEffect(()=>{setIdx(0);setContacting(false);setToast(null);setRemoved([]);setSession({contacts:0,points:0});api.momentum().then(setProgress).catch(()=>setProgress(null))},[campaign]);
@@ -96,6 +97,7 @@ function UpNext({campaign}:{campaign:string}){
       if(kind==='CONTACT'){
         const result=await api.activity(current.prospect_id,{status:'CONTACTED'});
         if(result?.momentum?.points){setToast(result.momentum);const gained=Number(result.momentum.points||0)+Number(result.momentum.bonus_points||0)+Number(result.momentum.weekly_bonus_points||0);setSession(value=>({contacts:value.contacts+1,points:value.points+gained}));setProgress((value:any)=>value?({...value,total:Number(value.total||0)+gained,mission:{...value.mission,contacts:Number(value.mission?.contacts||0)+1,moves_remaining:Math.max(0,Number(value.mission?.moves_remaining||0)-1)}}):value)}
+        void api.momentum().then(setProgress).catch(()=>setProgress(null));
         confirmLeadMotion(leadCard.current);
         setConfirmation(`${current.business_name||current.name||'Lead'} → Contacted. Your next lead is ready.`);
         removeAndNext(Number(current.prospect_id));
@@ -123,9 +125,7 @@ function UpNext({campaign}:{campaign:string}){
   const decisionMaker=current.contact_name||current.owner_name||current.decision_maker||'Decision-maker not confirmed';
 
   return <div className="sell-focus">
-    <div className="sell-session-head"><div><p className="eyebrow">START SELLING</p><h2>One good move at a time.</h2></div><div className="sell-session-score"><b>+{session.points}</b><span>this session</span><small>{items.length} move{items.length===1?'':'s'} ready</small></div></div>
-    <section className="sell-mission-strip"><span><b>{progress?.mission?.contacts||0} / {progress?.mission?.contacts_target||8}</b> today</span><div role="progressbar" aria-label="Today’s contacts" aria-valuemin={0} aria-valuemax={progress?.mission?.contacts_target||8} aria-valuenow={progress?.mission?.contacts||0}><i style={{width:'100%',transform:`scaleX(${Math.min(1,Number(progress?.mission?.contacts||0)/Math.max(1,Number(progress?.mission?.contacts_target||8)))})`}}/></div><small>{progress?.mission?.moves_remaining??8} moves left · +{progress?.mission?.reward||25} mission reward</small></section>
-    <section className="power-hour"><div><p className="eyebrow">POWER HOUR</p><b>{secondsLeft?`${String(Math.floor(secondsLeft/60)).padStart(2,'0')}:${String(secondsLeft%60).padStart(2,'0')}`:'Focus your selling session'}</b><small>{secondsLeft?`${session.contacts} meaningful moves completed`:'Choose a distraction-light sprint. You control every action.'}</small></div>{secondsLeft?<button onClick={()=>setSecondsLeft(0)}>End session</button>:<div>{[20,30,60].map(minutes=><button key={minutes} aria-pressed={powerMinutes===minutes} onClick={()=>setPowerMinutes(minutes)}>{minutes}m</button>)}<button className="primary" disabled={!powerMinutes} onClick={()=>setSecondsLeft(powerMinutes*60)}>Start</button></div>}</section>
+    <ContactMission progress={progress} points={session.points} ready={items.length} minutes={powerMinutes} seconds={secondsLeft} onMinutes={setPowerMinutes} onStart={()=>setSecondsLeft(powerMinutes*60)} onEnd={()=>setSecondsLeft(0)}/>
     <div className="kp-confirmation" role="status" aria-live="polite">{confirmation}</div>
     <article ref={leadCard} key={current.prospect_id} className={`sell-lead-card kp-lead-arrival ${contacting?'kp-is-focused':''}`}>
       <BusinessHero business={{...current,name}} compact/><div className="sell-lead-top"><div><span>{score!=null?`${score} MATCH · `:''}{priority}</span><h1>{name}</h1><p>{[current.category,current.city,current.state].filter(Boolean).join(' · ')||'Business lead'}</p></div>{score!=null&&<strong>{score}<small>ICP</small></strong>}</div>
@@ -133,10 +133,10 @@ function UpNext({campaign}:{campaign:string}){
       <div className="sell-quick-context"><span><small>Talk to</small><b>{decisionMaker}</b></span><span><small>Recommended angle</small><b>{q.recommended_action||'Lead with the clearest business result you can create.'}</b></span></div>
       <details className="sell-game-plan"><summary>View game plan</summary><div>{q.matches?.length>0&&<p><b>Matches:</b> {q.matches.join(' · ')}</p>}{q.risks?.length>0&&<p><b>Watch for:</b> {q.risks.join(' · ')}</p>}{q.missing_information?.length>0&&<p><b>Still need:</b> {q.missing_information.join(' · ')}</p>}<p><b>Previous activity:</b> {prettyLabel(current.sales_status||'Not contacted')}</p></div></details>
       {contacting&&<section className="sell-contact-panel"><h3>Choose how you want to reach out</h3><div>{current.phone&&<a href={`tel:${current.phone}`}>Call {current.phone}</a>}{current.email&&<a href={`mailto:${current.email}`}>Email {current.email}</a>}{current.social&&<a href={current.social} target="_blank" rel="noreferrer">Open social</a>}{current.website&&<a href={current.website} target="_blank" rel="noreferrer">Open website</a>}</div>{!current.phone&&!current.email&&!current.social&&!current.website&&<p>We need a little more contact information first. Save this lead for later while you research the right person.</p>}<button className="primary" disabled={busy} aria-busy={busy} onClick={()=>act('CONTACT')}>{busy?'Saving…':'I contacted them'}</button></section>}
-      <footer className="sell-actions"><button className="primary" disabled={busy} aria-expanded={contacting} onClick={()=>setContacting(value=>!value)}>{contacting?'Close contact options':'Contact lead'}</button><button disabled={busy} onClick={next}>Skip</button><button disabled={busy} onClick={()=>act('NOT_FIT')}>Not a fit</button><button disabled={busy} onClick={()=>act('LATER')}>Save for later</button></footer>
+      <footer className="sell-actions"><button className="primary" disabled={busy} aria-expanded={contacting} onClick={()=>setContacting(value=>!value)}><span aria-hidden="true">☎</span><span>{contacting?'Close':'Contact'}</span></button><button disabled={busy} onClick={next}><span aria-hidden="true">→</span><span>Skip</span></button><button disabled={busy} onClick={()=>act('NOT_FIT')}><span aria-hidden="true">×</span><span>Not a fit</span></button><button disabled={busy} onClick={()=>act('LATER')}><span aria-hidden="true">◷</span><span>Later</span></button></footer>
     </article>
     {message&&<p className="notice" role="alert">{message}</p>}
-    <p className="sell-quality-note">Momentum rewards qualified outreach, replies, meetings, proposals, and wins.</p>
+
     {toast&&<MomentumToast event={toast} onDone={()=>setToast(null)}/>}
   </div>
 }
@@ -532,7 +532,7 @@ function App(){
     page==='Runs'?<Runs/>:
     page==='Momentum'?<CoreMomentum/>:
     page==='More'?<CoreMore onNavigate={setPage}/>:<Settings campaign={campaign}/>;
-  return <><WorkspaceShell page={page} onNavigate={setPage} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} menuOpen={mobileMenuOpen} onMenu={()=>setMobileMenuOpen(true)} blocked={mobileMenuOpen||tourOpen}><div className="kp-page" key={`${page}:${campaign}`}>{content}</div>{hubProspect&&<ProspectDrawer key={hubProspect.prospect_id??hubProspect.id} item={hubProspect} onClose={()=>{setHubProspect(null);setDashboardRevision(x=>x+1)}}/>}</WorkspaceShell>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>} {tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<React.Suspense fallback={null}><SalesAgent campaign={campaign} discoveryIds={discoveryContext} onOpenBusiness={id=>{setPage('Prospects');setDiscoveryContext([id])}} onDiscover={()=>setPage('Home')}/></React.Suspense></>;
+  return <><WorkspaceShell page={page} onNavigate={setPage} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} menuOpen={mobileMenuOpen} onMenu={()=>setMobileMenuOpen(true)} blocked={mobileMenuOpen}><div className="kp-page" key={`${page}:${campaign}`}>{content}</div>{hubProspect&&<ProspectDrawer key={hubProspect.prospect_id??hubProspect.id} item={hubProspect} onClose={()=>{setHubProspect(null);setDashboardRevision(x=>x+1)}}/>}</WorkspaceShell>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>} {tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<React.Suspense fallback={null}><SalesAgent campaign={campaign} discoveryIds={discoveryContext} onOpenBusiness={id=>{setPage('Prospects');setDiscoveryContext([id])}} onDiscover={()=>setPage('Home')}/></React.Suspense></>;
 
 }
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}

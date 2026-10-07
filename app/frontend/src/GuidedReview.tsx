@@ -4,6 +4,7 @@ import {BusinessHero} from './BusinessHero';
 import {FitSignals} from './FitSignals';
 import {FocusCarousel} from './FocusCarousel';
 import {SkyeGuide} from './SkyeGuide';
+import {SavedBusinessCarousel} from './SavedBusinessCarousel';
 
 const labels: Record<string,string> = {
   QUALIFIED:'Looks like a fit', NEEDS_RESEARCH:'Not sure', DISQUALIFIED:'Not a fit', UNREVIEWED:'Not reviewed',
@@ -42,7 +43,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   const previousBusiness=round.length>1?businesses.find(x=>x.id===round[(index-1+round.length)%round.length]):undefined;
   const nextBusiness=round.length>1?businesses.find(x=>x.id===round[(index+1)%round.length]):undefined;
   const latest = businesses.find(x=>x.id===current);
-  const savedFit=[...businesses].reverse().find(row=>row.saved&&row.decision==='QUALIFIED');
+  const savedFits=[...businesses].reverse().filter(row=>row.saved&&row.decision==='QUALIFIED');
   const reviewed = businesses.filter(x=>x.decision!=='UNREVIEWED').length;
   const saved = businesses.filter(x=>x.saved).length;
   const remaining = businesses.filter(x=>x.decision==='UNREVIEWED');
@@ -115,7 +116,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   };
 
   return <section className="dw-guided" aria-label="Review businesses one at a time">
-    <SkyeGuide compact mission={round.length?`Review ${round.length}`:'Review complete'} steps={round.map(id=>({id,name:businesses.find(row=>row.id===id)?.name||'Business',done:businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')}))}>{current?'Does it fit?':'Saved. What’s next?'}</SkyeGuide>
+    {(current||round.length>0)&&<SkyeGuide compact mission={round.length?`Review ${round.length}`:'Review complete'} steps={round.map(id=>({id,name:businesses.find(row=>row.id===id)?.name||'Business',done:businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')}))}>{current?'Does it fit?':'Saved. What’s next?'}</SkyeGuide>}
     {error&&<p role="alert">{error}</p>}
 
     {loading&&<p role="status">Loading…</p>}
@@ -133,7 +134,8 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
       </details>
     </>}</article></FocusCarousel>}
     {current&&business?.id===current&&!loading&&<div className="dw-decision-dock" role="group" aria-label="Does this look worth contacting?"><div className="dw-actions dw-verdicts">{['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED'].map(outcome=><button key={outcome} className={outcome==='QUALIFIED'?'dw-primary':outcome==='NEEDS_RESEARCH'?'dw-not-sure':''} disabled={busy||retrySave} onClick={()=>choose(outcome)}><span aria-hidden="true">{outcome==='QUALIFIED'?'👍':outcome==='NEEDS_RESEARCH'?'?':'×'}</span>{labels[outcome]}</button>)}</div><p>Saves automatically.{undo&&<button disabled={busy} onClick={undoLast}>Undo</button>}</p>{retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry save</button>}</div>}
-    <div className="dw-review-foot">{notice&&<div className="dw-celebration" role="status" key={`${index}-${notice}`}><span aria-hidden="true">✓</span><p>{notice}</p></div>}{savedFit&&<button className="dw-saved-next" onClick={()=>onOpen(savedFit)}><b>Next step</b><span>{savedFit.name}</span><span aria-hidden="true">→</span></button>}</div>
+    <div className="dw-review-foot">{notice&&<div className="dw-celebration" role="status" key={`${index}-${notice}`}><span aria-hidden="true">✓</span><p>{notice}</p></div>}</div>
+    {!current&&savedFits.length>0&&<SavedBusinessCarousel businesses={savedFits} onOpen={onOpen}/>}
     {!current&&undo&&<button disabled={busy} onClick={undoLast}>Undo</button>}
     {!current&&<div className="dw-round-complete">
       <h3 ref={heading} tabIndex={-1}>{businesses.length?'Nice work. What’s next?':'Nothing found yet.'}</h3>

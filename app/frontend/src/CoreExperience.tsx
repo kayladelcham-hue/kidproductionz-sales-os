@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useState} from 'react';
 import {api,authApi} from './api';
 import {DealPanel} from './Lifecycle';
 import {BusinessHero} from './BusinessHero';
+import {LevelTrack} from './LevelTrack';
 
 const cash=(value:any)=>`$${Number(value||0).toLocaleString(undefined,{maximumFractionDigits:0})}`;
 const words=(value:any)=>String(value||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
@@ -60,9 +61,9 @@ export function CorePipeline({campaign,onOpenContact}:{campaign:string;onOpenCon
 }
 
 export function CoreMomentum(){
- const [data,setData]=useState<any>(null);useEffect(()=>{api.momentum().then(setData).catch(()=>setData({total:0,level:{name:'Starter'},mission:{},weekly_goal:{},selling_rhythm:{}}))},[]);if(!data)return <section className="kx-loading"><span/><h2>Gathering your progress…</h2></section>;
+ const [data,setData]=useState<any>(null),[failed,setFailed]=useState(false);const load=()=>{setFailed(false);api.momentum().then(setData).catch(()=>setFailed(true))};useEffect(load,[]);if(failed)return <section role="alert"><h2>Progress couldn’t load.</h2><button onClick={load}>Try again</button></section>;if(!data)return <section className="kx-loading"><span/><h2>Gathering your progress…</h2></section>;
  const level=data.level||{},mission=data.mission||{},weekly=data.weekly_goal||{},progress=level.next_at?((data.total-level.floor)/(level.next_at-level.floor))*100:100;
- return <div className="kx-momentum"><section className="kx-level-hero"><div><p className="kx-kicker">KP MOMENTUM</p><h1>{level.name}</h1><p>Professional progress built from real selling work.</p></div><div className="kx-orbit" style={{'--progress':`${Math.min(100,progress)}%`} as React.CSSProperties}><strong>{data.total||0}</strong><small>Momentum</small></div><footer><Meter value={progress} label="Level progress"/><span>{level.next_name?`${level.remaining} until ${level.next_name}`:'Top level reached'}</span></footer></section>
+ return <div className="kx-momentum"><LevelTrack total={Number(data.total)||0} level={level}/>
   <div className="kx-momentum-flow"><section className="kx-mission-feature"><div><p className="kx-kicker">TODAY’S MISSION</p><h2>{mission.complete?'Mission complete':'Start the next conversations'}</h2><p>{mission.moves_remaining??0} meaningful moves left.</p><Meter value={Number(mission.contacts||0)/Math.max(1,Number(mission.contacts_target||8))*100} label="Daily mission progress"/></div><div><strong>{mission.contacts||0}<small> / {mission.contacts_target||8}</small></strong><span>qualified contacts</span><b>+{mission.reward||25}</b></div></section>
    <section className="kx-week"><header><span>THIS WEEK</span><b>{weekly.meaningful_moves||0} / {weekly.target||40}</b></header><Meter value={Number(weekly.meaningful_moves||0)/Math.max(1,Number(weekly.target||40))*100} label="Weekly progress"/><div>{[['Contacts',weekly.contacts],['Replies',weekly.replies],['Meetings',weekly.meetings],['Proposals',weekly.proposals]].map(([x,v])=><span key={String(x)}><b>{v||0}</b><small>{x}</small></span>)}</div><p>{data.selling_rhythm?.active_days||0} active selling days · Best week {data.selling_rhythm?.best_week||0}</p></section>
    <section className="kx-activity"><header><div><span>RECENT MOMENTUM</span><h2>Work that counted.</h2></div></header>{data.recent?.length?data.recent.slice(0,6).map((x:any,i:number)=><div key={`${x.created_at}-${i}`}><span><b>{words(x.event_type)}</b><small>{new Date(x.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span><strong>+{x.points}</strong></div>):<p>Your meaningful selling activity will appear here.</p>}</section>

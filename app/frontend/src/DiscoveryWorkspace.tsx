@@ -6,6 +6,7 @@ import {DiscoveryTools} from './DiscoveryTools';
 import {FitSignals} from './FitSignals';
 import {Icon} from './AppExperience';
 import {FocusCarousel} from './FocusCarousel';
+import {SavedBusinessCarousel} from './SavedBusinessCarousel';
 const GuidedReview=React.lazy(()=>import('./GuidedReview').then(module=>({default:module.GuidedReview})));
 import {useSurfaceDialog} from './useSurfaceDialog';
 
@@ -115,11 +116,11 @@ export function DiscoveryWorkspace({campaign,home=false,onNavigate,onCampaignRea
    {(!guided||tab==='saved')&&<>
    {selected.length>0&&<div className="dw-actions"><button className="dw-primary" disabled={busy} onClick={saveSelected}>Save {selected.length}</button><button onClick={()=>{onContext?.(selected);setMessage('Open Skye to compare these businesses.')}}>Compare</button><button onClick={()=>setSelected([])}>Cancel</button></div>}
    {ready&&visible.length===0&&result?.status!=='SEARCHING'&&<div className="dw-empty"><h3>{tab==='saved'?'Nothing saved here yet.':result?'No matches here.':'Let’s find customers.'}</h3><p>Try another business type or area.</p><button onClick={reset}>Clear filters</button><button onClick={()=>{setTab('results');setEditing(true);setStep(1)}}>Change search</button></div>}
-   <div className="dw-list">{visible.map((row:any)=>{const q=row.assessment||{};return <article key={row.id} className="kp-business-poster"><BusinessHero business={row} compact/>
+   {tab==='saved'?<SavedBusinessCarousel businesses={visible} onOpen={open} onFull={row=>void openSaved(row)}/>:<div className="dw-list">{visible.map((row:any)=>{const q=row.assessment||{};return <article key={row.id} className="kp-business-poster"><BusinessHero business={row} compact/>
     <div className="dw-row-top"><button className="dw-business-open" onClick={()=>open(row)}><h3>{row.name||row.company}</h3><span>{[row.category,[row.city,row.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ')||'Industry or location not recorded'}</span></button><span className="dw-badge">{decisionLabels[row.decision]}{row.saved?' · Saved':''}</span></div>
     <FitSignals assessment={q}/>
     <div className="dw-actions"><button onClick={()=>open(row)}>{row.saved?'View next steps':row.decision==='UNREVIEWED'?'Take a look':row.decision==='NEEDS_RESEARCH'?'Take another look':'Review my decision'}</button>{row.saved&&<details><summary>Advanced tools</summary><button onClick={()=>openSaved(row)}>Open full saved record</button></details>}{typeof row.id==='number'&&row.decision==='QUALIFIED'&&!row.saved&&<label className="dw-check"><input type="checkbox" checked={selected.includes(row.id)} onChange={e=>setSelected(x=>e.target.checked?[...x,row.id]:x.filter(id=>id!==row.id))}/>Select to save</label>}</div>
-   </article>})}</div></>}
+   </article>})}</div>}</>}
    {guided&&tab==='results'&&result&&result.status!=='SEARCHING'&&<React.Suspense fallback={<p role="status">Skye is opening your review…</p>}><GuidedReview key={result.id} businesses={allRows} campaign={activeCampaign.current} searchId={result.id} onUpdated={updateRow} onOpen={open} onBrowse={()=>setGuided(false)} onNewSearch={()=>{setEditing(true);setStep(0)}}/></React.Suspense>}
   </section>}
 
