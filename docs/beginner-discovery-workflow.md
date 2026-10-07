@@ -61,3 +61,11 @@ Production build and git diff --check pass. These changes do not alter records o
 The earlier focus-carousel release was confirmed on the live site by its deployed CSS asset, but its side cards were too obscured. The supplied three-screen reference now informs a visible three-column portrait composition on wide containers: a 420px active card and offset, lightly blurred side cards. Narrow containers retain a sharp center card with explicit side peeks; all fields stack within the portrait card. Home has a centered introductory heading, shorter Skye guidance, compact stage markers and real existing KP artwork. The first card includes a noninteractive Skye introduction at the left so the composition is visible from the start. No skincare/product imagery, mock metrics or fake businesses are added.
 
 Build and whitespace checks pass. This is a code/layout revision; its rendered visual fidelity still needs verification because browser policy blocks UI access.
+
+## Illustrated Skye hero review
+
+The supplied KP Sales OS concept informs a cyan/teal mission bar, illustrated hero avatars, a centered glowing business card with three short evidence rows, blurred real neighboring records and the three decision controls beneath the card. Mission markers count actual persisted decisions in the current round; no mock businesses, fake conversion forecasts or point awards from the concept image are copied. A saved-fit next-step button opens the actual saved business. Full evidence, sources, Skye explanations and notes remain accessible in the card details.
+
+Built-in image_gen generated original transparent Skye, café, salon and shop assets. Final assets are app/frontend/public/avatars/skye.png, cafe.png, salon.png and shop.png; exact prompts are in docs/hero-asset-prompts.json. Industry artwork is labeled as illustration and never substitutes for an asserted real logo. A record-provided logo retains priority; unsupported categories keep their existing emoji fallback. The public PNGs are copied unchanged from the generated originals and shared between center cards and previews.
+
+Production build and targeted API tests passed. The artwork was visually inspected and its transparency/file presence checked. Actual desktop/mobile rendering and motion still require verification; browser access remains blocked.
