@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {api} from './api';
+import {FocusCarousel} from './FocusCarousel';
 const GuidedReview=React.lazy(()=>import('./GuidedReview').then(module=>({default:module.GuidedReview})));
 import {useSurfaceDialog} from './useSurfaceDialog';
 
@@ -78,7 +79,7 @@ export function DiscoveryWorkspace({campaign,home=false,onNavigate,onCampaignRea
   {error&&<div className="dw-alert" role="alert">{error}<button onClick={()=>location.reload()}>Reload workspace</button></div>}
   {message&&<p role="status">{message}</p>}
   {!ready&&<p role="status">Loading your discovery workspace…</p>}
-  {(!result||editing)&&<section className="dw-target" aria-label="Who you want to sell to" ref={targetSurface} key={`setup-${step}`}>
+  {(!result||editing)&&<FocusCarousel activeKey={step} previous={step>0?{label:'Previous step',title:['Your offer','Business type','Location'][step-1],summary:[profile.offer,criteria.industry,[criteria.city,criteria.state].filter(Boolean).join(', ')][step-1]}:undefined} next={{label:'Coming next',title:['Business type','Location','Check your search','Review businesses'][step],summary:['Choose who to explore','Choose where to look','Confirm before searching','One business at a time, with Skye'][step]}}><section className="dw-target" aria-label="Who you want to sell to" ref={targetSurface} key={`setup-${step}`}>
    <p className="dw-step">Step {step+1} of 4 · {['What you sell','Who could use it','Where to look','Check your search'][step]}</p>
    <div className="dw-skye-guide" aria-label="Skye’s guidance"><strong>✦ Skye</strong><p>{[
     'Let’s find a potential customer together. First, what do you sell? A few words are enough.',
@@ -98,7 +99,7 @@ export function DiscoveryWorkspace({campaign,home=false,onNavigate,onCampaignRea
     <div className="dw-actions"><button className="dw-primary" disabled={!ready||busy||!valid||!allowance?.available||criteria.limit>allowance.max_per_search} onClick={run}>{busy?'Finding potential customers…':'Find potential customers'}</button></div>
     {!allowance?.available&&<p>{allowance?.message||'Checking search access…'}</p>}<small>{allowance?.configured&&`${allowance.remaining} businesses left in your monthly search allowance.`}</small>
    </>}
-  </section>}
+  </section></FocusCarousel>}
   {!editing&&searches.length>0&&<details className="dw-history"><summary>Your recent and saved searches ({searches.length})</summary>{searches.map(s=><article key={s.id}><div><b>{s.criteria.industry} · {s.criteria.city}, {s.criteria.state}</b><p>{words(s.status)} · {new Date(s.created_at).toLocaleString()} {s.saved?'· Saved search':''}</p></div><button onClick={()=>{setError('');setCriteria({...emptyCriteria,...s.criteria});setTab('results');setEditing(false);reset();void loadResult(s.id).catch((e:any)=>setError(e.message))}}>Resume search</button><button aria-label={`${s.saved?'Unsave':'Save'} search ${s.criteria.industry} ${s.criteria.city}`} onClick={()=>api.discoverySaveSearch(s.id,!s.saved).then(()=>loadHistory()).catch((e:any)=>setError(e.message))}>{s.saved?'Unsave search':'Save search'}</button></article>)}</details>}
   {!editing&&(result||saved.length>0||!home)&&<section className="dw-results" aria-label="Potential customer results">
    <div className="dw-tabs" role="group" aria-label="Potential customer view"><button aria-pressed={tab==='results'} onClick={()=>{setTab('results');setSelected([])}}>Businesses found</button><button aria-pressed={tab==='saved'} onClick={()=>{setTab('saved');setSelected([])}}>Saved potential customers ({saved.length})</button><button onClick={()=>{setEditing(true);setStep(0)}}>Start a new search</button></div>

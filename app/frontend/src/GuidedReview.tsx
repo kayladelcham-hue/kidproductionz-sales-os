@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {api} from './api';
+import {FocusCarousel} from './FocusCarousel';
 
 const labels: Record<string,string> = {
   QUALIFIED:'Looks like a fit', NEEDS_RESEARCH:'Not sure', DISQUALIFIED:'Not a fit', UNREVIEWED:'Not reviewed',
@@ -25,6 +26,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   const [index,setIndex] = useState(0);
   const [business,setBusiness] = useState<any>(null);
   const [notes,setNotes] = useState('');
+  const [loadAttempt,setLoadAttempt]=useState(0);
   const [loading,setLoading] = useState(false);
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
@@ -34,6 +36,8 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   const [undo,setUndo] = useState<any>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const current = round[index];
+  const previousBusiness=businesses.find(x=>x.id===round[index-1]);
+  const nextBusiness=businesses.find(x=>x.id===round[index+1]);
   const latest = businesses.find(x=>x.id===current);
   const reviewed = businesses.filter(x=>x.decision!=='UNREVIEWED').length;
   const saved = businesses.filter(x=>x.saved).length;
@@ -48,7 +52,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
     }).catch(e=>{if(!cancelled)setError(e.message||'This business could not load.');})
       .finally(()=>{if(!cancelled)setLoading(false);});
     return ()=>{cancelled=true;};
-  },[current,searchId]);
+  },[current,searchId,loadAttempt]);
 
   useEffect(()=>{
     if (business?.id===current && latest && latest.revision!==business.revision) setBusiness(latest);
@@ -114,8 +118,8 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
     {error&&<p role="alert">{error}</p>}
     {undo&&<button disabled={busy} onClick={undoLast}>Undo last decision</button>}
     {loading&&<p role="status">Opening the next business…</p>}
-    {current&&!loading&&!business&&<button onClick={()=>onOpen(businesses.find(x=>x.id===current))}>Open business details</button>}
-    {current&&business&&!loading&&<article className="dw-guided-card" key={business.id}>
+    {current&&!loading&&!business&&<button onClick={()=>setLoadAttempt(x=>x+1)}>Try opening this business again</button>}
+    {current&&<FocusCarousel activeKey={index} previous={previousBusiness?{label:'Just reviewed',title:previousBusiness.name,summary:labels[previousBusiness.decision]}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · ')}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><article className="dw-guided-card">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Opening the next business…'}</h3><p>Getting the recorded evidence…</p></div>:<>
       <h3 ref={heading} tabIndex={-1}>{business.name}</h3>
       <p>{business.category||'Business type not recorded'} · {[business.city,business.state].filter(Boolean).join(', ')||'Location not recorded'}</p>
       <button disabled={busy} onClick={explain}>Skye, walk me through this business</button>
@@ -137,7 +141,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
       <div className="dw-actions dw-verdicts">{['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED'].map(outcome=><button key={outcome} disabled={busy||retrySave} onClick={()=>choose(outcome)}>{labels[outcome]}</button>)}</div>
       <p>All three choices count as progress. “Looks like a fit” also saves the business.</p>
       {retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry saving this business</button>}
-    </article>}
+    </>}</article></FocusCarousel>}
     {!current&&<div className="dw-round-complete">
       <h3 ref={heading} tabIndex={-1}>{businesses.length?'Nice work. What’s next?':'No businesses came back from this search.'}</h3>
       <p>{businesses.length?`You’ve reviewed ${reviewed} businesses in this search and saved ${saved}. Your decisions are saved.`:'Try a different business type or location. We won’t change your search for you.'}</p>

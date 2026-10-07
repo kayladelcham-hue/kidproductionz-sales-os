@@ -49,3 +49,9 @@ Latest verification: production Vite build and 64 targeted API tests passed. The
 The supplied dashboard references inform layered teal-black panels, lime/cyan gradients, restrained glow, a four-stage tracker, and gentle stage/review entrances. Saved-decision feedback animates after the recorded action completes. Skye’s accent pulses briefly on entry rather than continuously. Hover/tap feedback, bright light-mode surfaces, existing KP theme accents and readable business/evidence typography are retained. Reduced-motion preferences disable decorative animation and transitions. The guided review module loads only when needed. No reference metrics, NFT artwork or invented business data were added.
 
 Validation: production Vite build and git diff --check pass. Static palette calculations check the defined text/background pairs; these are not a full accessibility audit. Mobile/desktop screenshots, actual motion and keyboard behavior still require browser verification, which remains blocked by the browser’s policy check.
+
+## Focus carousel
+
+Home setup and guided review now use a centered active card with dimmed, blurred previews of adjacent stages or actual business records. Only the active card contains controls; previews are hidden from assistive technology and cannot receive pointer or keyboard focus. Existing Next/Back and decision controls advance the carousel after validation or persistence. Side previews are clipped to avoid horizontal overflow, with narrower peeks on mobile. The loading card retains the deck while fresh details load. Reduced-motion preferences disable the entry transitions.
+
+Production build and git diff --check pass. These changes do not alter records or provider criteria. Actual mobile/desktop layout, blur rendering, focus and motion remain unverified because browser access is blocked.
