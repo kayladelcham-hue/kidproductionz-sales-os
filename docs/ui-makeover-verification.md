@@ -69,3 +69,7 @@ Contact actions now have icon-led responsive sizing with normal word wrapping; o
 - Initial publication attempt was blocked: Git push cannot read a GitHub username; the GitHub connector's create_blob returns internal errors, and read calls expose inconsistent required repository parameter schemas. No new PR or deployment was created for this batch.
 
 - Publication access restored after the user completed GitHub CLI authentication on October 7. The saved changes were pushed using Git; browser-rendered verification remains blocked.
+
+## Skye launcher placement repair
+- Corrected a misgrouped CSS selector that restricted the base floating launcher geometry to the detail-open body state. Skye now has unconditional fixed bottom-right positioning, with the existing mobile safe-area offset above navigation. Detail-open bottom navigation retains its own hide rule.
+- Added a regression check that base launcher positioning does not depend on opening details. Existing standalone manifest and install guide already provide a browser-chrome-free app window on supported browsers.
