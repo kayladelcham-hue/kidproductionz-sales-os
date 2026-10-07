@@ -55,3 +55,8 @@ html body .dw-modal .dw-detail>header{display:flex!important;grid-template-colum
 html body .dw-modal .dw-detail>header>div{flex:1;min-width:0}
 html body .dw-modal .dw-detail>header>button{flex:0 0 44px;min-width:44px}
 #kp-sales-app .dw-guided h3:focus-visible{outline:3px solid var(--dw-text);outline-offset:4px}
+
+/* Completion choices reflow rather than shrinking into six narrow columns. */
+#kp-sales-app .dw-round-complete .dw-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;align-items:stretch}
+#kp-sales-app .dw-round-complete .dw-actions button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;min-width:0;min-height:64px;padding:14px 18px;white-space:normal!important;overflow-wrap:anywhere}
+#kp-sales-app .dw-round-complete .dw-next-business{display:block;font-size:14px;font-weight:400;line-height:1.5;color:var(--dw-muted)}

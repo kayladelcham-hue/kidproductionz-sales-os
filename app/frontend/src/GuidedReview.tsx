@@ -142,8 +142,8 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
       <h3 ref={heading} tabIndex={-1}>{businesses.length?'Nice work. What’s next?':'No businesses came back from this search.'}</h3>
       <p>{businesses.length?`You’ve reviewed ${reviewed} businesses in this search and saved ${saved}. Your decisions are saved.`:'Try a different business type or location. We won’t change your search for you.'}</p>
       <div className="dw-actions">
-        {remaining.length>0&&<button className="dw-primary" onClick={()=>{setRound(remaining.slice(0,5).map(x=>x.id));setIndex(0);setUndo(null);setNotice('');}}>Review up to 5 more</button>}
-        {businesses.filter(x=>x.saved).slice(0,3).map(row=><button key={row.id} onClick={()=>onOpen(row)}>Next steps for {row.name}</button>)}
+        {remaining.length>0&&<button className="dw-primary" onClick={()=>{setRound(remaining.slice(0,5).map(x=>x.id));setIndex(0);setUndo(null);setNotice('');}}>Review {Math.min(5,remaining.length)} more</button>}
+        {businesses.filter(x=>x.saved).slice(0,3).map(row=><button key={row.id} onClick={()=>onOpen(row)}><span>Next steps</span><span className="dw-next-business">{row.name}</span></button>)}
         <button onClick={onBrowse}>View all businesses</button>
         <button onClick={onNewSearch}>Start another search</button>
       </div>
