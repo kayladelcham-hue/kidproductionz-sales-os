@@ -46,7 +46,7 @@ def test_single_manual_lead_refresh_uses_website_evidence_and_history(rescoring_
     sessions,ids=rescoring_db
     html="Harbor House is a boutique hotel in Tampa. Our new location is now open with a premium guest experience."
     result=rescore(ids["lead"],ids["user"],ids["user"],True,fetcher=lambda _:html)
-    assert result["new_score"]>result["previous_score"]
+    assert result["new_score"] == 50  # Only recorded geography matches; enrichment does not invent a category.
     assert result["score_delta"]==result["new_score"]-55
     assert "WEBSITE" in result["sources_used"]
     assert all(item["evidence_text"] for item in result["evidence"])

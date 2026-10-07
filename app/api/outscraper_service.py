@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -104,6 +105,7 @@ def normalize_place(place: dict, fallback_category: str = "") -> dict:
             or place.get("business_name")
         ),
         "category": category,
+        "category_inferred_from_query": not bool(place.get("category") or place.get("type") or place.get("subtypes")),
         "city": city,
         "state": state,
         "address": address,
@@ -171,6 +173,7 @@ def search_google_maps(
 
     params = urlencode({
         "query": query,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
         "limit": limit,
         "async": "false",
     })
@@ -240,11 +243,14 @@ def search_google_maps(
 
     result = {
         "query": query,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
         "requested_limit": limit,
         "received_count": len(places),
         "normalized_count": len(normalized),
         "unique_count": len(unique),
         "duplicates_removed": len(normalized) - len(unique),
+        "skipped": len(places) - len(normalized),
+        "partial": bool(len(places) - len(normalized)),
         "leads": unique,
     }
 

@@ -59,6 +59,8 @@ from .lifecycle import router as lifecycle_router
 app.include_router(lifecycle_router)
 from .rescoring import router as rescoring_router
 app.include_router(rescoring_router)
+from .discovery import router as discovery_router
+app.include_router(discovery_router)
 
 # Private single-user session foundation. Local desktop mode remains deliberately
 # frictionless; cloud mode opts into cookie-authenticated API access.

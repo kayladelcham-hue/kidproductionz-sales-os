@@ -61,10 +61,27 @@ async function mutate<T>(path:string,method:'PATCH'|'PUT'|'DELETE',body?:any):Pr
   if(body!==undefined) headers['Content-Type']='application/json';
   const r=await fetch(`${BASE}${path}`,{method,headers,credentials:'include',body:body===undefined?undefined:JSON.stringify(body)});
   if(r.status===403){csrfToken=null;throw new Error('CSRF_403');}
-  if(!r.ok)throw new Error(`API_${r.status}`);return r.json()
+  if(!r.ok){const data=await r.json().catch(()=>({}));throw new Error(typeof data.detail==='string'?data.detail:`API_${r.status}`)}return r.json()
 }
 export const authApi={me:()=>get<any>('/api/auth/me'),login:async(username:string,password:string)=>{const r=await fetch(BASE+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});if(!r.ok){const data=await r.json().catch(()=>({}));throw new Error(data.detail||'Could not sign in. Check your email and password.')}return r.json()},logout:()=>post<any>('/api/auth/logout',{})};
 export const api={
+ discoveryTarget:()=>get<any>('/api/discovery/target'),
+ discoverySaveTarget:(criteria:any)=>mutate<any>('/api/discovery/target','PUT',criteria),
+ discoverySearches:(campaign:string)=>get<any[]>(`/api/discovery/searches?campaign_slug=${encodeURIComponent(campaign)}`),
+ discoveryRun:(body:any)=>post<any>('/api/discovery/searches',body),
+ discoveryResults:(id:string)=>get<any>(`/api/discovery/searches/${id}`),
+ discoverySaveSearch:(id:string,saved:boolean)=>mutate<any>(`/api/discovery/searches/${id}`,'PATCH',{saved}),
+ discoverySaved:(campaign:string)=>get<any[]>(`/api/discovery/saved?campaign_slug=${encodeURIComponent(campaign)}`),
+ discoveryDetail:(id:number,search?:string)=>get<any>(`/api/discovery/businesses/${id}${search?`?search_id=${encodeURIComponent(search)}`:''}`),
+ discoveryDecide:(id:number,body:any)=>mutate<any>(`/api/discovery/businesses/${id}/qualification`,'PATCH',body),
+ discoveryUndo:(id:number,body:any)=>post<any>(`/api/discovery/businesses/${id}/undo`,body),
+ discoverySave:(id:number)=>post<any>(`/api/discovery/businesses/${id}/save`,{}),
+ discoveryBulkSave:(business_ids:number[])=>post<any[]>(`/api/discovery/save-qualified`,{business_ids}),
+ discoveryOutreach:(id:number)=>post<any>(`/api/discovery/businesses/${id}/outreach`,{}),
+ discoveryOutreachIds:(campaign:string)=>get<number[]>(`/api/discovery/outreach?campaign_slug=${encodeURIComponent(campaign)}`),
+ discoveryReviewLegacy:(id:number)=>post<any>(`/api/discovery/legacy/${id}/review`,{}),
+ discoveryExplain:(body:any)=>post<any>('/api/discovery/explain',body),
+
 recoveryCode:(password:string)=>post<any>('/api/auth/recovery-code',{password}),discoverySettings:()=>get<any>('/api/settings/discovery'),saveGoogleFeatures:(body:any)=>post<any>('/api/settings/google',body),
 aiChat:(body:any)=>post<any>('/api/ai/chat',body),
 commandCenter:(campaign?:string)=>get<any>(`/api/home/command-center${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),

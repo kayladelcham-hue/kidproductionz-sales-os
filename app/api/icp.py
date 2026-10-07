@@ -52,7 +52,12 @@ def _geography_matches(lead: dict[str, Any], values: list[str]) -> list[str]:
     matched=[]
     for value in values:
         normalized=re.sub(r"[^a-z0-9]+"," ",value.casefold()).strip()
-        if (city and city in normalized) or (state and re.search(rf"\b{re.escape(state.casefold())}\b",normalized)) or (state_name and state_name in normalized):matched.append(value)
+        if ',' in value:
+            target_city,target_state=value.split(',',1)
+            same_city=re.sub(r"[^a-z0-9]+"," ",target_city.casefold()).strip()==city
+            same_state=target_state.strip().upper()==state or target_state.strip().casefold()==state_name
+            if same_city and same_state:matched.append(value)
+        elif (city and normalized==city) or (state and normalized==state.casefold()) or (state_name and normalized==state_name):matched.append(value)
     return matched
 
 def _priority(score: float, disqualified: bool) -> str:
@@ -63,8 +68,8 @@ def _priority(score: float, disqualified: bool) -> str:
 
 def score_lead(lead: dict[str, Any], profile: dict[str, Any], weights: dict[str, float] | None = None) -> dict[str, Any]:
     profile = normalize_profile(profile); weights = validate_weights(weights)
-    company_text = _text(lead.get("category"), lead.get("normalized_category"), lead.get("name"), lead.get("business"))
-    evidence_text = _text(lead.get("description"), lead.get("research"), lead.get("visual_evidence"), lead.get("ownership_evidence"), lead.get("category"), lead.get("name"))
+    company_text = _text(lead.get("category"), lead.get("normalized_category"))
+    evidence_text = _text(lead.get("description"), lead.get("research"), lead.get("visual_evidence"), lead.get("ownership_evidence"))
     location_text = _text(lead.get("city"), lead.get("state"), lead.get("address"))
     contact = bool(lead.get("phone") or lead.get("email") or lead.get("website") or lead.get("social"))
     named = bool(lead.get("owner") or lead.get("decision_maker") or lead.get("contact_name"))
@@ -81,22 +86,21 @@ def score_lead(lead: dict[str, Any], profile: dict[str, Any], weights: dict[str,
     closed = str(lead.get("status") or "").casefold() in {"closed", "permanently_closed"} or bool(lead.get("permanently_closed"))
     if closed: disqualifiers.append("Business appears permanently closed")
 
-    dimensions = {
-        "fit": (0.45 if industry_matches else 0.1) + (0.35 if geography_matches else 0) + (0.2 if profile["ownership_preferences"] and _matches(evidence_text, profile["ownership_preferences"]) else 0),
-        "need": min(1.0, 0.45 + 0.3 * len(positive_matches)) if profile["problems_solved"] else 0.25,
-        # Missing contact or decision-maker data is unknown, not proof that access is poor.
-        "authority": 1.0 if named else 0.65 if contact else 0.5,
-        "value": 0.8 if (profile.get("ideal_customer_value") or profile.get("offer_value_max")) else 0.55,
-        "friction": 0.8 if contact and not disqualifiers else 0.25 if disqualifiers else 0.5,
-        "timing": min(1.0, 0.3 + 0.35 * len(positive_matches)),
-    }
-    score = round(sum(weights[key] * max(0, min(1, dimensions[key])) for key in weights))
+    # Business fit uses only the recorded industry/geography criteria. Offer
+    # value, a contact path, and an unidentified buyer are not buying evidence.
+    checks=[]
+    if profile['target_industries'] or profile['business_types']:checks.append(bool(industry_matches))
+    if profile['geography']:checks.append(bool(geography_matches))
+    score=round(100*sum(checks)/len(checks)) if checks else 0
+    dimensions={key:0 for key in DEFAULT_WEIGHTS}
+    dimensions['fit']=score
     if disqualifiers: score = min(score, 49)
+    dimensions["fit"]=score
     matches = []
     if industry_matches: matches.append("Matches target industry: " + ", ".join(industry_matches))
     if geography_matches: matches.append("Within target geography: " + ", ".join(geography_matches))
     if contact: matches.append("Has a reachable contact path")
-    if named: matches.append("Decision-maker information is available")
+    if named: matches.append("Named contact recorded; role and identity are not verified")
     signals = [f"Detected signal: {value}" for value in positive_matches]
     missing = []
     if not industry_matches: missing.append("Target industry match is not confirmed")
@@ -105,8 +109,8 @@ def score_lead(lead: dict[str, Any], profile: dict[str, Any], weights: dict[str,
     if not positive_matches: missing.append("No current buying or urgency signal is confirmed")
     if not contact: missing.append("A contact path has not been identified yet")
     risks = list(disqualifiers)
-    action = "Skip or verify the disqualifier before spending time on outreach." if disqualifiers else ("Contact the likely decision-maker and lead with " + (profile["problems_solved"][0] if profile["problems_solved"] else "the clearest problem your offer solves") + ".")
-    return {"score": score, "priority": _priority(score, bool(disqualifiers)), "dimensions": {k: round(v * weights[k]) for k, v in dimensions.items()}, "matches": matches, "signals": signals, "missing_information": missing, "risks": risks, "disqualifiers": disqualifiers, "recommended_action": action}
+    action = "Skip or verify the disqualifier before spending time on outreach." if disqualifiers else ("Research the decision-maker and verify the need before outreach about " + (profile["problems_solved"][0] if profile["problems_solved"] else "the clearest problem your offer solves") + ".")
+    return {"score": score, "priority": _priority(score, bool(disqualifiers)), "dimensions": dimensions, "score_type":"RECORDED_CRITERIA_FIT", "score_meaning":"Percentage of stated industry/location criteria matched by recorded fields; not a conversion probability. Missing budget, need, authority and timing are unknown.", "matches": matches, "signals": signals, "missing_information": missing, "risks": risks, "disqualifiers": disqualifiers, "recommended_action": action}
 
 def discovery_defaults(profile: dict[str, Any]) -> dict[str, Any]:
     profile = normalize_profile(profile)
