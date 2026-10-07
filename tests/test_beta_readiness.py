@@ -287,3 +287,31 @@ def test_health_reports_database_failure(accounts,monkeypatch):
     def unavailable(): raise RuntimeError('synthetic outage')
     monkeypatch.setattr(api,'connect',unavailable)
     assert TestClient(api.app).get('/api/health').status_code==503
+
+
+def test_beginner_discovery_through_real_auth_csrf_and_queue(accounts,monkeypatch):
+    from app.api import outscraper_service
+    a,_=accounts[0];b,_=accounts[1]
+    monkeypatch.setattr(outscraper_service,'search_google_maps',lambda *args:{'leads':[{'name':'Synthetic fit business','category':'Salon','city':'Orlando','state':'FL','place_id':'synthetic-fit','phone':'5550100'}]})
+    criteria={'industry':'Salon','city':'Orlando','state':'FL','limit':10}
+    assert a.put('/api/discovery/target',json=criteria).status_code==200
+    assert a.put('/api/icp/profile',json={'profile':{'offer':'Website design','business_types':['Salon'],'geography':['Orlando, FL']}}).status_code==200
+    result=a.post('/api/discovery/searches',json={'campaign':'alice','criteria':criteria})
+    assert result.status_code==200,result.text
+    found=result.json();bid=found['businesses'][0]['id']
+    assert b.get(f'/api/discovery/businesses/{bid}').status_code==404
+    token=a.headers.pop('X-CSRF-Token')
+    assert a.patch(f'/api/discovery/businesses/{bid}/qualification',json={'decision':'QUALIFIED','reason':'Fits my search','revision':0}).status_code==403
+    a.headers['X-CSRF-Token']=token
+    assert a.patch(f'/api/discovery/businesses/{bid}/qualification',json={'decision':'QUALIFIED','reason':'Fits my search','revision':0,'notes':'Check website first'}).status_code==200
+    pid=a.post(f'/api/discovery/businesses/{bid}/save').json()['prospect_id']
+    assert a.post(f'/api/discovery/businesses/{bid}/outreach').status_code==200
+    assert any(row['prospect_id']==pid for row in a.get('/api/queue?campaign=alice').json()['daily_queue'])
+    assert a.post('/api/auth/logout').status_code==200
+    assert a.post('/api/auth/login',json={'username':'alice@example.test','password':'IsolatedTestPassword!'}).status_code==200
+    detail=a.get(f'/api/discovery/businesses/{bid}').json()
+    assert detail['decision']=='QUALIFIED' and detail['notes']=='Check website first' and detail['saved']
+    assert a.post('/api/discovery/explain',json={'campaign':'alice','business_ids':[bid],'question':'Draft a first message.'}).status_code==403
+    a.headers['X-CSRF-Token']=a.get('/api/auth/csrf').json()['csrf_token']
+    draft=a.post('/api/discovery/explain',json={'campaign':'alice','business_ids':[bid],'question':'Draft a first message.'}).json()
+    assert 'Website design' in draft['draft'] and 'Nothing has been sent' in draft['reply']

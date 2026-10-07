@@ -35,3 +35,12 @@ def test_profile_completion_and_discovery_defaults():
     assert defaults["suggested_business_type"] == "independent hospitality"
     assert defaults["suggested_city"] == "Miami"
     assert defaults["suggested_state"] == "FL"
+
+
+def test_contact_offer_value_and_name_do_not_inflate_business_fit():
+    base={"name":"Hotel expanding", "city":"Miami","state":"FL"}
+    result=score_lead({**base,"phone":"555","owner":"Owner"},profile())
+    assert result['score']==50
+    assert result['signals']==[]
+    assert result['score_type']=='RECORDED_CRITERIA_FIT'
+    assert score_lead({**base,"category":"boutique hotel","city":"Orlando"},profile())['score']<=49
