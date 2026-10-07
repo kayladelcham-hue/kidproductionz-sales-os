@@ -7,6 +7,9 @@ import {FocusCarousel} from '../../app/frontend/src/FocusCarousel';
 import {BusinessHero} from '../../app/frontend/src/BusinessHero';
 import {GuidedReview} from '../../app/frontend/src/GuidedReview';
 import {api} from '../../app/frontend/src/api';
+import {CorePipeline} from '../../app/frontend/src/CoreExperience';
+import {FitSignals} from '../../app/frontend/src/FitSignals';
+import {DiscoveryTools} from '../../app/frontend/src/DiscoveryTools';
 import {Appearance} from '../../app/frontend/src/AppExperience';
 import SalesAgent from '../../app/frontend/src/SalesAgent';
 const dom={window:window};
@@ -33,4 +36,7 @@ await click(button('Undo last decision'));assert.equal(undoCalls,1);assert.match
 await click(button('?Not sure'));assert.equal(records.get(1)!.decision,'NEEDS_RESEARCH');await click(button('×Not a fit'));assert.equal(records.get(2)!.decision,'DISQUALIFIED');assert.match(host.textContent||'',/reviewed 2 businesses/);assert.match(host.textContent||'',/saved 1/);ok('all decision types count and completion uses actual reviewed/saved counts');
 await render(<Appearance/>);await click(button('☀ Light'));assert.equal(document.documentElement.dataset.kpMode,'light');assert.equal(localStorage.getItem('kp-interface-mode'),'light');await click(button('☾ Dark'));assert.equal(document.documentElement.dataset.kpMode,'dark');ok('appearance toggles both themes and persists the choice');
 await render(<SalesAgent campaign="test" onDiscover={()=>{}}/>);await click(host.querySelector('[aria-label="Open Skye sales assistant"]'));assert.equal(document.activeElement,host.querySelector('[aria-label="Ask Skye"]'));await act(()=>document.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));assert.equal(host.querySelector('.ai-agent-panel'),null);ok('Skye focuses its input and closes with Escape');
+await render(<FitSignals assessment={{matches:['City: Orlando'],contact_paths:['website'],missing_information:['Decision maker not identified']}}/>);assert.equal(host.querySelectorAll('dl>div').length,3);assert.match(host.textContent||'',/1 matching details/);assert.match(host.textContent||'',/unverified/);assert.match(host.textContent||'',/Decision maker not identified/);ok('visual evidence tiles use recorded facts and retain uncertainty');
+await render(<DiscoveryTools><button data-close-tools>Resume a search</button></DiscoveryTools>);await click(button('Searches & saved businesses'));assert.ok(document.querySelector('[aria-labelledby="kp-discovery-tools-title"]'));await act(()=>(document.querySelector('[data-close-tools]') as HTMLElement).click());assert.equal(document.querySelector('[aria-labelledby="kp-discovery-tools-title"]'),null);ok('secondary tools open and close without occupying the main stage');
+api.deals=async()=>[{id:77,stage:'CONSULTATION',status:'ACTIVE',deal_value:0,name:'Test opportunity',contact:{name:'Test business',category:'Hair salon'}}];await render(<CorePipeline campaign="test" onOpenContact={()=>{}}/>);assert.match(host.querySelector('.kx-stage')?.textContent||'',/Test business/);assert.match(host.querySelector('.kx-stage-nav [aria-pressed=true]')?.textContent||'',/Consultation/i);ok('pipeline opens the real populated stage instead of an empty stage');
 await act(()=>root.unmount());console.log(`${passed} component checks passed. Visual layout not tested.`);
