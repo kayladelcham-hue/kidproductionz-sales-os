@@ -12,6 +12,7 @@ def accounts(tmp_path,monkeypatch):
     engine=create_engine('sqlite:///'+str(tmp_path/'beta.db'),connect_args={'check_same_thread':False})
     Base.metadata.create_all(engine)
     monkeypatch.setattr(db,'SessionLocal',sessionmaker(bind=engine,expire_on_commit=False))
+    monkeypatch.setattr(db,'engine',engine)
     monkeypatch.setenv('KIDPRODUCTIONZ_AUTH_MODE','cloud')
     monkeypatch.setenv('KIDPRODUCTIONZ_BETA_INVITE_CODE','isolated-audit-invite')
     monkeypatch.setenv('APP_ENV','development')
@@ -221,15 +222,42 @@ def test_oauth_state_binds_account_and_is_single_use(accounts,monkeypatch):
     assert a.get('/api/google/oauth/callback',params={'code':'mock','state':state},follow_redirects=False).status_code==400
     assert calls==['mock']
 
-def test_uploads_and_discovery_credentials_belong_to_account(accounts):
+def test_uploads_are_private_and_discovery_is_managed(accounts,monkeypatch):
     a,_=accounts[0];b,_=accounts[1]
     upload=a.post('/api/campaigns/upload',files={'file':('leads.csv',b'name,city,state,category\nTest,Orlando,FL,salon\n','text/csv')})
     assert upload.status_code==200
     ref=upload.json()['reference']
     assert b.post('/api/campaigns/run-preview',json={'campaign':'bob','input_file':ref}).status_code==404
-    assert a.post('/api/settings/discovery',json={'api_key':'MOCK_ALICE_KEY'}).status_code==200
-    assert a.get('/api/settings/discovery').json()['configured']
-    assert not b.get('/api/settings/discovery').json()['configured']
+    monkeypatch.setenv('KP_OUTSCRAPER_API_KEY','synthetic-managed-key')
+    assert a.post('/api/settings/discovery',json={'api_key':'MOCK_ALICE_KEY'}).status_code==410
+    for client in (a,b):
+        info=client.get('/api/settings/discovery').json()
+        assert info['configured'] and info['managed']
+        assert 'synthetic-managed-key' not in str(info)
+    bob=db.get_user_by_email('bob@example.test')['id']
+    assert b.put(f'/api/admin/discovery/users/{bob}/tier',json={'tier':'pro'}).status_code==403
+    with db.session_scope() as session:
+        session.get(User,db.get_user_by_email('alice@example.test')['id']).is_admin=1
+    assert a.put(f'/api/admin/discovery/users/{bob}/tier',json={'tier':'growth'}).status_code==200
+    assert b.get('/api/settings/discovery').json()['monthly_limit']==1000
+    assert a.get('/api/settings/discovery').json()['monthly_limit']==100
+
+def test_managed_discovery_routes_enforce_allowances(accounts,monkeypatch):
+    import io
+    from app.api import outscraper_service
+    a,_=accounts[0]
+    monkeypatch.setenv('KP_OUTSCRAPER_API_KEY','synthetic-managed-key')
+    monkeypatch.setenv('DISCOVERY_MONTHLY_BUDGET_USD','50')
+    calls=[]
+    def provider(request,timeout):
+        calls.append(request)
+        return io.BytesIO(b'{"data": []}')
+    monkeypatch.setattr(outscraper_service,'urlopen',provider)
+    assert a.post('/api/leads/outscraper/preview',json={'query':'synthetic first search','limit':100}).status_code==200
+    assert a.post('/api/leads/outscraper/preview',json={'query':'synthetic second search','limit':1}).status_code==429
+    assert a.post('/api/leads/outscraper/qualify-preview',json={'campaign':'alice','query':'synthetic third search','limit':1}).status_code==429
+    assert len(calls)==1
+    assert a.get('/api/settings/discovery').json()['remaining']==0
 
 def test_custom_campaign_preview_and_duplicates(accounts):
     a,_=accounts[0]
