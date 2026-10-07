@@ -15,9 +15,12 @@ export default function SalesAgent({campaign,discoveryIds=[],onOpenBusiness,onDi
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
   const bottom=useRef<HTMLDivElement|null>(null);
+  const launcher=useRef<HTMLButtonElement|null>(null);
+  const inputField=useRef<HTMLTextAreaElement|null>(null);
+  useEffect(()=>{if(!open)return;inputField.current?.focus();const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){setOpen(false);requestAnimationFrame(()=>launcher.current?.focus())}};document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key)},[open]);
 
   useEffect(()=>{
-    bottom.current?.scrollIntoView({behavior:'smooth'});
+    bottom.current?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   },[messages,loading]);
 
   const send=async(text?:string)=>{
@@ -46,11 +49,11 @@ export default function SalesAgent({campaign,discoveryIds=[],onOpenBusiness,onDi
   return <>
     {!open&&
       <button
-        className="ai-agent-launcher"
+        className="ai-agent-launcher" ref={launcher}
         aria-label="Open Skye sales assistant"
         onClick={()=>setOpen(true)}
       >
-        ✦ Skye
+        <img src="/avatars/skye.png" alt=""/><span>Skye</span>
       </button>
     }
 
@@ -59,18 +62,17 @@ export default function SalesAgent({campaign,discoveryIds=[],onOpenBusiness,onDi
 
         <header className="ai-agent-header">
           <div>
-            <strong>✦ Skye</strong>
-            <small>Your business helper</small>
+            <img src="/avatars/skye.png" alt=""/><div><strong>Skye</strong><small>Your business helper</small></div>
           </div>
 
-          <button aria-label="Close Skye" onClick={()=>setOpen(false)}>×</button>
+          <button aria-label="Close Skye" onClick={()=>{setOpen(false);requestAnimationFrame(()=>launcher.current?.focus())}}>×</button>
         </header>
 
         <div className="ai-agent-messages">
 
           {messages.length===0&&
             <div className="ai-agent-welcome">
-              <div className="ai-agent-icon">✦</div>
+              <div className="ai-agent-icon"><img src="/avatars/skye.png" alt=""/></div>
 
               <h2>What are we working on?</h2>
 
@@ -120,6 +122,7 @@ export default function SalesAgent({campaign,discoveryIds=[],onOpenBusiness,onDi
 
         <footer className="ai-agent-input">
           <textarea
+            ref={inputField}
             value={input}
             onChange={e=>setInput(e.target.value)}
             onKeyDown={e=>{
