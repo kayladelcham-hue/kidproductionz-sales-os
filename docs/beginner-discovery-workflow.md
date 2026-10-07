@@ -55,3 +55,9 @@ Validation: production Vite build and git diff --check pass. Static palette calc
 Home setup and guided review now use a centered active card with dimmed, blurred previews of adjacent stages or actual business records. Only the active card contains controls; previews are hidden from assistive technology and cannot receive pointer or keyboard focus. Existing Next/Back and decision controls advance the carousel after validation or persistence. Side previews are clipped to avoid horizontal overflow, with narrower peeks on mobile. The loading card retains the deck while fresh details load. Reduced-motion preferences disable the entry transitions.
 
 Production build and git diff --check pass. These changes do not alter records or provider criteria. Actual mobile/desktop layout, blur rendering, focus and motion remain unverified because browser access is blocked.
+
+## Portrait Home stage revision
+
+The earlier focus-carousel release was confirmed on the live site by its deployed CSS asset, but its side cards were too obscured. The supplied three-screen reference now informs a visible three-column portrait composition on wide containers: a 420px active card and offset, lightly blurred side cards. Narrow containers retain a sharp center card with explicit side peeks; all fields stack within the portrait card. Home has a centered introductory heading, shorter Skye guidance, compact stage markers and real existing KP artwork. The first card includes a noninteractive Skye introduction at the left so the composition is visible from the start. No skincare/product imagery, mock metrics or fake businesses are added.
+
+Build and whitespace checks pass. This is a code/layout revision; its rendered visual fidelity still needs verification because browser policy blocks UI access.

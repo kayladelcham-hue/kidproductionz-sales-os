@@ -100,3 +100,49 @@ html[data-kp-mode="light"] :is(#kp-sales-app .dw-workspace,.dw-modal){
 @media(prefers-reduced-motion:reduce){#kp-sales-app .dw-carousel-active{animation:none!important}}
 
 #kp-sales-app .dw-card-loading{min-height:300px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+
+/* Visible portrait deck inspired by the supplied three-screen composition. */
+#kp-sales-app .dw-workspace{container-type:inline-size}
+#kp-sales-app .dw-home-stage .dw-heading{text-align:center;margin:0 auto 24px!important;max-width:680px}
+#kp-sales-app .dw-home-stage .dw-heading h2{font-size:clamp(30px,4vw,44px)!important;line-height:1.12!important}
+#kp-sales-app .dw-home-stage .dw-heading>p:last-child{max-width:520px;margin:12px auto!important}
+#kp-sales-app .dw-focus-carousel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px) minmax(0,1fr);gap:20px;align-items:center;width:100%;max-width:1080px;padding:20px 0 36px;margin:0 auto;overflow:visible;isolation:isolate}
+#kp-sales-app .dw-carousel-active{grid-column:2;grid-row:1;width:100%;max-width:420px;margin:0;z-index:2}
+#kp-sales-app .dw-carousel-active :is(.dw-target,.dw-guided-card){min-height:440px;margin:0;padding:24px;border-radius:30px;border:2px solid var(--dw-line);box-shadow:0 22px 50px #0003,0 0 0 5px var(--flow-glow),0 0 34px var(--flow-glow)}
+#kp-sales-app .dw-carousel-peek{position:relative;inset:auto;width:100%;min-width:0;min-height:390px;height:auto;padding:24px 18px;border-radius:28px;opacity:.6;filter:blur(1.5px);margin:0;z-index:0;background:radial-gradient(ellipse at top,var(--flow-glow),transparent 70%),linear-gradient(150deg,var(--dw-card),var(--dw-bg));box-shadow:0 14px 30px #0002;overflow:hidden}
+#kp-sales-app .dw-carousel-previous{grid-column:1;grid-row:1;transform:rotateY(8deg) translateY(18px) scale(.94);transform-origin:right center}
+#kp-sales-app .dw-carousel-next{grid-column:3;grid-row:1;transform:rotateY(-8deg) translateY(18px) scale(.94);transform-origin:left center}
+#kp-sales-app .dw-carousel-orbit{width:70px;height:70px;margin:8px 0 36px;background:var(--dw-bg);border:1px solid var(--dw-line);border-radius:22px;box-shadow:0 0 30px var(--flow-glow)}
+#kp-sales-app .dw-carousel-orbit img{display:block;width:44px;height:44px;object-fit:contain;border-radius:10px}
+#kp-sales-app .dw-carousel-peek h3{font-size:24px!important;line-height:1.15!important}
+#kp-sales-app .dw-carousel-peek p{font-size:15px}
+#kp-sales-app .dw-carousel-active .dw-step{font-size:14px;letter-spacing:.02em;margin:0 0 16px}
+#kp-sales-app .dw-carousel-active .dw-step-track{gap:10px;margin:18px 0;grid-template-columns:repeat(4,1fr)}
+#kp-sales-app .dw-carousel-active .dw-step-track li{align-items:center}
+#kp-sales-app .dw-carousel-active .dw-step-track b{display:none}
+#kp-sales-app .dw-carousel-active .dw-target>.dw-progress{display:none}
+#kp-sales-app .dw-carousel-active .dw-target h3{font-size:24px!important;margin:24px 0 12px!important;line-height:1.2!important}
+#kp-sales-app .dw-carousel-active .dw-skye-guide{padding:14px;margin:12px 0;background:var(--dw-bg);border-radius:16px}
+#kp-sales-app .dw-carousel-active .dw-fields{grid-template-columns:1fr;gap:14px}
+#kp-sales-app .dw-carousel-active .dw-actions{gap:10px}
+#kp-sales-app .dw-carousel-active .dw-target>.dw-actions{display:grid;grid-template-columns:1fr}
+#kp-sales-app .dw-carousel-active .dw-target>button.dw-primary{display:block;width:100%;margin-top:20px}
+#kp-sales-app .dw-carousel-active .dw-verdicts{grid-template-columns:1fr}
+#kp-sales-app .dw-home-stage .dw-results:has(.dw-guided){background:transparent;border:0;padding:0;box-shadow:none}
+#kp-sales-app .dw-home-stage .dw-guided>.dw-skye-guide{max-width:660px;margin:16px auto}
+#kp-sales-app .dw-home-stage .dw-guided>.dw-step,#kp-sales-app .dw-home-stage .dw-guided>.dw-progress{max-width:420px;margin-left:auto;margin-right:auto}
+@container (max-width:760px){
+  #kp-sales-app .dw-focus-carousel{display:block;position:relative;padding:16px 0 30px;overflow:hidden;overflow:clip}
+  #kp-sales-app .dw-carousel-active{width:calc(100% - 96px);max-width:420px;margin:0 auto}
+  #kp-sales-app .dw-carousel-peek{position:absolute;top:50px;bottom:60px;width:180px;min-height:300px;height:auto;opacity:.48;filter:blur(2px);padding:20px 14px}
+  #kp-sales-app .dw-carousel-previous{left:0;right:auto;transform:translateX(-12%) rotateY(10deg) scale(.94)}
+  #kp-sales-app .dw-carousel-next{right:0;left:auto;transform:translateX(12%) rotateY(-10deg) scale(.94)}
+  #kp-sales-app .dw-carousel-active :is(.dw-target,.dw-guided-card){padding:20px;border-radius:26px}
+}
+@container (max-width:390px){
+  #kp-sales-app .dw-carousel-active{width:calc(100% - 48px)}
+  #kp-sales-app .dw-carousel-active :is(.dw-target,.dw-guided-card){padding:16px}
+}
+@media(prefers-reduced-motion:reduce){#kp-sales-app .dw-carousel-active{animation:none!important}}
+#kp-sales-app .dw-carousel-active .dw-target details .dw-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));align-items:stretch}
+#kp-sales-app .dw-carousel-active .dw-target details .dw-actions button{width:100%;min-width:0;overflow-wrap:anywhere}
