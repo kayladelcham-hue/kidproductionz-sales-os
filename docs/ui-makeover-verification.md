@@ -47,3 +47,7 @@ Build and twelve component checks pass. Actual live appearance remains unverifie
 ## Simple one-at-a-time review
 
 Review now uses the same icon-led, short-copy treatment as Home: compact Skye/progress strip, image-first side previews with no repeated evidence paragraphs, three concise signal tiles and the existing three decisions. Long evidence remains under More info and Open details. Completion uses actual Reviewed/Saved counters and three next-step choices rather than a paragraph and repeated saved-business buttons. Save/undo/retry handlers and available research links/notes remain connected. Build and twelve component checks pass; live rendered comparison remains blocked.
+
+## Compact Home header
+
+The campaign selector no longer occupies Home's header. A small borderless navigation icon opens Menu, where the same real campaign selector remains wired to campaign switching. Other pages retain their campaign selector. The navigation panel removes redundant headings. Build and thirteen component checks pass, including selecting another campaign through Menu. Actual layout remains unverified in a browser.
