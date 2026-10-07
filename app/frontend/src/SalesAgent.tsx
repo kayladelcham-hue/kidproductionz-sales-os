@@ -49,7 +49,7 @@ export default function SalesAgent({campaign,discoveryIds=[],onOpenBusiness,onDi
   return <>
     {!open&&
       <button
-        className="ai-agent-launcher" ref={launcher}
+        className="kp-floating-skye" ref={launcher}
         aria-label="Open Skye sales assistant"
         onClick={()=>setOpen(true)}
       >
