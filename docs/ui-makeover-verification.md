@@ -29,3 +29,11 @@ Component checks use isolated synthetic test records only, never production data
 Browser selection was denied because the admin-enforced browser policy could not be verified. No workaround or alternative browser was used. Therefore actual desktop/mobile rendering, pixel comparison with the mockup, both themes visually, text zoom, long-name reflow, touch interaction, motion, dialog overlap and live reload behavior have not been browser-verified. Backend reload/persistence and component state checks are separate evidence.
 
 Full TypeScript checking is blocked by missing React/React DOM declaration packages in the existing linked dependency installation. Vite compilation succeeds; this is not a claim of a clean full typecheck. The live Render deployment is not verified by these tests.
+
+## Visual-first refinement from the October 7 screenshots
+
+Home now moves search history, saved-search controls and advanced tools into a dialog; the main view keeps one visual carousel stage. Found/saved businesses use illustrated poster cards and three evidence tiles rather than text rows. Details retain full criteria, unknowns, contacts and sources in expandable research sections. The avatar image is absolutely bounded inside its fixed visual box to prevent intrinsic grid image sizing from overlapping its caption/title.
+
+Pipeline now opens an actual populated stage when the initial stage is empty, displays industry avatars on deal cards, and uses a compact value header and empty state. Calendar's Today button has an explicit content-width minimum and cannot wrap into letters. Skye is a transparent floating avatar button with no permanent box or visible text label, an accessible name, keyboard focus ring and reduced-motion support. Contact session stats use a compact wrapping pill and a visible data-driven mission bar.
+
+The production build and twelve DOM/component checks pass. The additional checks cover grounded evidence tiles, the secondary-tools dialog and Pipeline choosing the actual populated stage. Screenshot-based defects were inspected, but the corrected visual result still cannot be browser-verified under the administration policy.

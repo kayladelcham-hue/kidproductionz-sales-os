@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {api} from './api';
 import {BusinessHero} from './BusinessHero';
+import {FitSignals} from './FitSignals';
 import {FocusCarousel} from './FocusCarousel';
 import {SkyeGuide} from './SkyeGuide';
 
@@ -123,12 +124,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
       <BusinessHero business={business}/>
       <h3 ref={heading} tabIndex={-1}>{business.name}</h3>
       <p>{business.category||'Business type not recorded'} · {[business.city,business.state].filter(Boolean).join(', ')||'Location not recorded'}</p>
-      <div className="dw-card-evidence">
-       <div className="dw-evidence-row"><span aria-hidden="true">⌕</span><p><b>{business.assessment?.label==='Outside criteria'?'Check the fit':'Matches recorded'}</b>: {business.assessment?.matches?.slice(0,3).map((x:string)=>x.replace(/^Industry:/,'Business type:')).join(' · ')||'No match is confirmed yet.'}</p></div>
-       <div className="dw-evidence-row is-contact"><span aria-hidden="true">↗</span><p><b>Contact</b>: {business.assessment?.contact_paths?.length?`${business.assessment.contact_paths.join(', ')} listed · unverified`:'Not recorded yet'}</p></div>
-       <div className="dw-evidence-row is-unknown"><span aria-hidden="true">?</span><p><b>Still unknown</b>: {business.assessment?.missing_information?.slice(0,2).join(' · ')||'Review the full evidence below'}</p></div>
-       {business.assessment?.criteria?.filter((x:any)=>x.status==='MISMATCH').map((x:any)=><div className="dw-evidence-row is-mismatch" key={x.criterion}><span aria-hidden="true">!</span><p><b>Doesn’t match</b>: {x.criterion} — {x.value} (you asked for {x.target}).</p></div>)}
-      </div><p className="dw-buying-note">ⓘ A match does not mean they want to buy.</p>
+      <FitSignals assessment={business.assessment}/><p className="dw-buying-note">ⓘ A match does not mean they want to buy.</p>
       <details><summary>Evidence, Skye’s explanation, and notes</summary><button disabled={busy} onClick={explain}>Skye, walk me through this business</button>
       {skye&&<div className="dw-skye-guide" aria-live="polite"><strong><img className="dw-inline-skye" src="/avatars/skye.png" alt=""/>Skye</strong>{skye.businesses?.map((row:any)=><div key={row.id}><p>What matches: {row.known.join(' · ')||'No match confirmed.'}</p><p>What to check: {row.missing.join(' · ')}</p><p>My suggestion: {labels[row.suggested_decision]}. {row.explanation}</p>{row.sources.map((source:any)=><a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.label} ↗</a>)}</div>)}</div>}
         <button onClick={()=>onOpen(business)}>See evidence and ask Skye</button>

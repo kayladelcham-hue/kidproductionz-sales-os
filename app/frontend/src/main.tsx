@@ -1,6 +1,7 @@
 import './LegacyLayouts.css';
 import './DesignSystem.css';
 import {WorkspaceShell} from './WorkspaceShell';
+import {BusinessHero} from './BusinessHero';
 import {DiscoveryWorkspace} from './DiscoveryWorkspace';
 import {createPortal} from 'react-dom';
 import SalesDashboard from './SalesDashboard';
@@ -127,7 +128,7 @@ function UpNext({campaign}:{campaign:string}){
     <section className="power-hour"><div><p className="eyebrow">POWER HOUR</p><b>{secondsLeft?`${String(Math.floor(secondsLeft/60)).padStart(2,'0')}:${String(secondsLeft%60).padStart(2,'0')}`:'Focus your selling session'}</b><small>{secondsLeft?`${session.contacts} meaningful moves completed`:'Choose a distraction-light sprint. You control every action.'}</small></div>{secondsLeft?<button onClick={()=>setSecondsLeft(0)}>End session</button>:<div>{[20,30,60].map(minutes=><button key={minutes} aria-pressed={powerMinutes===minutes} onClick={()=>setPowerMinutes(minutes)}>{minutes}m</button>)}<button className="primary" disabled={!powerMinutes} onClick={()=>setSecondsLeft(powerMinutes*60)}>Start</button></div>}</section>
     <div className="kp-confirmation" role="status" aria-live="polite">{confirmation}</div>
     <article ref={leadCard} key={current.prospect_id} className={`sell-lead-card kp-lead-arrival ${contacting?'kp-is-focused':''}`}>
-      <div className="sell-lead-top"><div><span>{score!=null?`${score} MATCH · `:''}{priority}</span><h1>{name}</h1><p>{[current.category,current.city,current.state].filter(Boolean).join(' · ')||'Business lead'}</p></div>{score!=null&&<strong>{score}<small>ICP</small></strong>}</div>
+      <BusinessHero business={{...current,name}} compact/><div className="sell-lead-top"><div><span>{score!=null?`${score} MATCH · `:''}{priority}</span><h1>{name}</h1><p>{[current.category,current.city,current.state].filter(Boolean).join(' · ')||'Business lead'}</p></div>{score!=null&&<strong>{score}<small>ICP</small></strong>}</div>
       <section className="sell-reason"><small>WHY THIS ONE</small><h3>{q.matches?.[0]||'You qualified this business for outreach. Review its recorded evidence and contact details.'}</h3>{q.signals?.[0]&&<p><b>Why now:</b> {q.signals[0]}</p>}</section>
       <div className="sell-quick-context"><span><small>Talk to</small><b>{decisionMaker}</b></span><span><small>Recommended angle</small><b>{q.recommended_action||'Lead with the clearest business result you can create.'}</b></span></div>
       <details className="sell-game-plan"><summary>View game plan</summary><div>{q.matches?.length>0&&<p><b>Matches:</b> {q.matches.join(' · ')}</p>}{q.risks?.length>0&&<p><b>Watch for:</b> {q.risks.join(' · ')}</p>}{q.missing_information?.length>0&&<p><b>Still need:</b> {q.missing_information.join(' · ')}</p>}<p><b>Previous activity:</b> {prettyLabel(current.sales_status||'Not contacted')}</p></div></details>
