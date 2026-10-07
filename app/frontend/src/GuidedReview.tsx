@@ -40,6 +40,8 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   const previousBusiness=businesses.find(x=>x.id===round[index-1]);
   const nextBusiness=businesses.find(x=>x.id===round[index+1]);
   const latest = businesses.find(x=>x.id===current);
+  const completedInRound=round.filter(id=>businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')).length;
+  const savedFit=[...businesses].reverse().find(row=>row.saved&&row.decision==='QUALIFIED');
   const reviewed = businesses.filter(x=>x.decision!=='UNREVIEWED').length;
   const saved = businesses.filter(x=>x.saved).length;
   const remaining = businesses.filter(x=>x.decision==='UNREVIEWED');
@@ -112,38 +114,31 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   };
 
   return <section className="dw-guided" aria-label="Review businesses one at a time">
-    <div className="dw-skye-guide" aria-label="Skye’s guidance"><strong>✦ Skye</strong><p>{current?'Let’s take a look together. Check what matches and what’s missing, then tell me whether this looks worth contacting. Any of the three choices is useful.':businesses.length?'Your choices are saved. We can check a saved business’s website, prepare a first message, or look at a few more businesses.':'This search didn’t bring back any businesses. Let’s try another business type or location—you choose what to change.'}</p></div>
-    <p className="dw-step">{current?`Business ${index+1} of ${round.length}`:'Your review is saved'}</p>
-    <progress className="dw-progress" max={Math.max(round.length,1)} value={index} aria-label={`${index} of ${round.length} businesses reviewed in this round`}/>
-    {notice&&<p role="status" className="dw-celebration" key={`${index}-${notice}`}>✓ {notice}</p>}
+    <div className="dw-mission-bar"><div className="dw-mission-skye"><img src="/avatars/skye.png" alt="Skye"/><div><strong>SKYE</strong><p>{current?'Let’s check what fits and what we still need to know.':'Your choices are saved. Let’s choose the next step.'}</p></div></div><div className="dw-mission-progress"><div><small>THIS ROUND</small><b>{round.length?`Review ${round.length} businesses`:'Your review is saved'}</b></div><ol aria-label="Recorded decisions in this round">{round.map(id=>{const done=businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED');return <li key={id} className={done?'is-done':''}><span aria-hidden="true">{done?'✓':''}</span><span className="dw-sr-only">{businesses.find(row=>row.id===id)?.name}: {done?'reviewed':'not reviewed'}</span></li>})}</ol><div><b>{round.length?`${completedInRound} of ${round.length}`:`${reviewed} reviewed`}</b><small>Every decision counts.</small></div></div></div>
     {error&&<p role="alert">{error}</p>}
-    {undo&&<button disabled={busy} onClick={undoLast}>Undo last decision</button>}
+
     {loading&&<p role="status">Opening the next business…</p>}
     {current&&!loading&&!business&&<button onClick={()=>setLoadAttempt(x=>x+1)}>Try opening this business again</button>}
-    {current&&<FocusCarousel activeKey={index} previous={previousBusiness?{label:'Just reviewed',title:previousBusiness.name,summary:labels[previousBusiness.decision]}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · ')}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><article className="dw-guided-card">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Opening the next business…'}</h3><p>Getting the recorded evidence…</p></div>:<>
+    {current&&<FocusCarousel activeKey={index} onPrevious={!busy&&index>0?()=>setIndex(index-1):undefined} onNext={!busy&&index+1<round.length?()=>setIndex(index+1):undefined} previous={previousBusiness?{label:'Just reviewed',title:previousBusiness.name,summary:[previousBusiness.category,previousBusiness.city].filter(Boolean).join(' · '),business:previousBusiness}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · '),business:nextBusiness}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><article className="dw-guided-card">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Opening the next business…'}</h3><p>Getting the recorded evidence…</p></div>:<>
       <BusinessHero business={business}/>
       <h3 ref={heading} tabIndex={-1}>{business.name}</h3>
       <p>{business.category||'Business type not recorded'} · {[business.city,business.state].filter(Boolean).join(', ')||'Location not recorded'}</p>
-      <button disabled={busy} onClick={explain}>Skye, walk me through this business</button>
-      {skye&&<div className="dw-skye-guide" aria-live="polite"><strong>✦ Skye</strong>{skye.businesses?.map((row:any)=><div key={row.id}><p>What matches: {row.known.join(' · ')||'No match is confirmed yet.'}</p><p>What to check: {row.missing.join(' · ')}</p><p>My suggestion: {labels[row.suggested_decision]}. {row.explanation}</p>{row.sources.map((source:any)=><a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.label} ↗</a>)}</div>)}</div>}
-      <h4>Why it appeared</h4>
-      <p>{business.assessment?.matches?.join(' · ')||'No matching details are confirmed yet.'}</p>
-      {business.assessment?.criteria?.filter((x:any)=>x.status==='MISMATCH').map((x:any)=><p key={x.criterion}>Doesn’t match: {x.criterion} — {x.value} (you asked for {x.target}).</p>)}
-      <h4>Contact information</h4>
-      <p>{business.assessment?.contact_paths?.length?`${business.assessment.contact_paths.join(', ')} available, but not independently verified.`:'No contact information recorded yet.'}</p>
-      <h4>What we don’t know</h4>
-      <ul>{business.assessment?.missing_information?.map((x:string)=><li key={x}>{x}</li>)}</ul>
-      <p>A search match does not mean this business wants to buy.</p>
-      <details><summary>Check evidence or add a note</summary>
+      <div className="dw-card-evidence">
+       <div className="dw-evidence-row"><span aria-hidden="true">⌕</span><p><b>{business.assessment?.label==='Outside criteria'?'Check the fit':'Matches recorded'}</b>: {business.assessment?.matches?.slice(0,3).map((x:string)=>x.replace(/^Industry:/,'Business type:')).join(' · ')||'No match is confirmed yet.'}</p></div>
+       <div className="dw-evidence-row is-contact"><span aria-hidden="true">↗</span><p><b>Contact</b>: {business.assessment?.contact_paths?.length?`${business.assessment.contact_paths.join(', ')} listed · unverified`:'Not recorded yet'}</p></div>
+       <div className="dw-evidence-row is-unknown"><span aria-hidden="true">?</span><p><b>Still unknown</b>: {business.assessment?.missing_information?.slice(0,2).join(' · ')||'Review the full evidence below'}</p></div>
+       {business.assessment?.criteria?.filter((x:any)=>x.status==='MISMATCH').map((x:any)=><div className="dw-evidence-row is-mismatch" key={x.criterion}><span aria-hidden="true">!</span><p><b>Doesn’t match</b>: {x.criterion} — {x.value} (you asked for {x.target}).</p></div>)}
+      </div><p className="dw-buying-note">ⓘ A match does not mean they want to buy.</p>
+      <details><summary>Evidence, Skye’s explanation, and notes</summary><button disabled={busy} onClick={explain}>Skye, walk me through this business</button>
+      {skye&&<div className="dw-skye-guide" aria-live="polite"><strong><img className="dw-inline-skye" src="/avatars/skye.png" alt=""/>Skye</strong>{skye.businesses?.map((row:any)=><div key={row.id}><p>What matches: {row.known.join(' · ')||'No match confirmed.'}</p><p>What to check: {row.missing.join(' · ')}</p><p>My suggestion: {labels[row.suggested_decision]}. {row.explanation}</p>{row.sources.map((source:any)=><a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.label} ↗</a>)}</div>)}</div>}
         <button onClick={()=>onOpen(business)}>See evidence and ask Skye</button>
         {link(business.website)&&<a href={link(business.website)} target="_blank" rel="noreferrer">Check their website ↗</a>}
         <label>Anything to remember? (optional)<textarea maxLength={3000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
       </details>
-      <h4>Does this look worth contacting?</h4>
-      <div className="dw-actions dw-verdicts">{['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED'].map(outcome=><button key={outcome} disabled={busy||retrySave} onClick={()=>choose(outcome)}>{labels[outcome]}</button>)}</div>
-      <p>All three choices count as progress. “Looks like a fit” also saves the business.</p>
-      {retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry saving this business</button>}
     </>}</article></FocusCarousel>}
+    {current&&business?.id===current&&!loading&&<div className="dw-decision-dock" role="group" aria-label="Does this look worth contacting?"><div className="dw-actions dw-verdicts">{['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED'].map(outcome=><button key={outcome} className={outcome==='QUALIFIED'?'dw-primary':outcome==='NEEDS_RESEARCH'?'dw-not-sure':''} disabled={busy||retrySave} onClick={()=>choose(outcome)}><span aria-hidden="true">{outcome==='QUALIFIED'?'👍':outcome==='NEEDS_RESEARCH'?'?':'×'}</span>{labels[outcome]}</button>)}</div><p>Decisions save automatically.{undo&&<button disabled={busy} onClick={undoLast}>Undo last decision</button>}</p>{retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry saving this business</button>}</div>}
+    <div className="dw-review-foot">{notice&&<div className="dw-celebration" role="status" key={`${index}-${notice}`}><b>✦ Decision saved</b><p>{notice}</p></div>}{savedFit&&<button className="dw-saved-next" onClick={()=>onOpen(savedFit)}><b>Saved a fit?</b><span>Check the website or prepare a first message for {savedFit.name}.</span><span aria-hidden="true">→</span></button>}</div>
+    {!current&&undo&&<button disabled={busy} onClick={undoLast}>Undo last decision</button>}
     {!current&&<div className="dw-round-complete">
       <h3 ref={heading} tabIndex={-1}>{businesses.length?'Nice work. What’s next?':'No businesses came back from this search.'}</h3>
       <p>{businesses.length?`You’ve reviewed ${reviewed} businesses in this search and saved ${saved}. Your decisions are saved.`:'Try a different business type or location. We won’t change your search for you.'}</p>

@@ -1,0 +1,22 @@
+{
+  "generator": "Built-in image_gen",
+  "transparent_background": true,
+  "assets": [
+    {
+      "name": "skye",
+      "prompt": "Use case: stylized-concept. Asset type: transparent 3D hero illustration for KP Sales OS. Premium friendly 3D render with luminous cyan rim light, teal glass, tiny lime accents. Centered isolated subject, no text, no logos, no scenery, true transparent background, generous clear padding, crisp silhouette, suitable for a 220px dashboard card. Subject: Skye, a cute small round cyan holographic assistant orb, glossy dark teal face, two bright cyan oval eyes and a friendly smile, subtle orbit ring. No pedestal. Match a futuristic friendly sales assistant, not a business logo."
+    },
+    {
+      "name": "cafe",
+      "prompt": "Use case: stylized-concept. Asset type: transparent 3D hero illustration for KP Sales OS. Premium friendly 3D render with luminous cyan rim light, teal glass, tiny lime accents. Centered isolated subject, no text, no logos, no scenery, true transparent background, generous clear padding, crisp silhouette, suitable for a 220px dashboard card. Subject: a friendly white ceramic coffee cup with dark coffee, tiny smiling face, rosy cheeks, a small pair of green leaves above the rim and two floating coffee beans. It floats over a slim circular teal glass pedestal with a cyan luminous ring. Generic café illustration, no branding."
+    },
+    {
+      "name": "salon",
+      "prompt": "Use case: stylized-concept. Asset type: transparent 3D hero illustration for KP Sales OS. Premium friendly 3D render with luminous cyan rim light, teal glass, tiny lime accents. Centered isolated subject, no text, no logos, no scenery, true transparent background, generous clear padding, crisp silhouette, suitable for a 220px dashboard card. Subject: elegant polished silver salon scissors, floating diagonally upright with a small green botanical sprig beside them. Slim circular teal glass pedestal with a cyan luminous ring. Generic salon illustration, no branding."
+    },
+    {
+      "name": "shop",
+      "prompt": "Use case: stylized-concept. Asset type: transparent 3D hero illustration for KP Sales OS. Premium friendly 3D render with luminous cyan rim light, teal glass, tiny lime accents. Centered isolated subject, no text, no logos, no scenery, true transparent background, generous clear padding, crisp silhouette, suitable for a 220px dashboard card. Subject: a charming miniature gift shop with a coral and cream striped awning, warm window light, and small green plants. Slim circular teal glass pedestal with cyan luminous ring. No lettering on any signs, generic shop illustration, no branding."
+    }
+  ]
+}
