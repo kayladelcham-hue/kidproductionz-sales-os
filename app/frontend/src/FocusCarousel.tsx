@@ -13,7 +13,7 @@ export function FocusCarousel({activeKey,children,previous,next,onPrevious,onNex
     setMotion({key:activeKey,backwards});
   }
   const preview=(card:Preview,side:string)=><div className={`dw-carousel-peek dw-carousel-${side}`} aria-hidden="true">
-    <div className="dw-peek-art">{card.business?<BusinessHero business={card.business} compact/>:<img src="/avatars/skye.png" alt=""/>}</div><small>{card.label}</small><h3>{card.title}</h3>{card.summary&&<p>{card.summary}</p>}
+    <div className="dw-peek-art">{card.business?<BusinessHero business={card.business} compact/>:<img src="/avatars/skye.png" alt=""/>}</div>{!card.business&&<small>{card.label}</small>}<h3>{card.title}</h3>{card.summary&&<p>{card.summary}</p>}
     {card.business&&<div className="dw-peek-evidence"><p>Matches: {card.business.assessment?.matches?.slice(0,2).join(' · ')||'Not confirmed'}</p><p>Contact: {card.business.assessment?.contact_paths?.join(', ')||'Not recorded'}</p><p>Still unknown: {card.business.assessment?.missing_information?.[0]||'Review the evidence'}</p></div>}
   </div>;
   return <div className="dw-focus-carousel">
