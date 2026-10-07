@@ -43,3 +43,9 @@ Skye now leads setup one question at a time (offer, business type, location, the
 Skye’s setup instructions are task-specific guidance. Her Walk me through this business action uses the real assessment and cited sources, with the current search’s profile snapshot; it does not require model credentials or send communications. Completion counts come from recorded decisions and saved links. Gentle card transitions respect reduced motion.
 
 Latest verification: production Vite build and 64 targeted API tests passed. These verify backend support for the three-choice review/save/undo sequence and search-grounded Skye explanations, not full browser interaction. Browser security continues to block mobile/desktop visual and interaction verification; guided focus, motion, draft restoration and round progression remain unverified in a browser.
+
+## Neon guided-flow styling
+
+The supplied dashboard references inform layered teal-black panels, lime/cyan gradients, restrained glow, a four-stage tracker, and gentle stage/review entrances. Saved-decision feedback animates after the recorded action completes. Skye’s accent pulses briefly on entry rather than continuously. Hover/tap feedback, bright light-mode surfaces, existing KP theme accents and readable business/evidence typography are retained. Reduced-motion preferences disable decorative animation and transitions. The guided review module loads only when needed. No reference metrics, NFT artwork or invented business data were added.
+
+Validation: production Vite build and git diff --check pass. Static palette calculations check the defined text/background pairs; these are not a full accessibility audit. Mobile/desktop screenshots, actual motion and keyboard behavior still require browser verification, which remains blocked by the browser’s policy check.

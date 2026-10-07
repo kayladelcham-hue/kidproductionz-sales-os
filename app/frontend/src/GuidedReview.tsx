@@ -110,7 +110,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
     <div className="dw-skye-guide" aria-label="Skye’s guidance"><strong>✦ Skye</strong><p>{current?'Let’s take a look together. Check what matches and what’s missing, then tell me whether this looks worth contacting. Any of the three choices is useful.':businesses.length?'Your choices are saved. We can check a saved business’s website, prepare a first message, or look at a few more businesses.':'This search didn’t bring back any businesses. Let’s try another business type or location—you choose what to change.'}</p></div>
     <p className="dw-step">{current?`Business ${index+1} of ${round.length}`:'Your review is saved'}</p>
     <progress className="dw-progress" max={Math.max(round.length,1)} value={index} aria-label={`${index} of ${round.length} businesses reviewed in this round`}/>
-    {notice&&<p role="status" className="dw-celebration">✓ {notice}</p>}
+    {notice&&<p role="status" className="dw-celebration" key={`${index}-${notice}`}>✓ {notice}</p>}
     {error&&<p role="alert">{error}</p>}
     {undo&&<button disabled={busy} onClick={undoLast}>Undo last decision</button>}
     {loading&&<p role="status">Opening the next business…</p>}
