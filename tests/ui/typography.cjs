@@ -1,0 +1,23 @@
+/* Static typography contract. Does not replace browser layout/zoom/font-loading tests. */
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const css=fs.readFileSync('app/frontend/src/DesignSystem.css','utf8');
+const legacy=fs.readFileSync('app/frontend/src/LegacyLayouts.css','utf8');
+const index=fs.readFileSync('app/frontend/index.html','utf8');
+const font=fs.readFileSync('app/frontend/public/fonts/Manrope-Variable.woff2');
+assert.equal(font.subarray(0,4).toString(),'wOF2');
+assert.equal(font.readUInt32BE(8),font.length);
+assert.match(css,/@font-face\{font-family:Manrope;src:url\('\/fonts\/Manrope-Variable\.woff2'\) format\('woff2'\);font-style:normal;font-weight:200 800;font-display:swap/);
+assert.match(css,/--body-font:"Manrope",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif/);
+assert.match(css,/body\{[^}]*font:400 1rem\/1\.5 var\(--body-font\)/);
+assert.match(css,/button\{[^}]*font-weight:500;font-size:1rem/);
+assert.match(css,/h1,h2\{font-family:var\(--body-font\)/);
+assert.match(css,/\.kp-topbar h1,\.dw-heading h2[^}]+font-family:var\(--display-font\)/);
+assert.doesNotMatch(css,/Arial|Helvetica|font-weight:700|font-weight:800/);
+assert.doesNotMatch(legacy,/(?:^|[;{])font(?:-family|-size|-weight)?:/);
+for(const match of css.matchAll(/font-size:([\d.]+)rem/g))assert.ok(Number(match[1])>=.875,match[0]);
+assert.match(css,/\.dw-guided-card h3\{font-size:1\.5rem/);
+assert.match(css,/\.bottom-nav button\{[^}]*font-size:0\.9375rem/);
+assert.match(index,/rel="preload" href="\/fonts\/Manrope-Variable\.woff2" as="font" type="font\/woff2" crossorigin/);
+assert.ok(fs.readFileSync('app/frontend/public/fonts/OFL-Manrope.txt','utf8').includes('SIL OPEN FONT LICENSE'));
+console.log('Typography/font asset contract passed. Rendered mobile/200% zoom not tested.');
