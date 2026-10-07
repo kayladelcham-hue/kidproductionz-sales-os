@@ -51,3 +51,19 @@ Review now uses the same icon-led, short-copy treatment as Home: compact Skye/pr
 ## Compact Home header
 
 The campaign selector no longer occupies Home's header. A small borderless navigation icon opens Menu, where the same real campaign selector remains wired to campaign switching. Other pages retain their campaign selector. The navigation panel removes redundant headings. Build and thirteen component checks pass, including selecting another campaign through Menu. Actual layout remains unverified in a browser.
+
+## Contact quest and action sizing
+
+Replaced the stacked contact session/mission/Power Hour panels with ContactMission: one compact quest card, actual daily progress ring, backend target/reward, real session points and queue count, Skye art, trophy completion state and selectable focus sprint. Missing mission data displays unavailable instead of fabricated fallback targets/rewards. The existing local timer controls remain connected. After a saved contact, mission progress is refreshed from the backend.
+
+Contact actions now have icon-led responsive sizing with normal word wrapping; on mobile Contact is full-width and the three shorter secondary actions form the next row. No communications are sent by the quest/timer; outreach controls retain their existing review flow. Build and fifteen component checks pass, including actual quest values, sprint handlers and missing-data honesty. Live layout remains blocked by browser policy.
+
+## Saved carousel, customer cards, level graph, and useful tour (October 7)
+- Saved discovery businesses and review-completion next steps share an actual-record carousel: one interactive business, inert neighboring previews, avatar and recorded evidence, keyboard/button navigation, and next-step action. Empty completed rounds no longer show a 0/0 mission.
+- Customers use compact cards, short labeled contact links, distinct contracted/collected amounts, and collapsed history. Follow-up actions have consistent touch targets and short labels.
+- Momentum uses real level thresholds and totals for an SVG checkpoint map; API failure shows retry instead of fabricated zero progress.
+- The quick tour has four short nonmodal steps. It highlights and scrolls to real content, leaves the background sharp and interactive, supports Back/Next/Done/Escape, and cleans up highlights. No external communication occurs.
+- Verification: production Vite build passed; 19 jsdom component checks passed, including actual saved-record carousel navigation/opening, failed-save/retry/undo, quest timer, level thresholds, tour navigation/highlight cleanup, customer financial labels/contact links/new-deal dialog.
+- Rendered desktop/mobile, text zoom, visual contrast/overlap, and live deployment verification remain blocked: browser automation cannot verify the administrator-enforced policy. jsdom does not establish visual correctness or production reload persistence. Full TypeScript checking remains blocked by the existing missing React type declarations in the installed dependencies.
+- Backend regression verification for this batch: 65 tests passed across discovery, scoring, rescoring, managed discovery, and beta readiness.
+- Publication blocked in this session: Git push cannot read a GitHub username; the GitHub connector's create_blob returns internal errors, and read calls expose inconsistent required repository parameter schemas. No new PR or deployment was created for this batch.
