@@ -1,26 +1,10 @@
 import {BusinessHero} from './BusinessHero';
-import React, {useState} from 'react';
-
+import React from 'react';
 type Preview={label:string;title:string;summary?:string;business?:any};
 type Props={activeKey:string|number;children:React.ReactNode;previous?:Preview;next?:Preview;onPrevious?:()=>void;onNext?:()=>void};
-
-/** Side cards preview real stages/records; only the centered card is interactive. */
+function SideCard({card,side}:{card?:Preview;side:string}){return <div className={`kp-carousel-preview kp-carousel-${side}`} aria-hidden="true" inert>{card?.business?<><BusinessHero business={card.business} compact/><h3>{card.title}</h3><p>{card.summary}</p><div className="kp-preview-evidence"><p>⌕ {card.business.assessment?.matches?.slice(0,2).join(' · ')||'Match not confirmed'}</p><p>✓ Contact: {card.business.assessment?.contact_paths?.join(', ')||'Not recorded'}</p><p>? {card.business.assessment?.missing_information?.[0]||'Review the evidence'}</p></div></>:<><img className="kp-preview-skye" src="/avatars/skye.png" alt=""/><small>{card?.label||'Your guide'}</small><h3>{card?.title||'One step at a time'}</h3><p>{card?.summary||'Skye helps you check each business before you decide.'}</p></>}</div>}
+/** Adjacent cards are inert previews. Browsing never assigns a decision. */
 export function FocusCarousel({activeKey,children,previous,next,onPrevious,onNext}:Props){
-  const [motion,setMotion]=useState({key:activeKey,backwards:false});
-  let backwards=motion.backwards;
-  if(motion.key!==activeKey){
-    backwards=typeof activeKey==='number'&&typeof motion.key==='number'&&activeKey<motion.key;
-    setMotion({key:activeKey,backwards});
-  }
-  const preview=(card:Preview,side:string)=><div className={`dw-carousel-peek dw-carousel-${side}`} aria-hidden="true">
-    <div className="dw-peek-art">{card.business?<BusinessHero business={card.business} compact/>:<img src="/avatars/skye.png" alt=""/>}</div>{!card.business&&<small>{card.label}</small>}<h3>{card.title}</h3>{card.summary&&<p>{card.summary}</p>}
-    {card.business&&<div className="dw-peek-evidence"><p>Matches: {card.business.assessment?.matches?.slice(0,2).join(' · ')||'Not confirmed'}</p><p>Contact: {card.business.assessment?.contact_paths?.join(', ')||'Not recorded'}</p><p>Still unknown: {card.business.assessment?.missing_information?.[0]||'Review the evidence'}</p></div>}
-  </div>;
-  return <div className="dw-focus-carousel">
-    {preview(previous||{label:'Your guide',title:'Meet Skye',summary:'One question at a time. Your choices shape the search.'},'previous')}
-    {next&&preview(next,'next')}
-    <div className={`dw-carousel-active ${backwards?'is-backwards':''}`} key={activeKey}>{children}</div>
-    <button className="dw-carousel-arrow dw-carousel-prev-arrow" aria-label="Previous card" disabled={!onPrevious} onClick={onPrevious}>‹</button>
-    <button className="dw-carousel-arrow dw-carousel-next-arrow" aria-label="Next card" disabled={!onNext} onClick={onNext}>›</button>
-  </div>;
+ const handleKey=(e:React.KeyboardEvent<HTMLDivElement>)=>{if(e.target!==e.currentTarget)return;if(e.key==='ArrowLeft'&&onPrevious){e.preventDefault();onPrevious()}if(e.key==='ArrowRight'&&onNext){e.preventDefault();onNext()}};
+ return <div className="kp-carousel" role="region" aria-roledescription="carousel" aria-label="Guided discovery cards" tabIndex={0} onKeyDown={handleKey}><div className="kp-carousel-stage"><SideCard card={previous} side="previous"/><div className="kp-carousel-active" key={activeKey} role="group" aria-roledescription="slide">{children}</div><SideCard card={next} side="next"/></div><div className="kp-carousel-controls"><button aria-label="Previous card" disabled={!onPrevious} onClick={onPrevious}>‹</button><span>One business. One decision.</span><button aria-label="Next card" disabled={!onNext} onClick={onNext}>›</button></div></div>;
 }

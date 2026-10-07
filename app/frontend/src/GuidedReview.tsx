@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {api} from './api';
 import {BusinessHero} from './BusinessHero';
 import {FocusCarousel} from './FocusCarousel';
+import {SkyeGuide} from './SkyeGuide';
 
 const labels: Record<string,string> = {
   QUALIFIED:'Looks like a fit', NEEDS_RESEARCH:'Not sure', DISQUALIFIED:'Not a fit', UNREVIEWED:'Not reviewed',
@@ -37,10 +38,9 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   const [undo,setUndo] = useState<any>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const current = round[index];
-  const previousBusiness=businesses.find(x=>x.id===round[index-1]);
-  const nextBusiness=businesses.find(x=>x.id===round[index+1]);
+  const previousBusiness=round.length>1?businesses.find(x=>x.id===round[(index-1+round.length)%round.length]):undefined;
+  const nextBusiness=round.length>1?businesses.find(x=>x.id===round[(index+1)%round.length]):undefined;
   const latest = businesses.find(x=>x.id===current);
-  const completedInRound=round.filter(id=>businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')).length;
   const savedFit=[...businesses].reverse().find(row=>row.saved&&row.decision==='QUALIFIED');
   const reviewed = businesses.filter(x=>x.decision!=='UNREVIEWED').length;
   const saved = businesses.filter(x=>x.saved).length;
@@ -114,12 +114,12 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   };
 
   return <section className="dw-guided" aria-label="Review businesses one at a time">
-    <div className="dw-mission-bar"><div className="dw-mission-skye"><img src="/avatars/skye.png" alt="Skye"/><div><strong>SKYE</strong><p>{current?'Let’s check what fits and what we still need to know.':'Your choices are saved. Let’s choose the next step.'}</p></div></div><div className="dw-mission-progress"><div><small>THIS ROUND</small><b>{round.length?`Review ${round.length} businesses`:'Your review is saved'}</b></div><ol aria-label="Recorded decisions in this round">{round.map(id=>{const done=businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED');return <li key={id} className={done?'is-done':''}><span aria-hidden="true">{done?'✓':''}</span><span className="dw-sr-only">{businesses.find(row=>row.id===id)?.name}: {done?'reviewed':'not reviewed'}</span></li>})}</ol><div><b>{round.length?`${completedInRound} of ${round.length}`:`${reviewed} reviewed`}</b><small>Every decision counts.</small></div></div></div>
+    <SkyeGuide mission={round.length?`Review ${round.length} businesses`:'Review complete'} steps={round.map(id=>({id,name:businesses.find(row=>row.id===id)?.name||'Business',done:businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')}))}>{current?'Let’s check what fits and what we still need to know.':'Your choices are saved. Let’s choose the next step.'}</SkyeGuide>
     {error&&<p role="alert">{error}</p>}
 
     {loading&&<p role="status">Opening the next business…</p>}
     {current&&!loading&&!business&&<button onClick={()=>setLoadAttempt(x=>x+1)}>Try opening this business again</button>}
-    {current&&<FocusCarousel activeKey={index} onPrevious={!busy&&index>0?()=>setIndex(index-1):undefined} onNext={!busy&&index+1<round.length?()=>setIndex(index+1):undefined} previous={previousBusiness?{label:'Just reviewed',title:previousBusiness.name,summary:[previousBusiness.category,previousBusiness.city].filter(Boolean).join(' · '),business:previousBusiness}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · '),business:nextBusiness}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><article className="dw-guided-card">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Opening the next business…'}</h3><p>Getting the recorded evidence…</p></div>:<>
+    {current&&<FocusCarousel activeKey={index} onPrevious={!busy&&round.length>1?()=>setIndex((index-1+round.length)%round.length):undefined} onNext={!busy&&round.length>1?()=>setIndex((index+1)%round.length):undefined} previous={previousBusiness?{label:'Previous business',title:previousBusiness.name,summary:[previousBusiness.category,previousBusiness.city].filter(Boolean).join(' · '),business:previousBusiness}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · '),business:nextBusiness}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><article className="dw-guided-card">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Opening the next business…'}</h3><p>Getting the recorded evidence…</p></div>:<>
       <BusinessHero business={business}/>
       <h3 ref={heading} tabIndex={-1}>{business.name}</h3>
       <p>{business.category||'Business type not recorded'} · {[business.city,business.state].filter(Boolean).join(', ')||'Location not recorded'}</p>
