@@ -819,7 +819,7 @@ function Settings({campaign}:{campaign:string}){const [i,setI]=useState<any>(nul
 </>}</div>{msg&&<div className="notice">{msg}</div>}</div>}
 function AuthGateBeta(){
   const [state,setState]=useState<any>(null);
-  const [mode,setMode]=useState<'login'|'signup'|'recover'>('login');
+  const [mode,setMode]=useState<'login'|'signup'|'recover'>(()=>new URLSearchParams(window.location.search).get('signup')==='1'?'signup':'login');
   const [user,setUser]=useState('');
   const [name,setName]=useState('');
   const [password,setPassword]=useState('');
