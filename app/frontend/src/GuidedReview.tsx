@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {api} from './api';
+import {BusinessHero} from './BusinessHero';
 import {FocusCarousel} from './FocusCarousel';
 
 const labels: Record<string,string> = {
@@ -120,6 +121,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
     {loading&&<p role="status">Opening the next business…</p>}
     {current&&!loading&&!business&&<button onClick={()=>setLoadAttempt(x=>x+1)}>Try opening this business again</button>}
     {current&&<FocusCarousel activeKey={index} previous={previousBusiness?{label:'Just reviewed',title:previousBusiness.name,summary:labels[previousBusiness.decision]}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · ')}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><article className="dw-guided-card">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Opening the next business…'}</h3><p>Getting the recorded evidence…</p></div>:<>
+      <BusinessHero business={business}/>
       <h3 ref={heading} tabIndex={-1}>{business.name}</h3>
       <p>{business.category||'Business type not recorded'} · {[business.city,business.state].filter(Boolean).join(', ')||'Location not recorded'}</p>
       <button disabled={busy} onClick={explain}>Skye, walk me through this business</button>

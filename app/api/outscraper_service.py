@@ -105,6 +105,7 @@ def normalize_place(place: dict, fallback_category: str = "") -> dict:
             or place.get("business_name")
         ),
         "category": category,
+        "logo_url": _first(place.get("logo_url")),
         "category_inferred_from_query": not bool(place.get("category") or place.get("type") or place.get("subtypes")),
         "city": city,
         "state": state,
