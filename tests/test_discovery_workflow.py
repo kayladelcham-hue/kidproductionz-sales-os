@@ -184,3 +184,31 @@ def test_interrupted_search_does_not_poll_forever(client):
     with sessions.begin() as s:s.add(d.Search(id=sid,owner_id=1,campaign_id=1,criteria_json=json.dumps(CRITERIA),profile_json='{}',created_at='2020-01-01T00:00:00+00:00'))
     result=c.get(f'/api/discovery/searches/{sid}').json()
     assert result['status']=='FAILED' and 'criteria are saved' in result['error']
+
+
+def test_guided_round_all_decisions_persist_and_fit_saves_once(client,monkeypatch):
+    c,sessions=client
+    monkeypatch.setattr(outscraper_service,'search_google_maps',lambda *a:{'leads':[dict(BUSINESS,name=f'Synthetic {i}',place_id=f'guided-{i}') for i in range(3)]})
+    rows=search(c)['businesses'];events=[]
+    for row,outcome in zip(rows,['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED']):
+        response=decision(c,row['id'],value=outcome)
+        assert response.status_code==200
+        events.append(response.json())
+        if outcome=='QUALIFIED':
+            assert c.post(f"/api/discovery/businesses/{row['id']}/save").status_code==200
+            assert c.post(f"/api/discovery/businesses/{row['id']}/save").status_code==200
+    loaded=c.get(f"/api/discovery/searches/{c.get('/api/discovery/searches?campaign_slug=test').json()[0]['id']}").json()['businesses']
+    assert len([r for r in loaded if r['decision']!='UNREVIEWED'])==3
+    assert len([r for r in loaded if r['saved']])==1
+    last=events[-1]
+    assert c.post(f"/api/discovery/businesses/{rows[-1]['id']}/undo",json={'event_id':last['undo_event'],'revision':last['revision']}).json()['decision']=='UNREVIEWED'
+    with sessions() as s:assert s.scalar(select(func.count()).select_from(Prospect))==1
+
+
+def test_skye_guidance_uses_the_current_search_profile_snapshot(client):
+    c,_=client
+    db.save_icp_profile(1,{'minimum_budget':1000},{},True)
+    found=search(c);bid=found['businesses'][0]['id']
+    db.save_icp_profile(1,{'minimum_budget':0},{},True)
+    explanation=c.post('/api/discovery/explain',json={'campaign':'test','search_id':found['id'],'business_ids':[bid],'question':'Why does this business fit?'}).json()
+    assert 'Minimum budget is not confirmed' in explanation['businesses'][0]['missing']

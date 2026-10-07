@@ -34,3 +34,24 @@ html[data-kp-mode="light"] :is(#kp-sales-app .dw-workspace,.dw-modal){--dw-bg:#f
 /* Suggestions need room for complete labels at narrow widths and text zoom. */
 #kp-sales-app .dw-help .dw-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));align-items:stretch;gap:10px}
 #kp-sales-app .dw-help .dw-actions button{width:100%;min-width:0;height:100%;white-space:normal!important;overflow-wrap:anywhere;word-break:normal;padding:12px 16px;display:flex;align-items:center;justify-content:center;text-align:center}
+
+#kp-sales-app .dw-progress{display:block;width:100%;height:12px;margin:12px 0 24px;accent-color:var(--kp-theme-a,var(--dw-accent))}
+#kp-sales-app .dw-guided-card{border:1px solid var(--dw-line);border-radius:14px;padding:20px;margin:18px 0;background:var(--dw-bg);animation:dw-arrive .18s ease-out}
+#kp-sales-app .dw-guided-card h4{margin-top:20px!important}
+#kp-sales-app .dw-guided-card label{margin-top:14px}
+#kp-sales-app .dw-verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));align-items:stretch}
+#kp-sales-app .dw-verdicts button{width:100%;min-width:0}
+#kp-sales-app .dw-celebration{padding:12px;border-left:4px solid var(--kp-theme-a,var(--dw-accent));background:var(--dw-bg)}
+#kp-sales-app .dw-round-complete{padding:20px 0}
+@keyframes dw-arrive{from{opacity:.6;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){#kp-sales-app .dw-guided-card{animation:none}}
+
+#kp-sales-app .dw-skye-guide{border-left:4px solid var(--kp-theme-a,var(--dw-accent));background:var(--dw-bg);padding:14px 16px;border-radius:8px;margin:16px 0}
+#kp-sales-app .dw-skye-guide strong{font:700 16px/1.5 Arial,Helvetica,sans-serif}
+#kp-sales-app .dw-skye-guide a{display:inline-block;min-height:44px;padding:10px;color:var(--dw-text);text-decoration:underline}
+
+/* Shared shell header rules must not squeeze the business details dialog. */
+html body .dw-modal .dw-detail>header{display:flex!important;grid-template-columns:none!important;align-items:flex-start!important;gap:12px!important;width:100%;margin:0 0 20px!important;padding:0!important;border:0!important}
+html body .dw-modal .dw-detail>header>div{flex:1;min-width:0}
+html body .dw-modal .dw-detail>header>button{flex:0 0 44px;min-width:44px}
+#kp-sales-app .dw-guided h3:focus-visible{outline:3px solid var(--dw-text);outline-offset:4px}
