@@ -17,17 +17,25 @@ function industryIcon(category:string){
   return '🏢';
 }
 
+function industryArt(category:string){
+  if(/cafe|café|coffee|restaurant|food|bakery/i.test(category))return '/avatars/cafe.png';
+  if(/salon|hair|barber/i.test(category))return '/avatars/salon.png';
+  if(/retail|gift|shop|store/i.test(category))return '/avatars/shop.png';
+  return undefined;
+}
+
 /** A record-provided logo or a clearly identified decorative industry avatar. */
 export function BusinessHero({business,compact=false}:{business:any;compact?:boolean}){
   const url=logoUrl(business.logo_url);
   const [failed,setFailed]=useState(false);
   useEffect(()=>{setFailed(false)},[business.id,url]);
   const hasLogo=!!url&&!failed;
+  const art=industryArt(String(business.category||''));
   return <div className={`dw-business-hero ${compact?'is-compact':''}`}>
     <div className="dw-hero-halo" aria-hidden="true"/>
     <div className="dw-floating-avatar">
-      {hasLogo?<img src={url} alt={`${business.name} logo from its record`} referrerPolicy="no-referrer" onError={()=>setFailed(true)}/>:<span role="img" aria-label={`${business.category||'Business'} industry icon`}>{industryIcon(String(business.category||''))}</span>}
+      {hasLogo?<img src={url} alt={`${business.name} logo from its record`} referrerPolicy="no-referrer" onError={()=>setFailed(true)}/>:art?<img className="dw-industry-art" loading={compact?'lazy':'eager'} decoding="async" src={art} alt="Illustrated industry avatar"/>:<span role="img" aria-label={`${business.category||'Business'} industry icon`}>{industryIcon(String(business.category||''))}</span>}
     </div>
-    <small>{hasLogo?'Logo from business record':'Industry icon'}</small>
+    <small>{hasLogo?'Logo from business record':art?'Illustrated industry avatar':'Industry icon'}</small>
   </div>;
 }
