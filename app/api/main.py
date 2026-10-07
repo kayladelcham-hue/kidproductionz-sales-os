@@ -953,11 +953,27 @@ def save_hubspot_settings(req:HubSpotSettings):
 class DiscoverySettings(BaseModel):
     api_key:str
 @app.get('/api/settings/discovery')
-def discovery_settings(): return {'configured':bool(setting('OUTSCRAPER_API_KEY'))}
+def discovery_settings():
+    from .managed_discovery import status
+    return status()
 @app.post('/api/settings/discovery')
 def save_discovery_settings(req:DiscoverySettings):
-    save_integration_settings({'OUTSCRAPER_API_KEY':req.api_key.strip()})
-    return discovery_settings()
+    raise HTTPException(410, 'Lead discovery is managed by KP Sales OS. Personal API keys are no longer needed.')
+
+class DiscoveryTierRequest(BaseModel):
+    tier: str
+
+@app.put('/api/admin/discovery/users/{user_id}/tier')
+def assign_discovery_tier(user_id: int, req: DiscoveryTierRequest):
+    from .managed_discovery import TIERS
+    if not request_context.user_id.get() or not request_context.is_admin.get():
+        raise HTTPException(403, 'Admin access required')
+    if req.tier not in TIERS:
+        raise HTTPException(422, 'Choose beta, starter, growth or pro')
+    if not get_user_by_id(user_id):
+        raise HTTPException(404, 'User not found')
+    save_settings({f'discovery:plan:{user_id}': req.tier})
+    return {'user_id': user_id, 'tier': req.tier}
 class GoogleFeatures(BaseModel):
     calendar_enabled:bool=False
     gmail_enabled:bool=False
@@ -1379,6 +1395,8 @@ def outscraper_qualify_preview(req: OutscraperQualifyRequest, request: Request):
             ],
         }
 
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception('Outscraper qualification preview failed')
 

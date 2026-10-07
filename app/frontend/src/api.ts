@@ -65,7 +65,7 @@ async function mutate<T>(path:string,method:'PATCH'|'PUT'|'DELETE',body?:any):Pr
 }
 export const authApi={me:()=>get<any>('/api/auth/me'),login:async(username:string,password:string)=>{const r=await fetch(BASE+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});if(!r.ok){const data=await r.json().catch(()=>({}));throw new Error(data.detail||'Could not sign in. Check your email and password.')}return r.json()},logout:()=>post<any>('/api/auth/logout',{})};
 export const api={
-recoveryCode:(password:string)=>post<any>('/api/auth/recovery-code',{password}),discoverySettings:()=>get<any>('/api/settings/discovery'),saveDiscoverySettings:(api_key:string)=>post<any>('/api/settings/discovery',{api_key}),saveGoogleFeatures:(body:any)=>post<any>('/api/settings/google',body),
+recoveryCode:(password:string)=>post<any>('/api/auth/recovery-code',{password}),discoverySettings:()=>get<any>('/api/settings/discovery'),saveGoogleFeatures:(body:any)=>post<any>('/api/settings/google',body),
 aiChat:(body:any)=>post<any>('/api/ai/chat',body),
 commandCenter:(campaign?:string)=>get<any>(`/api/home/command-center${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),
 icpProfile:()=>get<any>('/api/icp/profile'),saveIcpProfile:(body:any)=>mutate<any>('/api/icp/profile','PUT',body),icpDiscovery:()=>get<any>('/api/icp/discovery'),icpDashboard:(campaign?:string)=>get<any>(`/api/icp/dashboard${campaign?`?campaign=${encodeURIComponent(campaign)}`:''}`),leadFeedback:(id:number,body:any)=>post<any>(`/api/prospects/${id}/feedback`,body),

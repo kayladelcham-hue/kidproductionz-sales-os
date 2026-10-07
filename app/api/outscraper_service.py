@@ -149,18 +149,25 @@ def search_google_maps(
     category: str = "",
 ) -> dict:
 
-    from .request_context import setting
-    api_key = setting("OUTSCRAPER_API_KEY", "").strip()
+    from .managed_discovery import server_key, reserve, cached_search
+    api_key = server_key()
 
     if not api_key:
-        raise RuntimeError("OUTSCRAPER_API_KEY_NOT_CONFIGURED")
+        from fastapi import HTTPException
+        raise HTTPException(503, "Lead discovery is temporarily unavailable. Contact your workspace admin.")
 
     query = str(query or "").strip()
 
     if not query:
         raise ValueError("OUTSCRAPER_QUERY_REQUIRED")
 
-    limit = max(1, min(int(limit or 10), 500))
+    limit = int(limit)
+    if len(query) > 500:
+        raise ValueError("Keep your lead search under 500 characters.")
+    cached = cached_search(query, limit, category)
+    if cached is not None:
+        return cached
+    reserve(limit)
 
     params = urlencode({
         "query": query,
@@ -231,7 +238,7 @@ def search_google_maps(
         seen.add(key)
         unique.append(row)
 
-    return {
+    result = {
         "query": query,
         "requested_limit": limit,
         "received_count": len(places),
@@ -240,3 +247,6 @@ def search_google_maps(
         "duplicates_removed": len(normalized) - len(unique),
         "leads": unique,
     }
+
+    cached_search(query, limit, category, result)
+    return result

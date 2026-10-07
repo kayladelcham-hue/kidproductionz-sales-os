@@ -106,6 +106,8 @@ def delete_user_session(token_hash):
 def connect(): return engine.connect()
 def init_db():
     Base.metadata.create_all(bind=engine)
+    from .managed_discovery import metadata as discovery_metadata
+    discovery_metadata.create_all(engine)
 
     with engine.begin() as conn:
         if 'owner_id' not in {c['name'] for c in inspect(engine).get_columns('upload')}:
