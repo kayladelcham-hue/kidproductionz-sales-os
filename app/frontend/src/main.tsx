@@ -14,6 +14,7 @@ import './ProductRedesign.css';
 import './AppPolish.css';
 import './BrandRefresh.css';
 import './PremiumMotion.css';
+import './DiscoveryWorkspace.css';
 import {confirmLeadMotion} from './leadMotion';
 const logo = '/kp-logo.png'; import {ScoreBadge,GradeBadge,RouteBadge,PriorityBadge,StatusBadge} from './badges';
 

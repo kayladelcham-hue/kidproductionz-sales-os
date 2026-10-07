@@ -2,7 +2,6 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {api} from './api';
 import {useSurfaceDialog} from './useSurfaceDialog';
-import './DiscoveryWorkspace.css';
 
 const decisionLabels:any={QUALIFIED:'Looks like a fit',NEEDS_RESEARCH:'Not sure',DISQUALIFIED:'Not a fit',UNREVIEWED:'Not reviewed'};
 const fitLabel=(x:string)=>x==='Matches stated criteria'?'Matches what you asked for':x==='Outside criteria'?"Some details don’t match":'Some details are missing';
@@ -70,7 +69,7 @@ export function DiscoveryWorkspace({campaign,home=false,onNavigate,onCampaignRea
  const active=[query&&`Text: ${query}`,decision!=='ALL'&&decisionLabels[decision],contact!=='ALL'&&`Contact: ${contact==='YES'?'available':'missing'}`,fit==='WITHIN'&&'Hide confirmed mismatches'].filter(Boolean);
  const valid=criteria.industry.trim()&&criteria.city.trim()&&/^[A-Z]{2}$/.test(criteria.state)&&Number.isInteger(criteria.limit)&&criteria.limit>0&&criteria.limit<=100&&criteria.min_rating>=0&&criteria.min_rating<=5&&Number.isInteger(criteria.min_reviews)&&criteria.min_reviews>=0;
  return <div className="dw-workspace">
-  <header className="dw-heading"><p className="eyebrow">KP SALES OS</p><h2>{home?'Find potential customers.':'Your potential customers'}</h2><p>Find businesses that might need what you sell. You decide who looks worth contacting.</p></header>
+  <div className="dw-heading"><p className="eyebrow">KP SALES OS</p><h2>{home?'Find potential customers.':'Your potential customers'}</h2><p>Find businesses that might need what you sell. You decide who looks worth contacting.</p></div>
   {error&&<div className="dw-alert" role="alert">{error}<button onClick={()=>location.reload()}>Reload workspace</button></div>}
   {message&&<p role="status">{message}</p>}
   {!ready&&<p role="status">Loading your discovery workspace…</p>}
