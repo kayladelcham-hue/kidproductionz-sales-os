@@ -1,23 +1,21 @@
+import './LegacyLayouts.css';
+import './DesignSystem.css';
+import {WorkspaceShell} from './WorkspaceShell';
 import {DiscoveryWorkspace} from './DiscoveryWorkspace';
 import {createPortal} from 'react-dom';
 import SalesDashboard from './SalesDashboard';
-import SalesAgent from './SalesAgent';
-import {Appearance,AppNavigation,CalendarGrid,GuidedTour,Icon,navigationGroups,pageName} from './AppExperience';
+
+import {Appearance,AppNavigation,CalendarGrid,GuidedTour,pageName} from './AppExperience';
 import {CustomersWorkspace,RevenueWorkspace} from './Lifecycle';
 import {CoreHome,CoreLeads,CorePipeline,CoreMomentum,CoreMore} from './CoreExperience';
 import {AddProspect,FollowUpHub} from './SalesHub';
 import {IcpProfile} from './IcpProfile';
 import {MomentumToast} from './Momentum';
 import {RescorePanel} from './RescorePanel';
-import React,{useEffect,useState,useRef} from 'react'; import {createRoot} from 'react-dom/client'; import './styles.css'; import './Lifecycle.css'; import './Momentum.css'; import './SalesHub.css'; import './IcpProfile.css'; import './RescorePanel.css'; import {api,campaignApi,uploadCampaign,authApi,Queue,QueueItem} from './api';
-import './ProductRedesign.css';
-import './AppPolish.css';
-import './BrandRefresh.css';
-import './PremiumMotion.css';
-import './DiscoveryWorkspace.css';
-import './NeonFlow.css';
-import './HeroReview.css';
-import './ReferenceLayout.css';
+import React,{useEffect,useState,useRef} from 'react'; import {createRoot} from 'react-dom/client'; import {api,campaignApi,uploadCampaign,authApi,Queue,QueueItem} from './api';
+
+
+const SalesAgent=React.lazy(()=>import('./SalesAgent'));
 import {confirmLeadMotion} from './leadMotion';
 const logo = '/kp-logo.png'; import {ScoreBadge,GradeBadge,RouteBadge,PriorityBadge,StatusBadge} from './badges';
 
@@ -533,7 +531,8 @@ function App(){
     page==='Runs'?<Runs/>:
     page==='Momentum'?<CoreMomentum/>:
     page==='More'?<CoreMore onNavigate={setPage}/>:<Settings campaign={campaign}/>;
-  return <div id="kp-sales-app" className={`shell ${page==='Home'?'kp-reference-home':''}`}><aside inert={mobileMenuOpen||tourOpen}><div className="brand"><img className="neo-brand-logo" src={logo} alt="KidProductionz logo"/><div><b>Sales OS</b><small>KidProductionz</small></div></div><nav>{navigationGroups.map(g=><section className="xp-desktop-group" key={g.name}>{g.pages.map(n=><button key={n} className={page===n?'active':''} onClick={()=>setPage(n)}><Icon name={({Home:'home',Prospects:'people','Up Next':'sell',Leads:'queue',More:'menu'} as Record<string,string>)[n]||'menu'}/><span>{pageName(n)}</span></button>)}</section>)}</nav><div className="safe"><span/>Ready when you are</div></aside><main inert={mobileMenuOpen||tourOpen}><header><button className="mobile-menu-btn" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(true)}><Icon name="menu"/></button><div className="neo-header-brand"><img className="neo-mobile-logo" src={logo} alt="KidProductionz logo"/><p className="eyebrow">KIDPRODUCTIONZ SALES OS</p><h1>{pageName(page)}</h1></div><select aria-label="Current campaign" value={campaign} onChange={e=>{setCampaign(e.target.value);setHubProspect(null)}}>{campaigns.map(c=><option key={c.campaign_id} value={c.campaign_id}>{c.name||c.campaign_id}</option>)}</select></header><div className="kp-page" key={`${page}:${campaign}`}>{content}</div>{hubProspect&&<ProspectDrawer key={hubProspect.prospect_id??hubProspect.id} item={hubProspect} onClose={()=>{setHubProspect(null);setDashboardRevision(x=>x+1)}}/>}</main>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>}<div className="bottom-nav" inert={mobileMenuOpen||tourOpen}>{[["Home","Home","home"],["Contact","Up Next","sell"],["Potential customers","Prospects","people"],["Pipeline","Leads","queue"],["More","More","menu"]].map(([l,v,icon])=><button key={l} aria-current={page===v?'page':undefined} onClick={()=>setPage(v)}><Icon name={icon}/><span>{l}</span></button>)}</div>{tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<SalesAgent campaign={campaign} discoveryIds={discoveryContext} onOpenBusiness={id=>{setPage('Prospects');setDiscoveryContext([id])}} onDiscover={()=>setPage('Home')}/></div>
+  return <><WorkspaceShell page={page} onNavigate={setPage} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} menuOpen={mobileMenuOpen} onMenu={()=>setMobileMenuOpen(true)} blocked={mobileMenuOpen||tourOpen}><div className="kp-page" key={`${page}:${campaign}`}>{content}</div>{hubProspect&&<ProspectDrawer key={hubProspect.prospect_id??hubProspect.id} item={hubProspect} onClose={()=>{setHubProspect(null);setDashboardRevision(x=>x+1)}}/>}</WorkspaceShell>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>} {tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<React.Suspense fallback={null}><SalesAgent campaign={campaign} discoveryIds={discoveryContext} onOpenBusiness={id=>{setPage('Prospects');setDiscoveryContext([id])}} onDiscover={()=>setPage('Home')}/></React.Suspense></>;
+
 }
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
 function QueueTable({items,onSelect}:{items:QueueItem[];onSelect?:(item:QueueItem)=>void}){return <div className="table-wrap"><table><thead><tr><th>Position</th><th>Business</th><th>Score</th><th>Grade</th><th>Route</th><th>Priority</th><th>Reason</th></tr></thead><tbody>{(items||[]).map((x:any,i:number)=><tr key={x.prospect_id||x.lead_id||x.fixture_id||i} onClick={()=>onSelect?.(x)}><td>{x.queue_position??i+1}</td><td><b>{x.business_name||x.name||x.business||'-'}</b></td><td><ScoreBadge value={x.score}/></td><td><GradeBadge value={x.grade}/></td><td><RouteBadge value={x.route}/></td><td><PriorityBadge value={x.priority}/></td><td>{x.route_reason||'-'}</td></tr>)}</tbody></table></div>}

@@ -1,0 +1,36 @@
+/** Component tests only. jsdom cannot verify visual layout or animation. */
+import React,{act,useState} from '../../app/frontend/node_modules/react';
+import {createRoot} from '../../app/frontend/node_modules/react-dom/client';
+import assert from 'node:assert/strict';
+import {WorkspaceShell} from '../../app/frontend/src/WorkspaceShell';
+import {FocusCarousel} from '../../app/frontend/src/FocusCarousel';
+import {BusinessHero} from '../../app/frontend/src/BusinessHero';
+import {GuidedReview} from '../../app/frontend/src/GuidedReview';
+import {api} from '../../app/frontend/src/api';
+import {Appearance} from '../../app/frontend/src/AppExperience';
+import SalesAgent from '../../app/frontend/src/SalesAgent';
+const dom={window:window};
+const host=document.getElementById('root')!;const root=createRoot(host);
+const render=async(node:React.ReactNode)=>{await act(async()=>{root.render(node);await Promise.resolve()})};
+const click=async(el:Element|null)=>{assert.ok(el);await act(async()=>{(el as HTMLElement).click();await Promise.resolve()})};
+const button=(label:string)=>Array.from(host.querySelectorAll('button')).find(x=>x.textContent?.trim()===label)||null;
+let passed=0;const ok=(name:string)=>{passed++;console.log('PASS',name)};
+await render(<WorkspaceShell page="Home" onNavigate={()=>{}} campaign="test" campaigns={[{campaign_id:'test',name:'Very long campaign name that remains a real selection'}]} onCampaign={()=>{}} menuOpen={false} onMenu={()=>{}} blocked={false}><p>Content</p></WorkspaceShell>);
+assert.equal(host.querySelectorAll('nav').length,2);assert.equal(host.querySelectorAll('[aria-current="page"]').length,2);assert.ok(host.querySelector('a[href="#kp-main"]'));ok('shell exposes navigation, campaign label and skip link');
+let next=0;await render(<FocusCarousel activeKey={0} onNext={()=>next++} previous={{label:'Previous',title:'Previous'}} next={{label:'Next',title:'Next'}}><input aria-label="Test input"/><button>Active</button></FocusCarousel>);
+assert.equal(host.querySelectorAll('.kp-carousel-preview[aria-hidden=true][inert]').length,2);assert.equal(host.querySelectorAll('.kp-carousel-preview button').length,0);await click(host.querySelector('[aria-label="Next card"]'));assert.equal(next,1);await act(()=>{host.querySelector('.kp-carousel')!.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))});assert.equal(next,2);await act(()=>{host.querySelector('input')!.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))});assert.equal(next,2);ok('carousel click/keyboard navigation excludes text inputs and inert previews');
+await render(<BusinessHero business={{id:9,name:'Actual Record',category:'Hair salon',logo_url:'https://logo.example/real.png'}}/>);assert.match(host.textContent||'',/Logo from business record/);await act(()=>{host.querySelector('img')!.dispatchEvent(new dom.window.Event('error'))});assert.match(host.textContent||'',/Illustrated industry avatar/);assert.ok(host.querySelector('.dw-hero-platform'));ok('record logo has priority and failed logos fall back to labeled reusable art');
+const rows=[1,2].map(id=>({id,name:`Test business ${id} ${'Long business name '.repeat(6)}`,category:'Hair salon',city:'Orlando',state:'FL',decision:'UNREVIEWED',revision:0,notes:'',saved:false,assessment:{matches:['Business type: Hair salon','Location: Orlando'],contact_paths:['website'],missing_information:['Who makes buying decisions'],criteria:[]}}));
+const records=new Map(rows.map(x=>[x.id,{...x}]));let failSave=true;let savePendingResolve:any;let undoCalls=0;
+api.discoveryDetail=async(id:number)=>({...records.get(id)});
+api.discoveryDecide=async(id:number,payload:any)=>{const r=records.get(id)!;Object.assign(r,{decision:payload.decision,notes:payload.notes,revision:r.revision+1,undo_event:42});return {...r}};
+api.discoverySave=async(id:number)=>{if(failSave)throw Error('Deliberate test save failure');await new Promise(resolve=>savePendingResolve=resolve);records.get(id)!.saved=true;return {...records.get(id)}};
+api.discoveryUndo=async(id:number)=>{undoCalls++;Object.assign(records.get(id)!,{decision:'UNREVIEWED',revision:records.get(id)!.revision+1});return {...records.get(id)}};
+function Harness(){const [businesses,setBusinesses]=useState(rows);return <GuidedReview businesses={businesses} campaign="test" searchId="unit" onUpdated={row=>setBusinesses(old=>old.map(x=>x.id===row.id?row:x))} onOpen={()=>{}} onBrowse={()=>{}} onNewSearch={()=>{}}/>}
+await render(<Harness/>);await click(button('👍Looks like a fit'));assert.match(host.querySelector('[role=alert]')?.textContent||'',/save failure/);assert.match(host.querySelector('.dw-guided-card h3')?.textContent||'',/Test business 1/);assert.ok(button('Retry saving this business'));ok('failed fit save does not advance and offers retry');
+failSave=false;await act(async()=>{(button('Retry saving this business') as HTMLElement).click();await Promise.resolve()});assert.match(host.querySelector('.dw-guided-card h3')?.textContent||'',/Test business 1/);assert.ok(host.querySelector('.dw-verdicts button[disabled]'));await act(async()=>{savePendingResolve();await Promise.resolve()});assert.match(host.querySelector('.dw-guided-card h3')?.textContent||'',/Test business 2/);assert.ok(records.get(1)!.saved);ok('fit advances only after save persistence resolves');
+await click(button('Undo last decision'));assert.equal(undoCalls,1);assert.match(host.querySelector('.dw-guided-card h3')?.textContent||'',/Test business 1/);assert.equal(records.get(1)!.decision,'UNREVIEWED');ok('undo restores the reviewed business');
+await click(button('?Not sure'));assert.equal(records.get(1)!.decision,'NEEDS_RESEARCH');await click(button('×Not a fit'));assert.equal(records.get(2)!.decision,'DISQUALIFIED');assert.match(host.textContent||'',/reviewed 2 businesses/);assert.match(host.textContent||'',/saved 1/);ok('all decision types count and completion uses actual reviewed/saved counts');
+await render(<Appearance/>);await click(button('☀ Light'));assert.equal(document.documentElement.dataset.kpMode,'light');assert.equal(localStorage.getItem('kp-interface-mode'),'light');await click(button('☾ Dark'));assert.equal(document.documentElement.dataset.kpMode,'dark');ok('appearance toggles both themes and persists the choice');
+await render(<SalesAgent campaign="test" onDiscover={()=>{}}/>);await click(host.querySelector('[aria-label="Open Skye sales assistant"]'));assert.equal(document.activeElement,host.querySelector('[aria-label="Ask Skye"]'));await act(()=>document.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));assert.equal(host.querySelector('.ai-agent-panel'),null);ok('Skye focuses its input and closes with Escape');
+await act(()=>root.unmount());console.log(`${passed} component checks passed. Visual layout not tested.`);
