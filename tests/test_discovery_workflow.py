@@ -212,3 +212,9 @@ def test_skye_guidance_uses_the_current_search_profile_snapshot(client):
     db.save_icp_profile(1,{'minimum_budget':0},{},True)
     explanation=c.post('/api/discovery/explain',json={'campaign':'test','search_id':found['id'],'business_ids':[bid],'question':'Why does this business fit?'}).json()
     assert 'Minimum budget is not confirmed' in explanation['businesses'][0]['missing']
+
+
+def test_only_explicit_record_logos_are_preserved():
+    normalized=outscraper_service.normalize_place({'name':'Synthetic business','logo_url':'https://business.example/logo.png','photo':'https://business.example/photo.jpg'})
+    assert normalized['logo_url']=='https://business.example/logo.png'
+    assert outscraper_service.normalize_place({'name':'Synthetic business','photo':'https://business.example/photo.jpg'})['logo_url']==''

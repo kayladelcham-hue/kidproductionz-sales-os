@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {api} from './api';
+import {BusinessHero} from './BusinessHero';
 import {FocusCarousel} from './FocusCarousel';
 const GuidedReview=React.lazy(()=>import('./GuidedReview').then(module=>({default:module.GuidedReview})));
 import {useSurfaceDialog} from './useSurfaceDialog';
@@ -126,7 +127,7 @@ function QualificationDetail({lead,campaign,search,onClose,onUpdated,onOutreach,
  const ref=useSurfaceDialog(true,onClose),q=lead.assessment||{};
  const perform=async(action:()=>Promise<any>)=>{setBusy(true);setError('');try{const result=await action();const detail=await api.discoveryDetail(lead.id,search);onUpdated(detail);return result}catch(e:any){setError(e.message)}finally{setBusy(false)}};
  const decide=async(outcome:string)=>{const result=await perform(()=>api.discoveryDecide(lead.id,{decision:outcome,reason:reason.trim()||`My decision: ${decisionLabels[outcome]}.`,notes,revision:lead.revision}));if(result){setUndo({event_id:result.undo_event,revision:result.revision});setNotice('Your decision was saved automatically.')}};
- return createPortal(<div className="dw-modal" ref={ref} role="dialog" aria-modal="true" aria-labelledby="dw-detail-title"><div className="dw-detail"><header><div><small>POTENTIAL CUSTOMER</small><h2 id="dw-detail-title">{lead.name}</h2><p>{[lead.category,lead.city,lead.state].filter(Boolean).join(' · ')}</p></div><button aria-label="Close business details" onClick={onClose}>×</button></header>
+ return createPortal(<div className="dw-modal" ref={ref} role="dialog" aria-modal="true" aria-labelledby="dw-detail-title"><div className="dw-detail"><BusinessHero business={lead} compact/><header><div><small>POTENTIAL CUSTOMER</small><h2 id="dw-detail-title">{lead.name}</h2><p>{[lead.category,lead.city,lead.state].filter(Boolean).join(' · ')}</p></div><button aria-label="Close business details" onClick={onClose}>×</button></header>
   <p><strong>{fitLabel(q.label)}</strong> · {decisionLabels[lead.decision]}{lead.saved?' · Saved':''}</p><p>{q.score_meaning}</p>
   <h3>Why it might fit</h3><ul>{(q.matches||[]).length?q.matches.map((x:string)=><li key={x}>{x}</li>):<li>No match is confirmed by the recorded criteria.</li>}</ul>
   <div className="dw-evidence">{(q.criteria||[]).map((x:any)=><article key={x.criterion}><b>{x.criterion}</b><span>{words(x.status)}</span><p>Target: {x.target}</p><p>Recorded: {x.value}</p></article>)}</div>
