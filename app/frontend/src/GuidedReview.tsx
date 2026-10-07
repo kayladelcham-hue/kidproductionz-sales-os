@@ -115,7 +115,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   };
 
   return <section className="dw-guided" aria-label="Review businesses one at a time">
-    <SkyeGuide mission={round.length?`Review ${round.length} businesses`:'Review complete'} steps={round.map(id=>({id,name:businesses.find(row=>row.id===id)?.name||'Business',done:businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')}))}>{current?'Let’s check what fits and what we still need to know.':'Your choices are saved. Let’s choose the next step.'}</SkyeGuide>
+    <SkyeGuide mission={round.length?`Review ${round.length}`:'Review complete'} steps={round.map(id=>({id,name:businesses.find(row=>row.id===id)?.name||'Business',done:businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')}))}>{current?'Worth a look? You decide.':'Saved. What’s next?'}</SkyeGuide>
     {error&&<p role="alert">{error}</p>}
 
     {loading&&<p role="status">Opening the next business…</p>}
@@ -125,16 +125,16 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
       <h3 ref={heading} tabIndex={-1}>{business.name}</h3>
       <p>{business.category||'Business type not recorded'} · {[business.city,business.state].filter(Boolean).join(', ')||'Location not recorded'}</p>
       <FitSignals assessment={business.assessment}/><p className="dw-buying-note">ⓘ A match does not mean they want to buy.</p>
-      <details><summary>Evidence, Skye’s explanation, and notes</summary><button disabled={busy} onClick={explain}>Skye, walk me through this business</button>
+      <details><summary>More info</summary><button disabled={busy} onClick={explain}>Skye, walk me through this business</button>
       {skye&&<div className="dw-skye-guide" aria-live="polite"><strong><img className="dw-inline-skye" src="/avatars/skye.png" alt=""/>Skye</strong>{skye.businesses?.map((row:any)=><div key={row.id}><p>What matches: {row.known.join(' · ')||'No match confirmed.'}</p><p>What to check: {row.missing.join(' · ')}</p><p>My suggestion: {labels[row.suggested_decision]}. {row.explanation}</p>{row.sources.map((source:any)=><a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.label} ↗</a>)}</div>)}</div>}
-        <button onClick={()=>onOpen(business)}>See evidence and ask Skye</button>
+        <button onClick={()=>onOpen(business)}>Open details</button>
         {link(business.website)&&<a href={link(business.website)} target="_blank" rel="noreferrer">Check their website ↗</a>}
         <label>Anything to remember? (optional)<textarea maxLength={3000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
       </details>
     </>}</article></FocusCarousel>}
-    {current&&business?.id===current&&!loading&&<div className="dw-decision-dock" role="group" aria-label="Does this look worth contacting?"><div className="dw-actions dw-verdicts">{['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED'].map(outcome=><button key={outcome} className={outcome==='QUALIFIED'?'dw-primary':outcome==='NEEDS_RESEARCH'?'dw-not-sure':''} disabled={busy||retrySave} onClick={()=>choose(outcome)}><span aria-hidden="true">{outcome==='QUALIFIED'?'👍':outcome==='NEEDS_RESEARCH'?'?':'×'}</span>{labels[outcome]}</button>)}</div><p>Decisions save automatically.{undo&&<button disabled={busy} onClick={undoLast}>Undo last decision</button>}</p>{retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry saving this business</button>}</div>}
-    <div className="dw-review-foot">{notice&&<div className="dw-celebration" role="status" key={`${index}-${notice}`}><b>✦ Decision saved</b><p>{notice}</p></div>}{savedFit&&<button className="dw-saved-next" onClick={()=>onOpen(savedFit)}><b>Saved a fit?</b><span>Check the website or prepare a first message for {savedFit.name}.</span><span aria-hidden="true">→</span></button>}</div>
-    {!current&&undo&&<button disabled={busy} onClick={undoLast}>Undo last decision</button>}
+    {current&&business?.id===current&&!loading&&<div className="dw-decision-dock" role="group" aria-label="Does this look worth contacting?"><div className="dw-actions dw-verdicts">{['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED'].map(outcome=><button key={outcome} className={outcome==='QUALIFIED'?'dw-primary':outcome==='NEEDS_RESEARCH'?'dw-not-sure':''} disabled={busy||retrySave} onClick={()=>choose(outcome)}><span aria-hidden="true">{outcome==='QUALIFIED'?'👍':outcome==='NEEDS_RESEARCH'?'?':'×'}</span>{labels[outcome]}</button>)}</div><p>Saves automatically.{undo&&<button disabled={busy} onClick={undoLast}>Undo</button>}</p>{retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry saving this business</button>}</div>}
+    <div className="dw-review-foot">{notice&&<div className="dw-celebration" role="status" key={`${index}-${notice}`}><b>✦ Decision saved</b><p>{notice}</p></div>}{savedFit&&<button className="dw-saved-next" onClick={()=>onOpen(savedFit)}><b>Next step</b><span>{savedFit.name}</span><span aria-hidden="true">→</span></button>}</div>
+    {!current&&undo&&<button disabled={busy} onClick={undoLast}>Undo</button>}
     {!current&&<div className="dw-round-complete">
       <h3 ref={heading} tabIndex={-1}>{businesses.length?'Nice work. What’s next?':'No businesses came back from this search.'}</h3>
       <p>{businesses.length?`You’ve reviewed ${reviewed} businesses in this search and saved ${saved}. Your decisions are saved.`:'Try a different business type or location. We won’t change your search for you.'}</p>

@@ -37,3 +37,9 @@ Home now moves search history, saved-search controls and advanced tools into a d
 Pipeline now opens an actual populated stage when the initial stage is empty, displays industry avatars on deal cards, and uses a compact value header and empty state. Calendar's Today button has an explicit content-width minimum and cannot wrap into letters. Skye is a transparent floating avatar button with no permanent box or visible text label, an accessible name, keyboard focus ring and reduced-motion support. Contact session stats use a compact wrapping pill and a visible data-driven mission bar.
 
 The production build and twelve DOM/component checks pass. The additional checks cover grounded evidence tiles, the secondary-tools dialog and Pipeline choosing the actual populated stage. Screenshot-based defects were inspected, but the corrected visual result still cannot be browser-verified under the administration policy.
+
+## Beginner Home simplification
+
+Removed the visible industry-avatar caption while retaining alt text that distinguishes generic artwork from a business logo. Home now uses a short headline, icon-led setup stages, Next/Search actions, shorter Skye prompts and concise Match/Contact/Missing tiles. Main gallery controls no longer expose result-status statistics, duplicate counts, active-filter descriptions, repeated tabs, reset controls or a disabled Save 0 button. Those details and filter controls remain in the secondary dialog; selected bulk-save controls appear only after selection. Search failures/partial-results notices stay visible. The launcher now uses its own kp-floating-skye class, transparent styling and a bottom-right mobile position above navigation, preventing legacy launcher rules from affecting it.
+
+Build and twelve component checks pass. Actual live appearance remains unverified under the browser-policy block.
