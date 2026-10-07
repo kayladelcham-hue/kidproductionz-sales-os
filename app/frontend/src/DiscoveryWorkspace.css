@@ -30,3 +30,7 @@ html[data-kp-mode="light"] :is(#kp-sales-app .dw-workspace,.dw-modal){--dw-bg:#f
 #kp-sales-app .dw-heading>*{width:100%;max-width:none;min-width:0}
 #kp-sales-app .dw-heading .eyebrow{margin:0 0 8px!important;white-space:normal}
 #kp-sales-app .dw-heading h2{white-space:normal!important;overflow-wrap:anywhere!important}
+
+/* Suggestions need room for complete labels at narrow widths and text zoom. */
+#kp-sales-app .dw-help .dw-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));align-items:stretch;gap:10px}
+#kp-sales-app .dw-help .dw-actions button{width:100%;min-width:0;height:100%;white-space:normal!important;overflow-wrap:anywhere;word-break:normal;padding:12px 16px;display:flex;align-items:center;justify-content:center;text-align:center}
