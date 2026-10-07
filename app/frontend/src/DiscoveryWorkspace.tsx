@@ -74,18 +74,18 @@ export function DiscoveryWorkspace({campaign,home=false,onNavigate,onCampaignRea
  }).sort((a:any,b:any)=>sort==='name'?String(a.name).localeCompare(String(b.name)):sort==='recent'?String(b.found_at||'').localeCompare(String(a.found_at||'')):(b.assessment?.matches?.length||0)-(a.assessment?.matches?.length||0)),[allRows,query,decision,contact,fit,sort]);
  const active=[query&&`Text: ${query}`,decision!=='ALL'&&decisionLabels[decision],contact!=='ALL'&&`Contact: ${contact==='YES'?'available':'missing'}`,fit==='WITHIN'&&'Hide confirmed mismatches'].filter(Boolean);
  const valid=criteria.industry.trim()&&criteria.city.trim()&&/^[A-Z]{2}$/.test(criteria.state)&&Number.isInteger(criteria.limit)&&criteria.limit>0&&criteria.limit<=100&&criteria.min_rating>=0&&criteria.min_rating<=5&&Number.isInteger(criteria.min_reviews)&&criteria.min_reviews>=0;
- return <div className="dw-workspace">
-  <div className="dw-heading"><p className="eyebrow">KP SALES OS</p><h2>{home?'Find potential customers.':'Your potential customers'}</h2><p>Find businesses that might need what you sell. You decide who looks worth contacting.</p></div>
+ return <div className={home?'dw-workspace dw-home-stage':'dw-workspace'}>
+  <div className="dw-heading"><p className="eyebrow">KP SALES OS</p><h2>{home?'Your next customer starts here.':'Your potential customers'}</h2><p>Let Skye guide you from a simple idea to businesses worth exploring.</p></div>
   {error&&<div className="dw-alert" role="alert">{error}<button onClick={()=>location.reload()}>Reload workspace</button></div>}
   {message&&<p role="status">{message}</p>}
   {!ready&&<p role="status">Loading your discovery workspace…</p>}
   {(!result||editing)&&<FocusCarousel activeKey={step} previous={step>0?{label:'Previous step',title:['Your offer','Business type','Location'][step-1],summary:[profile.offer,criteria.industry,[criteria.city,criteria.state].filter(Boolean).join(', ')][step-1]}:undefined} next={{label:'Coming next',title:['Business type','Location','Check your search','Review businesses'][step],summary:['Choose who to explore','Choose where to look','Confirm before searching','One business at a time, with Skye'][step]}}><section className="dw-target" aria-label="Who you want to sell to" ref={targetSurface} key={`setup-${step}`}>
    <p className="dw-step">Step {step+1} of 4 · {['What you sell','Who could use it','Where to look','Check your search'][step]}</p>
    <div className="dw-skye-guide" aria-label="Skye’s guidance"><strong>✦ Skye</strong><p>{[
-    'Let’s find a potential customer together. First, what do you sell? A few words are enough.',
-    `Who could use ${profile.offer||'what you sell'}? Choose a business type. If you’re unsure, I can help you pick a starting point.`,
-    'Where can you serve customers? Choose a city and state, and I’ll keep the search there.',
-    'Does this search look right? You can edit it before we start. Then we’ll look at the businesses one at a time.'
+    'Tell me what you sell. I’ll help you choose where to look next.',
+    `Let’s explore who could use ${profile.offer||'what you sell'}. Need ideas? Ask me below.`,
+    'Choose a city and state you can serve. We’ll keep the search there.',
+    'Check your search, then we’ll review the businesses together.'
    ][step]}</p></div>
    <ol className="dw-step-track" aria-label="Setup stages">{['Your offer','Business type','Location','Your search'].map((label,i)=><li key={label} className={i<step?'is-done':i===step?'is-current':''} aria-current={i===step?'step':undefined}><span aria-hidden="true">{i<step?'✓':i+1}</span><b>{label}</b></li>)}</ol>
    <progress className="dw-progress" max={4} value={step+1} aria-label={`Setup step ${step+1} of 4`}/>

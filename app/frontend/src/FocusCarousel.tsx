@@ -12,11 +12,11 @@ export function FocusCarousel({activeKey,children,previous,next}:Props){
     setMotion({key:activeKey,backwards});
   }
   const preview=(card:Preview,side:string)=><div className={`dw-carousel-peek dw-carousel-${side}`} aria-hidden="true">
-    <span className="dw-carousel-orbit">✦</span><small>{card.label}</small><h3>{card.title}</h3>{card.summary&&<p>{card.summary}</p>}
+    <span className="dw-carousel-orbit"><img src="/kp-logo.png" alt=""/></span><small>{card.label}</small><h3>{card.title}</h3>{card.summary&&<p>{card.summary}</p>}
     <div className="dw-carousel-lines"><i/><i/><i/></div>
   </div>;
   return <div className="dw-focus-carousel">
-    {previous&&preview(previous,'previous')}
+    {preview(previous||{label:'Your guide',title:'Meet Skye',summary:'One question at a time. Your choices shape the search.'},'previous')}
     {next&&preview(next,'next')}
     <div className={`dw-carousel-active ${backwards?'is-backwards':''}`} key={activeKey}>{children}</div>
   </div>;
