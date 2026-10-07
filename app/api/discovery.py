@@ -475,6 +475,7 @@ class Ask(BaseModel):
     business_ids: list[int] = Field(default_factory=list,max_length=5)
     campaign: str
     question: str = Field(max_length=1000)
+    search_id: str | None = Field(default=None,max_length=36)
 
 
 @router.post('/explain')
@@ -489,7 +490,7 @@ def explain(req: Ask):
         for bid in req.business_ids:
             row=owned_business(session,bid)
             if row.campaign_id!=cid:raise HTTPException(404,'Business not found in this campaign')
-            view=business_view(row,profile=profile);q=view['assessment']
+            view=detail(bid,req.search_id) if req.search_id else business_view(row,profile=profile);q=view['assessment']
             rows.append({'id':bid,'name':view['name'],'fit':q['label'],'known':q['matches'],'missing':q['missing_information'],'sources':q['sources'],
                          'suggested_decision':'NEEDS_RESEARCH' if q['label']!='Matches stated criteria' else 'QUALIFIED',
                          'explanation':'Check what matches and what we do not know, then choose your own decision. This suggestion has not been saved.'})
