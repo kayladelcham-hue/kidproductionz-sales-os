@@ -8,7 +8,7 @@
     },
     {
       "name": "cafe",
-      "prompt": "Use case: stylized-concept. Asset type: transparent 3D hero illustration for KP Sales OS. Premium friendly 3D render with luminous cyan rim light, teal glass, tiny lime accents. Centered isolated subject, no text, no logos, no scenery, true transparent background, generous clear padding, crisp silhouette, suitable for a 220px dashboard card. Subject: a friendly white ceramic coffee cup with dark coffee, tiny smiling face, rosy cheeks, a small pair of green leaves above the rim and two floating coffee beans. It floats over a slim circular teal glass pedestal with a cyan luminous ring. Generic café illustration, no branding."
+      "prompt": "Use case: stylized-concept. Asset type: transparent 3D hero illustration for KP Sales OS. Premium friendly 3D render with luminous cyan rim light, teal glass, tiny lime accents. Centered isolated subject, no text, no logos, no scenery, true transparent background, generous clear padding, crisp silhouette, suitable for a 220px dashboard card. Subject: a friendly white ceramic coffee cup with dark coffee, tiny smiling face, rosy cheeks, a small pair of green leaves above the rim and two floating coffee beans. It floats over a slim circular teal glass pedestal with a cyan luminous ring. Generic caf\u00e9 illustration, no branding."
     },
     {
       "name": "salon",
@@ -17,6 +17,12 @@
     {
       "name": "shop",
       "prompt": "Use case: stylized-concept. Asset type: transparent 3D hero illustration for KP Sales OS. Premium friendly 3D render with luminous cyan rim light, teal glass, tiny lime accents. Centered isolated subject, no text, no logos, no scenery, true transparent background, generous clear padding, crisp silhouette, suitable for a 220px dashboard card. Subject: a charming miniature gift shop with a coral and cream striped awning, warm window light, and small green plants. Slim circular teal glass pedestal with cyan luminous ring. No lettering on any signs, generic shop illustration, no branding."
+    },
+    {
+      "name": "cafe-discovery-v2",
+      "file": "app/frontend/public/avatars/cafe-discovery-v2.webp",
+      "reference": "User-provided October 8 discovery mockup",
+      "prompt": "Use case: stylized-concept. Asset type: reusable caf\u00e9 industry artwork for a real sales discovery card. Use the attached UI mockup only as visual reference for its coffee-cup illustration. Generate ONE isolated large glossy white ceramic cup of fresh coffee, realistic curling steam, a few floating coffee beans and green leaves, hovering just above a thin luminous cyan glass platform. Match the reference's sophisticated realistic 3D rendering and teal/cyan rim light. No face, no eyes, no character expression. Transparent background, clean alpha edges, centered full composition with comfortable margins, square canvas. Do not include phones, any UI, any text, Juniper Caf\u00e9, business branding, logos, watermarks, background scenery, or another business. This is generic decorative industry art, never a real business logo."
     }
   ]
 }

@@ -16,7 +16,7 @@ assert.match(css,/\.kp-topbar h1,\.dw-heading h2[^}]+font-family:var\(--display-
 assert.doesNotMatch(css,/Arial|Helvetica|font-weight:700|font-weight:800/);
 assert.doesNotMatch(legacy,/(?:^|[;{])font(?:-family|-size|-weight)?:/);
 for(const match of css.matchAll(/font-size:([\d.]+)rem/g))assert.ok(Number(match[1])>=.875,match[0]);
-assert.match(css,/\.dw-guided-card h3\{font-size:1\.5rem/);
+assert.match(css,/\.kp-discovery-card h3\{font:600 1\.5rem\/1\.3 var\(--body-font\)/);
 assert.match(css,/\.bottom-nav button\{[^}]*font-size:0\.9375rem/);
 assert.match(index,/rel="preload" href="\/fonts\/Manrope-Variable\.woff2" as="font" type="font\/woff2" crossorigin/);
 assert.ok(fs.readFileSync('app/frontend/public/fonts/OFL-Manrope.txt','utf8').includes('SIL OPEN FONT LICENSE'));
