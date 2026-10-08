@@ -1,9 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {api} from './api';
-import {BusinessHero} from './BusinessHero';
-import {FitSignals} from './FitSignals';
+import {DiscoveryCard} from './DiscoveryCard';
 import {FocusCarousel} from './FocusCarousel';
-import {SkyeGuide} from './SkyeGuide';
 import {SavedBusinessCarousel} from './SavedBusinessCarousel';
 
 const labels: Record<string,string> = {
@@ -20,12 +18,12 @@ const link = (value: unknown) => {
 
 type Props = {
   businesses:any[]; campaign:string; searchId:string;
-  onUpdated:(row:any)=>void; onOpen:(row:any)=>void;
+  onFocus?:(id:number|undefined)=>void; onUpdated:(row:any)=>void; onOpen:(row:any)=>void;
   onBrowse:()=>void; onNewSearch:()=>void;
 };
 
 /** A review round contains actual unreviewed records; every decision counts. */
-export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBrowse,onNewSearch}:Props) {
+export function GuidedReview({businesses,campaign,searchId,onFocus,onUpdated,onOpen,onBrowse,onNewSearch}:Props) {
   const [round,setRound] = useState<number[]>(()=>businesses.filter(x=>x.decision==='UNREVIEWED').slice(0,5).map(x=>x.id));
   const [index,setIndex] = useState(0);
   const [business,setBusiness] = useState<any>(null);
@@ -38,6 +36,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   const [skye,setSkye] = useState<any>(null);
   const [retrySave,setRetrySave] = useState(false);
   const [undo,setUndo] = useState<any>(null);
+  const decisionLock=useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const current = round[index];
   const previousBusiness=round.length>1?businesses.find(x=>x.id===round[(index-1+round.length)%round.length]):undefined;
@@ -49,11 +48,11 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   const remaining = businesses.filter(x=>x.decision==='UNREVIEWED');
 
   useEffect(()=>{
-    if (!current) {setBusiness(null);return;}
+    if (!current) {setBusiness(null);if(!savedFits.length)onFocus?.(undefined);return;}
     let cancelled = false;
     setLoading(true);setError('');setBusiness(null);setRetrySave(false);setSkye(null);
     api.discoveryDetail(current,searchId).then(row=>{
-      if (!cancelled) {setBusiness(row);setNotes(row.notes||'');}
+      if (!cancelled) {setBusiness(row);setNotes(row.notes||'');onFocus?.(row.id);}
     }).catch(e=>{if(!cancelled)setError(e.message||'This business could not load.');})
       .finally(()=>{if(!cancelled)setLoading(false);});
     return ()=>{cancelled=true;};
@@ -71,7 +70,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
     finally {setBusy(false);}
   };
 
-  useEffect(()=>{if(!loading&&(business||!current))heading.current?.focus();},[current,business?.id,loading]);
+  useEffect(()=>{if(!loading&&!current)heading.current?.focus();},[current,business?.id,loading]);
 
   const finish = async (id:number, outcome:string) => {
     const row = await api.discoveryDetail(id,searchId);
@@ -81,8 +80,8 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   };
 
   const choose = async (outcome:string) => {
-    if (!business || busy) return;
-    setBusy(true);setError('');
+    if (!business || busy || retrySave || decisionLock.current) return;
+    decisionLock.current=true;setBusy(true);setError('');
     let decided = false;
     try {
       const result = await api.discoveryDecide(business.id,{
@@ -100,7 +99,7 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
         setRetrySave(outcome==='QUALIFIED');
       }
       setError(`${decided?'Your decision was saved, but the next step could not finish. ':''}${e.message||'Please try again.'}`);
-    } finally {setBusy(false);}
+    } finally {decisionLock.current=false;setBusy(false);}
   };
 
   const undoLast = async () => {
@@ -116,26 +115,23 @@ export function GuidedReview({businesses,campaign,searchId,onUpdated,onOpen,onBr
   };
 
   return <section className="dw-guided" aria-label="Review businesses one at a time">
-    {(current||round.length>0)&&<SkyeGuide compact mission={round.length?`Review ${round.length}`:'Review complete'} steps={round.map(id=>({id,name:businesses.find(row=>row.id===id)?.name||'Business',done:businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')}))}>{current?'Does it fit?':'Saved. What’s next?'}</SkyeGuide>}
+    {round.length>0&&<div className="kp-review-progress"><span>Review {round.length}</span><ol aria-label="Recorded review progress">{round.map(id=><li key={id} className={businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')?'is-done':''}><span className="kp-sr-only">{businesses.find(row=>row.id===id)?.name}: {businesses.some(row=>row.id===id&&row.decision!=='UNREVIEWED')?'reviewed':'not reviewed'}</span></li>)}</ol></div>}
     {error&&<p role="alert">{error}</p>}
 
     {loading&&<p role="status">Loading…</p>}
     {current&&!loading&&!business&&<button onClick={()=>setLoadAttempt(x=>x+1)}>Try again</button>}
-    {current&&<FocusCarousel activeKey={index} onPrevious={!busy&&round.length>1?()=>setIndex((index-1+round.length)%round.length):undefined} onNext={!busy&&round.length>1?()=>setIndex((index+1)%round.length):undefined} previous={previousBusiness?{label:'Previous business',title:previousBusiness.name,summary:[previousBusiness.category,previousBusiness.city].filter(Boolean).join(' · '),business:previousBusiness}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · '),business:nextBusiness}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><article className="dw-guided-card">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Loading…'}</h3><p></p></div>:<>
-      <BusinessHero business={business}/>
-      <h3 ref={heading} tabIndex={-1}>{business.name}</h3>
-      <p>{business.category||'Business type not recorded'} · {[business.city,business.state].filter(Boolean).join(', ')||'Location not recorded'}</p>
-      <FitSignals compact assessment={business.assessment}/><p className="dw-buying-note">ⓘ A match does not mean they want to buy.</p>
-      <details><summary>More info</summary><button disabled={busy} onClick={explain}>✦ Ask Skye</button>
+    {current&&<FocusCarousel review activeKey={index} onPrevious={!busy&&!retrySave&&round.length>1?()=>setIndex((index-1+round.length)%round.length):undefined} onNext={!busy&&!retrySave&&round.length>1?()=>setIndex((index+1)%round.length):undefined} previous={previousBusiness?{label:'Previous business',title:previousBusiness.name,summary:[previousBusiness.category,previousBusiness.city].filter(Boolean).join(' · '),business:previousBusiness}:undefined} next={nextBusiness?{label:'Coming next',title:nextBusiness.name,summary:[nextBusiness.category,nextBusiness.city].filter(Boolean).join(' · '),business:nextBusiness}:{label:'After this card',title:'Choose your next step',summary:'Your decisions stay saved'}}><div className="dw-guided-card-host">{loading||business?.id!==current?<div role="status" className="dw-card-loading"><span>✦ Skye</span><h3>{latest?.name||'Loading…'}</h3><p></p></div>:<>
+      <DiscoveryCard business={business} disabled={busy||retrySave} onDecision={choose}>
+      <div className="kp-research-actions"><button disabled={busy} onClick={explain}>✦ Ask Skye</button>
       {skye&&<div className="dw-skye-guide" aria-live="polite"><strong><img className="dw-inline-skye" src="/avatars/skye.png" alt=""/>Skye</strong>{skye.businesses?.map((row:any)=><div key={row.id}><p>What matches: {row.known.join(' · ')||'No match confirmed.'}</p><p>What to check: {row.missing.join(' · ')}</p><p>My suggestion: {labels[row.suggested_decision]}. {row.explanation}</p>{row.sources.map((source:any)=><a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.label} ↗</a>)}</div>)}</div>}
         <button onClick={()=>onOpen(business)}>Open details</button>
         {link(business.website)&&<a href={link(business.website)} target="_blank" rel="noreferrer">🌐 Website</a>}
-        <label>📝 Note<textarea maxLength={3000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
-      </details>
-    </>}</article></FocusCarousel>}
-    {current&&business?.id===current&&!loading&&<div className="dw-decision-dock" role="group" aria-label="Does this look worth contacting?"><div className="dw-actions dw-verdicts">{['QUALIFIED','NEEDS_RESEARCH','DISQUALIFIED'].map(outcome=><button key={outcome} className={outcome==='QUALIFIED'?'dw-primary':outcome==='NEEDS_RESEARCH'?'dw-not-sure':''} disabled={busy||retrySave} onClick={()=>choose(outcome)}><span aria-hidden="true">{outcome==='QUALIFIED'?'👍':outcome==='NEEDS_RESEARCH'?'?':'×'}</span>{labels[outcome]}</button>)}</div><p>Saves automatically.{undo&&<button disabled={busy} onClick={undoLast}>Undo</button>}</p>{retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry save</button>}</div>}
+        <label>📝 Note<textarea disabled={busy||retrySave} maxLength={3000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
+      </div></DiscoveryCard>
+    </>}</div></FocusCarousel>}
+    {current&&business?.id===current&&!loading&&<div className="dw-decision-dock" role="group" aria-label="Does this look worth contacting?"><div className="dw-actions dw-verdicts">{['DISQUALIFIED','NEEDS_RESEARCH','QUALIFIED'].map(outcome=><button key={outcome} className={outcome==='QUALIFIED'?'dw-primary':outcome==='NEEDS_RESEARCH'?'dw-not-sure':''} disabled={busy||retrySave} onClick={()=>choose(outcome)}><span aria-hidden="true">{outcome==='QUALIFIED'?'✓':outcome==='NEEDS_RESEARCH'?'?':'×'}</span>{labels[outcome]}</button>)}</div><p>Saves automatically.{undo&&<button disabled={busy} onClick={undoLast}>Undo</button>}</p>{retrySave&&<button className="dw-primary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await api.discoverySave(business.id);await finish(business.id,'QUALIFIED');}catch(e:any){setError(e.message);}finally{setBusy(false);}}}>Retry save</button>}</div>}
     <div className="dw-review-foot">{notice&&<div className="dw-celebration" role="status" key={`${index}-${notice}`}><span aria-hidden="true">✓</span><p>{notice}</p></div>}</div>
-    {!current&&savedFits.length>0&&<SavedBusinessCarousel businesses={savedFits} onOpen={onOpen}/>}
+    {!current&&savedFits.length>0&&<SavedBusinessCarousel businesses={savedFits} onFocus={onFocus} onOpen={onOpen}/>}
     {!current&&undo&&<button disabled={busy} onClick={undoLast}>Undo</button>}
     {!current&&<div className="dw-round-complete">
       <h3 ref={heading} tabIndex={-1}>{businesses.length?'Nice work. What’s next?':'Nothing found yet.'}</h3>

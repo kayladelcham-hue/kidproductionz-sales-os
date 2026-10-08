@@ -4,6 +4,7 @@ import {WorkspaceShell} from './WorkspaceShell';
 import {BusinessHero} from './BusinessHero';
 import {ContactMission} from './ContactMission';
 import {DiscoveryWorkspace} from './DiscoveryWorkspace';
+import {DiscoveryProfile} from './DiscoveryProfile';
 import {createPortal} from 'react-dom';
 import SalesDashboard from './SalesDashboard';
 
@@ -507,6 +508,9 @@ function App(){
   const [page,setPage]=useState('Home');
   const [dashboardRevision,setDashboardRevision]=useState(0);
   const [discoveryContext,setDiscoveryContext]=useState<number[]>([]);
+  const [discoveryRequestedId,setDiscoveryRequestedId]=useState<number|undefined>();
+  const navigate=(p:string)=>{setPage(p);setDiscoveryContext([]);setDiscoveryRequestedId(undefined)};
+  const recordContext=(ids:number[])=>{setDiscoveryContext(ids);setDiscoveryRequestedId(undefined)};
   const [tourOpen,setTourOpen]=useState(false);
   const [hubProspect,setHubProspect]=useState<any>(null);
   const [mobileMenuOpen,setMobileMenuOpen]=useState(false);
@@ -517,22 +521,22 @@ function App(){
   const loadCampaigns=()=>api.campaigns().then((x:any)=>{setCampaignsLoaded(true);setCampaignError('');const rows=Array.isArray(x)?x:(x.campaigns||[]);setCampaigns(rows);if(rows.length&&!rows.some((c:any)=>c.campaign_id===campaign))setCampaign(rows[0].campaign_id)}).catch(()=>{setCampaignsLoaded(true);setCampaignError('Campaigns could not load. Try refreshing.')} );
   useEffect(()=>{loadCampaigns()},[]);
   useEffect(()=>{document.querySelector('.shell > main')?.scrollTo({top:0});setHubProspect(null)},[page,campaign]);
-  const content=campaignError?<div className="card empty"><p role="alert">{campaignError}</p><button onClick={loadCampaigns}>Retry campaigns</button></div>:campaignsLoaded&&!campaignError&&!campaigns.length&&!['Home','Lead Generator','Prospects','Campaigns','More','Settings','ICP Profile'].includes(page)?<div className="card empty"><h2>Let’s build your pipeline.</h2><p>Create your first campaign to choose your market and start adding leads.</p><button onClick={()=>setPage('Campaigns')}>Create my first campaign →</button></div>:page==='Home'?<DiscoveryWorkspace key={campaign} home campaign={campaign} onNavigate={setPage} onCampaignReady={id=>{setCampaign(id);void loadCampaigns()}} onOpenSaved={setHubProspect} onContext={setDiscoveryContext} initialBusinessId={discoveryContext.length===1?discoveryContext[0]:undefined}/>:
-    page==='Prospects'?<DiscoveryWorkspace key={campaign} campaign={campaign} onNavigate={setPage} onOpenSaved={setHubProspect} onContext={setDiscoveryContext} initialBusinessId={discoveryContext.length===1?discoveryContext[0]:undefined}/>:
+  const content=campaignError?<div className="card empty"><p role="alert">{campaignError}</p><button onClick={loadCampaigns}>Retry campaigns</button></div>:campaignsLoaded&&!campaignError&&!campaigns.length&&!['Home','Lead Generator','Prospects','Campaigns','More','Settings','ICP Profile','Saved','Profile'].includes(page)?<div className="card empty"><h2>Let’s build your pipeline.</h2><p>Create your first campaign to choose your market and start adding leads.</p><button onClick={()=>setPage('Campaigns')}>Create my first campaign →</button></div>:page==='Home'?<DiscoveryWorkspace key={campaign} home campaign={campaign} onNavigate={navigate} onCampaignReady={id=>{setCampaign(id);void loadCampaigns()}} onOpenSaved={setHubProspect} onContext={recordContext} initialBusinessId={discoveryRequestedId}/>:
+    page==='Saved'?<DiscoveryWorkspace key={`saved:${campaign}`} savedOnly campaign={campaign} onNavigate={navigate} onOpenSaved={setHubProspect} onContext={recordContext}/>:page==='Profile'?<DiscoveryProfile onHelp={()=>navigate('Lead Generator')} onDiscover={()=>navigate('Home')} onMore={()=>navigate('More')}/>:page==='Prospects'?<DiscoveryWorkspace key={campaign} campaign={campaign} onNavigate={navigate} onOpenSaved={setHubProspect} onContext={recordContext} initialBusinessId={discoveryRequestedId}/>:
     page==='Leads'?<CorePipeline key={campaign} campaign={campaign} onOpenContact={setHubProspect}/>:
     page==='Customers'?<CustomersWorkspace key={campaign} campaign={campaign}/>:
-    page==='Calendar'?<div className="lc-page"><CalendarGrid onNavigate={setPage}/><FollowUpHub key={campaign} campaign={campaign} onOpen={setHubProspect}/></div>:
+    page==='Calendar'?<div className="lc-page"><CalendarGrid onNavigate={navigate}/><FollowUpHub key={campaign} campaign={campaign} onOpen={setHubProspect}/></div>:
     page==='Sales & Revenue'?<RevenueWorkspace key={campaign} campaign={campaign}/>:
     page==='Daily Queue'?<QueuePage campaign={campaign}/>:
     page==='Up Next'?<UpNext campaign={campaign}/>:
-    page==='Lead Generator'?<DiscoveryWorkspace key={campaign} home campaign={campaign} onNavigate={setPage} onCampaignReady={id=>{setCampaign(id);void loadCampaigns()}} onOpenSaved={setHubProspect} onContext={setDiscoveryContext} initialBusinessId={discoveryContext.length===1?discoveryContext[0]:undefined}/>:
+    page==='Lead Generator'?<DiscoveryWorkspace key={campaign} home startSetup campaign={campaign} onNavigate={navigate} onCampaignReady={id=>{setCampaign(id);void loadCampaigns()}} onOpenSaved={setHubProspect} onContext={recordContext} initialBusinessId={discoveryRequestedId}/>:
     page==='Add Prospect'?<AddProspect key={campaign} campaign={campaign}/>:
     page==='ICP Profile'?<IcpProfile/>:
     page==='Campaigns'?<Campaigns campaign={campaign} onChanged={loadCampaigns} onSelect={setCampaign}/>:
     page==='Runs'?<Runs/>:
     page==='Momentum'?<CoreMomentum/>:
-    page==='More'?<CoreMore onNavigate={setPage}/>:<Settings campaign={campaign}/>;
-  return <><WorkspaceShell page={page} onNavigate={setPage} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} menuOpen={mobileMenuOpen} onMenu={()=>setMobileMenuOpen(true)} blocked={mobileMenuOpen}><div className="kp-page" key={`${page}:${campaign}`}>{content}</div>{hubProspect&&<ProspectDrawer key={hubProspect.prospect_id??hubProspect.id} item={hubProspect} onClose={()=>{setHubProspect(null);setDashboardRevision(x=>x+1)}}/>}</WorkspaceShell>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={setPage} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>} {tourOpen&&<GuidedTour onNavigate={setPage} onClose={()=>setTourOpen(false)}/>}<React.Suspense fallback={null}><SalesAgent campaign={campaign} discoveryIds={discoveryContext} onOpenBusiness={id=>{setPage('Prospects');setDiscoveryContext([id])}} onDiscover={()=>setPage('Home')}/></React.Suspense></>;
+    page==='More'?<CoreMore onNavigate={navigate}/>:<Settings campaign={campaign}/>;
+  return <><WorkspaceShell page={page} onNavigate={navigate} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} menuOpen={mobileMenuOpen} onMenu={()=>setMobileMenuOpen(true)} blocked={mobileMenuOpen}><div className="kp-page" key={`${page}:${campaign}`}>{content}</div>{hubProspect&&<ProspectDrawer key={hubProspect.prospect_id??hubProspect.id} item={hubProspect} onClose={()=>{setHubProspect(null);setDashboardRevision(x=>x+1)}}/>}</WorkspaceShell>{mobileMenuOpen&&<AppNavigation page={page} onNavigate={navigate} campaign={campaign} campaigns={campaigns} onCampaign={id=>{setCampaign(id);setHubProspect(null)}} onClose={()=>setMobileMenuOpen(false)} onTour={()=>setTourOpen(true)}/>} {tourOpen&&<GuidedTour onNavigate={navigate} onClose={()=>setTourOpen(false)}/>}<React.Suspense fallback={null}><SalesAgent campaign={campaign} discoveryIds={discoveryContext} onOpenBusiness={id=>{setPage('Prospects');setDiscoveryContext([id]);setDiscoveryRequestedId(id)}} onDiscover={()=>setPage('Home')}/></React.Suspense></>;
 
 }
 function useQueue(campaign:string){const [data,setData]=useState<Queue|null>(null);const [error,setError]=useState(false);useEffect(()=>{setData(null);setError(false);api.queue(campaign).then(setData).catch(()=>setError(true))},[campaign]);return {data,error}}
