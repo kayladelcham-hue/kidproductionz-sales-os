@@ -315,3 +315,21 @@ def test_beginner_discovery_through_real_auth_csrf_and_queue(accounts,monkeypatc
     a.headers['X-CSRF-Token']=a.get('/api/auth/csrf').json()['csrf_token']
     draft=a.post('/api/discovery/explain',json={'campaign':'alice','business_ids':[bid],'question':'Draft a first message.'}).json()
     assert 'Website design' in draft['draft'] and 'Nothing has been sent' in draft['reply']
+
+def test_target_campaign_endpoint_is_owner_scoped_and_preserves_associations(accounts):
+    a,pid=accounts[0];b,_=accounts[1]
+    body={'industry':'Restaurant','city':'Atlanta','state':'GA'}
+    created=a.post('/api/campaigns/resolve-target',json=body)
+    assert created.status_code==200
+    row=created.json();assert row['name']=='Atlanta Restaurants'
+    again=a.post('/api/campaigns/resolve-target',json={**body,'industry':' restaurants ','city':'ATLANTA'})
+    assert again.status_code==200 and again.json()['campaign_id']==row['campaign_id']
+    other=b.post('/api/campaigns/resolve-target',json=body)
+    assert other.status_code==200 and other.json()['campaign_id']!=row['campaign_id']
+    assert b.get('/api/campaigns/'+row['campaign_id']).status_code==404
+    assert a.get('/api/prospects?campaign=alice').json()[0]['id']==pid
+    assert a.patch('/api/campaigns/'+row['campaign_id'],json={'name':'My custom name'}).status_code==200
+    assert a.post('/api/campaigns/resolve-target',json=body).json()['name']=='My custom name'
+    assert any(c['campaign_id']==row['campaign_id'] for c in a.get('/api/campaigns').json())
+    a.headers.pop('X-CSRF-Token')
+    assert a.post('/api/campaigns/resolve-target',json=body).status_code==403
