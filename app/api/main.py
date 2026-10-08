@@ -497,6 +497,20 @@ class CampaignPatch(BaseModel):
 def _campaign_payload(row):
     return {'campaign_id':row['slug'],'name':row['name'],'city':row.get('city') or '','state':row.get('state') or '','category':row.get('category') or '','description':row.get('description') or '','daily_queue_limit':row.get('daily_queue_limit') or 50,'status':row.get('status') or ('ACTIVE' if row.get('active') else 'PAUSED'),'created_at':row.get('created_at'),'updated_at':row.get('updated_at')}
 
+class CampaignTarget(BaseModel):
+    industry: str
+    city: str
+    state: str
+    preferred_campaign: str | None = None
+
+@app.post('/api/campaigns/resolve-target')
+def campaign_resolve_target(req: CampaignTarget, request: Request):
+    from .campaign_targets import resolve_target
+    try:
+        return _campaign_payload(resolve_target(_owner_id(request),req.industry,req.city,req.state,req.preferred_campaign))
+    except ValueError as error:
+        raise HTTPException(409,str(error))
+
 @app.post('/api/campaigns')
 def campaign_create(req: CampaignCreate, request: Request):
     if not req.campaign_id.strip() or not req.name.strip() or not req.city.strip() or not req.state.strip() or not req.category.strip(): raise HTTPException(422,'Required campaign fields are missing')
